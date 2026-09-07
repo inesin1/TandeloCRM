@@ -21,3 +21,13 @@
 - The `nx-generate` skill handles generator discovery internally - don't call nx_docs just to look up generator syntax
 
 <!-- nx configuration end-->
+
+# Project rules
+
+@~/.claude/rules-project/angular.md
+
+## Commits
+
+- Concise conventional commit message, one line only, max 70 characters
+- Describe the actual change, no marketing language
+- No `Co-Authored-By` trailer

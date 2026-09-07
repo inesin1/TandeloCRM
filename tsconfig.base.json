@@ -23,7 +23,9 @@
       "@org/shop/feature-products": [
         "./packages/shop/feature-products/src/index.ts"
       ],
-      "@org/shop/shared-ui": ["./packages/shop/shared-ui/src/index.ts"]
+      "@org/shop/shared-ui": ["./packages/shop/shared-ui/src/index.ts"],
+      "@org/shared": ["./libs/shared/src/index.ts"],
+      "@org/plugin-sdk": ["./libs/plugin-sdk/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

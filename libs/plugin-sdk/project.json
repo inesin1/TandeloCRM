@@ -1,0 +1,9 @@
+{
+  "name": "plugin-sdk",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/plugin-sdk/src",
+  "projectType": "library",
+  "tags": [],
+  "// targets": "to see all targets run: nx show project plugin-sdk --web",
+  "targets": {}
+}
