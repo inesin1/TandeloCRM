@@ -20,12 +20,7 @@
             "input": "apps/web/public"
           }
         ],
-        "styles": ["apps/web/src/styles.css"],
-        "server": "apps/web/src/main.server.ts",
-        "ssr": {
-          "entry": "apps/web/src/server.ts"
-        },
-        "outputMode": "server"
+        "styles": ["apps/web/src/styles.css"]
       },
       "configurations": {
         "production": {
