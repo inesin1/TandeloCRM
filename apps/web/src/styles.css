@@ -1,9 +1,11 @@
 @import 'tailwindcss';
 @import 'tailwindcss-primeui';
 @import 'primeicons/primeicons.css';
-@import '@fontsource-variable/manrope';
 @import '@fontsource-variable/inter';
 
 :root {
-  font-family: 'Manrope Variable', 'Inter Variable', system-ui, sans-serif;
+  color-scheme: light;
+  font-family: 'Inter Variable', system-ui, sans-serif;
+  font-feature-settings: 'cv11', 'ss01';
+  font-optical-sizing: auto;
 }
