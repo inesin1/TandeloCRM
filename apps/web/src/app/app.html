@@ -1,1 +1,86 @@
-<router-outlet></router-outlet>
+<p-sidebar-layout class="h-dvh">
+  <p-sidebar id="app-sidebar" variant="floating" collapsible="icon" side="left">
+    <p-sidebar-spacer />
+    <p-sidebar-aside>
+      <p-sidebar-panel>
+        <p-sidebar-header>
+          <p-sidebar-menu>
+            <p-sidebar-menu-item>
+              <button pSidebarMenuButton class="px-1!" routerLink="/">
+                <div
+                  class="flex size-6 shrink-0 items-center justify-center rounded-md bg-linear-to-br from-violet-500 to-indigo-600 text-white text-xs font-bold leading-none"
+                >
+                  O
+                </div>
+                <span class="font-semibold text-sm">{{ title }}</span>
+              </button>
+            </p-sidebar-menu-item>
+          </p-sidebar-menu>
+        </p-sidebar-header>
+        <p-sidebar-content>
+          @for (group of navGroups; track group.label) {
+          <p-sidebar-group>
+            <p-sidebar-group-label>{{ group.label }}</p-sidebar-group-label>
+            <p-sidebar-group-content>
+              <p-sidebar-menu>
+                @for (item of group.items; track item.label) {
+                <p-sidebar-menu-item>
+                  <button
+                    pSidebarMenuButton
+                    [routerLink]="item.routerLink"
+                    routerLinkActive
+                    #rla="routerLinkActive"
+                    [isActive]="rla.isActive"
+                  >
+                    <svg [pIcon]="item.icon"></svg>
+                    <span>{{ item.label }}</span>
+                  </button>
+                  @if (item.badge) {
+                  <p-sidebar-menu-badge>{{ item.badge }}</p-sidebar-menu-badge>
+                  }
+                </p-sidebar-menu-item>
+                }
+              </p-sidebar-menu>
+            </p-sidebar-group-content>
+          </p-sidebar-group>
+          }
+        </p-sidebar-content>
+        <p-sidebar-footer>
+          <p-sidebar-menu>
+            <p-sidebar-menu-item>
+              <button pSidebarMenuButton class="p-1!">
+                <p-avatar
+                  label="JD"
+                  shape="circle"
+                  class="size-6 shrink-0 text-xs"
+                />
+                <span>John Doe</span>
+              </button>
+            </p-sidebar-menu-item>
+          </p-sidebar-menu>
+        </p-sidebar-footer>
+        <button pSidebarRail aria-label="Toggle sidebar"></button>
+      </p-sidebar-panel>
+    </p-sidebar-aside>
+  </p-sidebar>
+
+  <p-sidebar-main>
+    <header
+      class="flex h-12 shrink-0 items-center gap-2 border-b border-surface-200 dark:border-surface-700 px-4"
+    >
+      <button
+        pButton
+        pSidebarTrigger
+        target="app-sidebar"
+        severity="secondary"
+        text
+        size="small"
+      >
+        <svg data-p-icon="sidebar"></svg>
+      </button>
+    </header>
+    <main class="flex-1 overflow-y-auto p-4">
+      <router-outlet />
+    </main>
+  </p-sidebar-main>
+</p-sidebar-layout>
