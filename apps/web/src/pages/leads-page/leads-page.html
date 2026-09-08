@@ -1,0 +1,74 @@
+<div class="p-4">
+  <div class="flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <h1 class="text-3xl font-bold tracking-tight">Leads</h1>
+      <p-select
+        [options]="pipelines"
+        [ngModel]="selectedPipeline()"
+        (ngModelChange)="selectedPipeline.set($event)"
+        optionLabel="name"
+        optionValue="id"
+        class="w-48"
+      />
+    </div>
+
+    <button pButton>
+      <svg data-p-icon="plus"></svg>
+      <span>Lead</span>
+    </button>
+  </div>
+
+  <div class="mt-2 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-2 text-sm text-surface-500">
+      <span>{{ leadsCount }} leads</span>
+      <span aria-hidden="true">•</span>
+      <span class="font-semibold text-surface-900">{{ totalPriceLabel }}</span>
+      <span>in progress</span>
+      <span aria-hidden="true">•</span>
+      <span class="flex items-center gap-1 font-semibold text-emerald-600">
+        <svg data-p-icon="arrow-up-right" class="size-4"></svg>
+        {{ conversionLabel }}
+      </span>
+    </div>
+
+    <div
+      class="flex h-12 shrink-0 items-center gap-2 rounded-xl border border-[var(--p-content-border-color)] bg-[var(--p-content-background)] px-2 shadow-sm"
+    >
+      <p-selectbutton
+        [options]="viewModes"
+        [ngModel]="viewMode()"
+        (ngModelChange)="viewMode.set($event)"
+        [allowEmpty]="false"
+        optionValue="value"
+        size="small"
+        aria-label="View mode"
+      >
+        <ng-template #item let-option>
+          <svg [pIcon]="option.icon"></svg>
+          <span>{{ option.label }}</span>
+        </ng-template>
+      </p-selectbutton>
+
+      <span
+        class="h-6 w-px shrink-0 bg-[var(--p-content-border-color)]"
+        aria-hidden="true"
+      ></span>
+
+      <button pButton severity="secondary" outlined size="small">
+        <svg [pIcon]="'filter'"></svg>
+        <span>Filters</span>
+      </button>
+
+      <button
+        pButton
+        severity="secondary"
+        outlined
+        size="small"
+        iconOnly
+        aria-label="Search"
+      >
+        <svg [pIcon]="'search'"></svg>
+      </button>
+    </div>
+  </div>
+</div>
