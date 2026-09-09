@@ -1,0 +1,66 @@
+@let lead = this.lead();
+
+<div class="flex items-center gap-1.5 text-xs text-surface-500">
+  <span class="shrink-0 text-surface-400">{{ lead.code }}</span>
+  <span aria-hidden="true">·</span>
+  <span class="truncate">{{ lead.clientName }}</span>
+
+  <button
+    pButton
+    severity="secondary"
+    text
+    size="small"
+    iconOnly
+    class="relative z-10 ml-auto shrink-0 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+    aria-label="Lead actions"
+  >
+    <svg [pIcon]="'ellipsis-h'"></svg>
+  </button>
+</div>
+
+<h3 class="mt-1 text-sm font-semibold leading-snug text-surface-900">
+  <a
+    [routerLink]="['/leads', lead.id]"
+    class="line-clamp-2 after:absolute after:inset-0"
+  >
+    {{ lead.name }}
+  </a>
+</h3>
+<div class="mt-0.5 text-sm font-medium text-surface-600">
+  {{ lead.priceLabel }}
+</div>
+
+@if (lead.task; as task) {
+<div class="mt-2 flex items-center gap-1.5 text-xs text-surface-600">
+  <svg [pIcon]="task.icon" class="size-3.5 shrink-0"></svg>
+  <span class="truncate">{{ task.text }}</span>
+  <span aria-hidden="true">·</span>
+  <span class="shrink-0">{{ task.dueAt | date: 'MMM d, HH:mm' }}</span>
+</div>
+
+@if (task.isOverdue) {
+<div class="mt-1 flex items-center gap-1.5 text-xs text-red-600">
+  <svg [pIcon]="'exclamation-circle'" class="size-3.5 shrink-0"></svg>
+  {{ task.overdueLabel }}
+</div>
+} } @else {
+<div class="mt-2 flex items-center gap-1.5 text-xs text-amber-600">
+  <svg [pIcon]="'exclamation-circle'" class="size-3.5 shrink-0"></svg>
+  No next task
+</div>
+}
+
+<div
+  class="mt-3 flex items-center justify-between gap-2 text-xs text-surface-500"
+>
+  <span class="flex min-w-0 items-center gap-1.5">
+    <span
+      class="flex size-5 shrink-0 items-center justify-center rounded-full bg-surface-100"
+    >
+      <svg [pIcon]="'user'" class="size-3"></svg>
+    </span>
+    <span class="truncate">{{ lead.responsibleName }}</span>
+  </span>
+
+  <span class="shrink-0">Updated {{ lead.updatedAt | date: 'MMM d' }}</span>
+</div>
