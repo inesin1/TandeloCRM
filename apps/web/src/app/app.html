@@ -56,27 +56,12 @@
             </p-sidebar-menu-item>
           </p-sidebar-menu>
         </p-sidebar-footer>
-        <button pSidebarRail aria-label="Toggle sidebar"></button>
+        <button pSidebarRail></button>
       </p-sidebar-panel>
     </p-sidebar-aside>
   </p-sidebar>
 
   <p-sidebar-main class="min-w-0">
-    <header
-      class="m-2 mb-0 flex h-12 shrink-0 items-center gap-2 rounded-xl border border-[var(--p-content-border-color)] bg-[var(--p-content-background)] px-2 shadow-sm"
-    >
-      <button
-        pButton
-        pSidebarTrigger
-        target="app-sidebar"
-        severity="secondary"
-        text
-        size="small"
-      >
-        <svg data-p-icon="sidebar"></svg>
-      </button>
-    </header>
-
     <main class="min-w-0 flex-1 overflow-y-auto p-2">
       <router-outlet />
     </main>
