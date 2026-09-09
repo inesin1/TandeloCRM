@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { SelectModule } from 'primeng/select';
@@ -6,6 +6,18 @@ import { Plus } from '@primeicons/angular/plus';
 import { ArrowUpRight } from '@primeicons/angular/arrow-up-right';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { PIcon } from '@primeicons/angular/p-icon';
+import { RouterLink } from '@angular/router';
+import { DatePipe } from '@angular/common';
+
+interface Task {
+  id: number;
+  leadId: number;
+  type: 'call' | 'email' | 'meeting' | 'document';
+  text: string;
+  dueAt: Date;
+  isCompleted: boolean;
+  responsibleUserId: number;
+}
 
 @Component({
   templateUrl: './leads-page.html',
@@ -18,12 +30,31 @@ import { PIcon } from '@primeicons/angular/p-icon';
     ArrowUpRight,
     SelectButtonModule,
     PIcon,
+    RouterLink,
+    DatePipe,
   ],
 })
 export class LeadsPage {
   protected readonly pipelines = [
-    { id: 1, name: 'Pipeline 1' },
-    { id: 2, name: 'Pipeline 2' },
+    {
+      id: 1,
+      name: 'Pipeline 1',
+      statuses: [
+        { id: 1, name: 'New', sort: 10 },
+        { id: 2, name: 'Qualification', sort: 20 },
+        { id: 3, name: 'Proposal', sort: 30 },
+        { id: 4, name: 'Negotiation', sort: 40 },
+      ],
+    },
+    {
+      id: 2,
+      name: 'Pipeline 2',
+      statuses: [
+        { id: 5, name: 'Incoming', sort: 10 },
+        { id: 6, name: 'In progress', sort: 20 },
+        { id: 7, name: 'Done', sort: 30 },
+      ],
+    },
   ];
 
   protected readonly leads = [
@@ -133,7 +164,7 @@ export class LeadsPage {
       name: 'Team expansion',
       price: 190_000,
       responsibleUserId: 2,
-      statusId: 4,
+      statusId: 5,
       pipelineId: 2,
       createdBy: 3,
       createdAt: new Date('2026-08-05T12:15'),
@@ -147,7 +178,7 @@ export class LeadsPage {
     },
   ];
 
-  protected readonly selectedPipeline = signal(this.pipelines[0].id);
+  protected readonly selectedPipeline = signal(this.pipelines[0]);
   protected readonly leadsCount = this.leads.length;
 
   protected readonly leadsPrice = this.leads.reduce(
@@ -167,9 +198,174 @@ export class LeadsPage {
     maximumFractionDigits: 1,
   }).format(0.186);
 
+  protected readonly users = [
+    { id: 1, name: 'Andrey N.' },
+    { id: 2, name: 'Elena K.' },
+    { id: 3, name: 'Mikhail S.' },
+  ];
+
+  protected readonly tasks: Task[] = [
+    {
+      id: 1,
+      leadId: 1,
+      type: 'call',
+      text: 'First call',
+      dueAt: new Date('2026-09-09T14:00'),
+      isCompleted: false,
+      responsibleUserId: 1,
+    },
+    {
+      id: 2,
+      leadId: 1,
+      type: 'email',
+      text: 'Send follow-up',
+      dueAt: new Date('2026-09-01T10:00'),
+      isCompleted: true,
+      responsibleUserId: 1,
+    },
+    {
+      id: 3,
+      leadId: 2,
+      type: 'document',
+      text: 'Send proposal',
+      dueAt: new Date('2026-09-12T11:00'),
+      isCompleted: false,
+      responsibleUserId: 2,
+    },
+    {
+      id: 4,
+      leadId: 3,
+      type: 'document',
+      text: 'Send proposal',
+      dueAt: new Date('2026-09-09T17:30'),
+      isCompleted: false,
+      responsibleUserId: 3,
+    },
+    {
+      id: 5,
+      leadId: 4,
+      type: 'call',
+      text: 'First call',
+      dueAt: new Date('2026-09-15T09:30'),
+      isCompleted: false,
+      responsibleUserId: 1,
+    },
+    {
+      id: 6,
+      leadId: 5,
+      type: 'meeting',
+      text: 'Demo for the team',
+      dueAt: new Date('2026-09-05T12:00'),
+      isCompleted: false,
+      responsibleUserId: 2,
+    },
+    {
+      id: 7,
+      leadId: 6,
+      type: 'document',
+      text: 'Discuss contract',
+      dueAt: new Date('2026-09-10T12:00'),
+      isCompleted: false,
+      responsibleUserId: 3,
+    },
+    {
+      id: 8,
+      leadId: 7,
+      type: 'meeting',
+      text: 'Discuss contract',
+      dueAt: new Date('2026-09-09T10:00'),
+      isCompleted: false,
+      responsibleUserId: 1,
+    },
+  ];
+
+  private readonly taskIcons = {
+    call: 'phone',
+    email: 'envelope',
+    meeting: 'calendar',
+    document: 'file',
+  };
+
+  private readonly priceFormat = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 0,
+  });
+
+  protected readonly columns = computed(() => {
+    const pipeline = this.selectedPipeline();
+
+    return pipeline.statuses
+      .toSorted((a, b) => a.sort - b.sort)
+      .map((status) => {
+        const leads = this.leads.filter(
+          (lead) =>
+            lead.pipelineId === pipeline.id && lead.statusId === status.id,
+        );
+
+        return {
+          ...status,
+          totalLabel: this.priceFormat.format(
+            leads.reduce((acc, lead) => acc + lead.price, 0),
+          ),
+          leads: leads.map((lead) => {
+            const company = lead.companies.at(0);
+            const contact = lead.contacts.at(0);
+
+            return {
+              ...lead,
+              priceLabel: this.priceFormat.format(lead.price),
+              clientName: company?.name ?? contact?.name ?? 'No client',
+              clientIcon: company ? 'building' : 'user',
+              responsibleName: this.users.find(
+                (user) => user.id === lead.responsibleUserId,
+              )?.name,
+              task: this.nextTask(lead.id),
+            };
+          }),
+        };
+      });
+  });
+
+  private nextTask(leadId: number) {
+    const task = this.tasks
+      .filter((item) => item.leadId === leadId && !item.isCompleted)
+      .toSorted((a, b) => a.dueAt.getTime() - b.dueAt.getTime())
+      .at(0);
+
+    if (!task) {
+      return null;
+    }
+
+    const isOverdue = task.dueAt.getTime() < Date.now();
+    const isToday = task.dueAt.toDateString() === new Date().toDateString();
+
+    const severity: 'overdue' | 'today' | 'later' = isOverdue
+      ? 'overdue'
+      : isToday
+        ? 'today'
+        : 'later';
+
+    const chipClass = isOverdue
+      ? 'bg-red-50 text-red-700'
+      : isToday
+        ? 'bg-emerald-50 text-emerald-700'
+        : 'bg-surface-100 text-surface-600';
+
+    return {
+      ...task,
+      icon: this.taskIcons[task.type],
+      severity,
+      chipClass,
+      responsibleName:
+        this.users.find((user) => user.id === task.responsibleUserId)?.name ??
+        'Unassigned',
+    };
+  }
+
   protected readonly viewModes = [
     { label: 'Board', value: 'board', icon: 'columns-2' },
-    { label: 'Table', value: 'table', icon: 'table' },
+    { label: 'List', value: 'list', icon: 'list' },
   ];
 
   protected readonly viewMode = signal(this.viewModes[0].value);
