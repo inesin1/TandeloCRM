@@ -3,8 +3,10 @@ import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { SelectModule } from 'primeng/select';
 import { Plus } from '@primeicons/angular/plus';
-import { ArrowUpRight } from '@primeicons/angular/arrow-up-right';
 import { SelectButtonModule } from 'primeng/selectbutton';
+import { InputTextModule } from 'primeng/inputtext';
+import { IconFieldModule } from 'primeng/iconfield';
+import { InputIconModule } from 'primeng/inputicon';
 import { PIcon } from '@primeicons/angular/p-icon';
 import { RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
@@ -27,8 +29,10 @@ interface Task {
     SelectModule,
     FormsModule,
     Plus,
-    ArrowUpRight,
     SelectButtonModule,
+    InputTextModule,
+    IconFieldModule,
+    InputIconModule,
     PIcon,
     RouterLink,
     DatePipe,
@@ -40,19 +44,19 @@ export class LeadsPage {
       id: 1,
       name: 'Pipeline 1',
       statuses: [
-        { id: 1, name: 'New', sort: 10 },
-        { id: 2, name: 'Qualification', sort: 20 },
-        { id: 3, name: 'Proposal', sort: 30 },
-        { id: 4, name: 'Negotiation', sort: 40 },
+        { id: 1, name: 'New', sort: 10, color: '#3b82f6' },
+        { id: 2, name: 'Qualification', sort: 20, color: '#6366f1' },
+        { id: 3, name: 'Proposal', sort: 30, color: '#f59e0b' },
+        { id: 4, name: 'Negotiation', sort: 40, color: '#10b981' },
       ],
     },
     {
       id: 2,
       name: 'Pipeline 2',
       statuses: [
-        { id: 5, name: 'Incoming', sort: 10 },
-        { id: 6, name: 'In progress', sort: 20 },
-        { id: 7, name: 'Done', sort: 30 },
+        { id: 5, name: 'Incoming', sort: 10, color: '#0ea5e9' },
+        { id: 6, name: 'In progress', sort: 20, color: '#8b5cf6' },
+        { id: 7, name: 'Done', sort: 30, color: '#10b981' },
       ],
     },
   ];
@@ -178,25 +182,13 @@ export class LeadsPage {
     },
   ];
 
+  protected readonly currentUserId = 1;
+
   protected readonly selectedPipeline = signal(this.pipelines[0]);
-  protected readonly leadsCount = this.leads.length;
-
-  protected readonly leadsPrice = this.leads.reduce(
-    (acc, lead) => acc + lead.price,
-    0,
-  );
-
-  protected readonly totalPriceLabel = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    notation: 'compact',
-    maximumFractionDigits: 2,
-  }).format(this.leadsPrice);
-
-  protected readonly conversionLabel = new Intl.NumberFormat('en-US', {
-    style: 'percent',
-    maximumFractionDigits: 1,
-  }).format(0.186);
+  protected readonly activeTab = signal('all');
+  protected readonly search = signal('');
+  protected readonly responsibleFilter = signal<number | null>(null);
+  protected readonly statusFilter = signal<number | null>(null);
 
   protected readonly users = [
     { id: 1, name: 'Andrey N.' },
@@ -292,15 +284,86 @@ export class LeadsPage {
     maximumFractionDigits: 0,
   });
 
+  protected readonly pipelineLeads = computed(() =>
+    this.leads.filter(
+      (lead) => lead.pipelineId === this.selectedPipeline().id,
+    ),
+  );
+
+  protected readonly stats = computed(() => {
+    const leads = this.pipelineLeads();
+    const tasks = leads.map((lead) => this.nextTask(lead.id));
+
+    return {
+      open: leads.length,
+      inWorkLabel: this.priceFormat.format(
+        leads.reduce((acc, lead) => acc + lead.price, 0),
+      ),
+      noTask: tasks.filter((task) => !task).length,
+      overdue: tasks.filter((task) => task?.isOverdue).length,
+    };
+  });
+
+  protected readonly tabs = computed(() => {
+    const leads = this.pipelineLeads();
+
+    return [
+      { value: 'all', label: 'All leads', count: leads.length },
+      {
+        value: 'mine',
+        label: 'Mine',
+        count: leads.filter(
+          (lead) => lead.responsibleUserId === this.currentUserId,
+        ).length,
+      },
+      {
+        value: 'attention',
+        label: 'Needs attention',
+        count: this.stats().noTask + this.stats().overdue,
+      },
+    ];
+  });
+
+  protected readonly filteredLeads = computed(() => {
+    const tab = this.activeTab();
+    const search = this.search().toLowerCase();
+    const responsible = this.responsibleFilter();
+    const status = this.statusFilter();
+
+    return this.pipelineLeads().filter((lead) => {
+      if (responsible && lead.responsibleUserId !== responsible) {
+        return false;
+      }
+
+      if (status && lead.statusId !== status) {
+        return false;
+      }
+
+      if (search && !lead.name.toLowerCase().includes(search)) {
+        return false;
+      }
+
+      if (tab === 'mine') {
+        return lead.responsibleUserId === this.currentUserId;
+      }
+
+      if (tab === 'attention') {
+        const task = this.nextTask(lead.id);
+        return !task || task.isOverdue;
+      }
+
+      return true;
+    });
+  });
+
   protected readonly columns = computed(() => {
     const pipeline = this.selectedPipeline();
 
     return pipeline.statuses
       .toSorted((a, b) => a.sort - b.sort)
       .map((status) => {
-        const leads = this.leads.filter(
-          (lead) =>
-            lead.pipelineId === pipeline.id && lead.statusId === status.id,
+        const leads = this.filteredLeads().filter(
+          (lead) => lead.statusId === status.id,
         );
 
         return {
@@ -314,12 +377,12 @@ export class LeadsPage {
 
             return {
               ...lead,
+              code: `DL-${String(lead.id).padStart(4, '0')}`,
               priceLabel: this.priceFormat.format(lead.price),
               clientName: company?.name ?? contact?.name ?? 'No client',
-              clientIcon: company ? 'building' : 'user',
-              responsibleName: this.users.find(
-                (user) => user.id === lead.responsibleUserId,
-              )?.name,
+              responsibleName:
+                this.users.find((user) => user.id === lead.responsibleUserId)
+                  ?.name ?? 'Unassigned',
               task: this.nextTask(lead.id),
             };
           }),
@@ -337,26 +400,15 @@ export class LeadsPage {
       return null;
     }
 
-    const isOverdue = task.dueAt.getTime() < Date.now();
-    const isToday = task.dueAt.toDateString() === new Date().toDateString();
-
-    const severity: 'overdue' | 'today' | 'later' = isOverdue
-      ? 'overdue'
-      : isToday
-        ? 'today'
-        : 'later';
-
-    const chipClass = isOverdue
-      ? 'bg-red-50 text-red-700'
-      : isToday
-        ? 'bg-emerald-50 text-emerald-700'
-        : 'bg-surface-100 text-surface-600';
+    const overdueMs = Date.now() - task.dueAt.getTime();
+    const overdueDays = Math.floor(overdueMs / 86_400_000);
 
     return {
       ...task,
       icon: this.taskIcons[task.type],
-      severity,
-      chipClass,
+      isOverdue: overdueMs > 0,
+      isToday: task.dueAt.toDateString() === new Date().toDateString(),
+      overdueDays,
       responsibleName:
         this.users.find((user) => user.id === task.responsibleUserId)?.name ??
         'Unassigned',
