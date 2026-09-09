@@ -61,7 +61,7 @@
     </p-sidebar-aside>
   </p-sidebar>
 
-  <p-sidebar-main>
+  <p-sidebar-main class="min-w-0">
     <header
       class="m-2 mb-0 flex h-12 shrink-0 items-center gap-2 rounded-xl border border-[var(--p-content-border-color)] bg-[var(--p-content-background)] px-2 shadow-sm"
     >
@@ -77,9 +77,8 @@
       </button>
     </header>
 
-    <main class="flex-1 overflow-y-auto p-2">
+    <main class="min-w-0 flex-1 overflow-y-auto p-2">
       <router-outlet />
     </main>
-
   </p-sidebar-main>
 </p-sidebar-layout>
