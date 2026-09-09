@@ -407,8 +407,9 @@ export class LeadsPage {
       ...task,
       icon: this.taskIcons[task.type],
       isOverdue: overdueMs > 0,
-      isToday: task.dueAt.toDateString() === new Date().toDateString(),
-      overdueDays,
+      overdueLabel: overdueDays
+        ? `Overdue by ${overdueDays} ${overdueDays === 1 ? 'day' : 'days'}`
+        : 'Overdue today',
       responsibleName:
         this.users.find((user) => user.id === task.responsibleUserId)?.name ??
         'Unassigned',

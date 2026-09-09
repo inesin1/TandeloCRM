@@ -1,7 +1,11 @@
 <div class="flex h-full flex-col">
-  <div class="flex shrink-0 items-center justify-between gap-4">
+  <div
+    class="px-4 py-3 flex shrink-0 items-center justify-between gap-4 rounded-xl border border-[var(--p-content-border-color)] bg-[var(--p-content-background)] shadow-sm"
+  >
     <div class="flex items-center gap-3">
-      <h1 class="text-3xl font-bold tracking-tight">Leads</h1>
+      <h1 class="text-2xl font-semibold tracking-tight text-surface-800">
+        Leads
+      </h1>
       <span class="text-lg text-surface-400">{{ stats().open }}</span>
       <p-select
         [options]="pipelines"
@@ -10,9 +14,32 @@
         optionLabel="name"
         class="w-48"
       />
+
+      <span class="text-sm text-surface-500">
+        In progress
+        <span class="font-semibold text-surface-900"
+          >{{ stats().inWorkLabel }}</span
+        >
+      </span>
     </div>
 
     <div class="flex items-center gap-2">
+      <p-selectbutton
+        [options]="viewModes"
+        [ngModel]="viewMode()"
+        (ngModelChange)="viewMode.set($event)"
+        [allowEmpty]="false"
+        optionValue="value"
+        size="small"
+        class="mr-2"
+        aria-label="View mode"
+      >
+        <ng-template #item let-option>
+          <svg [pIcon]="option.icon"></svg>
+          <span>{{ option.label }}</span>
+        </ng-template>
+      </p-selectbutton>
+
       <button pButton severity="secondary" outlined>
         <svg [pIcon]="'upload'"></svg>
         <span>Import</span>
@@ -23,22 +50,6 @@
         <span>Lead</span>
       </button>
     </div>
-  </div>
-
-  <div class="mt-2 flex shrink-0 items-center gap-2 text-sm text-surface-500">
-    <span>Open</span>
-    <span class="font-semibold text-surface-900">{{ stats().open }}</span>
-    <span aria-hidden="true">•</span>
-    <span>In progress</span>
-    <span class="font-semibold text-surface-900"
-      >{{ stats().inWorkLabel }}</span
-    >
-    <span aria-hidden="true">•</span>
-    <span>No task</span>
-    <span class="font-semibold text-amber-600">{{ stats().noTask }}</span>
-    <span aria-hidden="true">•</span>
-    <span>Overdue</span>
-    <span class="font-semibold text-red-600">{{ stats().overdue }}</span>
   </div>
 
   <div
@@ -100,25 +111,9 @@
         showClear
         class="w-48"
       />
-
-      <p-selectbutton
-        [options]="viewModes"
-        [ngModel]="viewMode()"
-        (ngModelChange)="viewMode.set($event)"
-        [allowEmpty]="false"
-        optionValue="value"
-        size="small"
-        class="ml-auto"
-        aria-label="View mode"
-      >
-        <ng-template #item let-option>
-          <svg [pIcon]="option.icon"></svg>
-          <span>{{ option.label }}</span>
-        </ng-template>
-      </p-selectbutton>
     </div>
 
-    <div class="flex min-h-0 flex-1 gap-4 overflow-x-auto p-4 pt-0">
+    <div class="board flex min-h-0 flex-1 gap-4 overflow-x-auto p-4 pt-0">
       @for (column of columns(); track column.id) {
       <div
         class="flex h-full flex-col shrink-0 w-80 rounded-xl border border-surface-200 bg-surface-50 p-2"
@@ -172,7 +167,9 @@
               </button>
             </div>
 
-            <h3 class="mt-1 text-sm font-medium leading-snug text-surface-900">
+            <h3
+              class="mt-1 text-sm font-semibold leading-snug text-surface-900"
+            >
               <a
                 [routerLink]="['/leads', lead.id]"
                 class="line-clamp-2 after:absolute after:inset-0"
@@ -180,7 +177,7 @@
                 {{lead.name}}
               </a>
             </h3>
-            <div class="mt-1 text-base font-semibold">
+            <div class="mt-0.5 text-sm font-medium text-surface-600">
               {{ lead.priceLabel }}
             </div>
 
@@ -202,7 +199,7 @@
                 [pIcon]="'exclamation-circle'"
                 class="size-3.5 shrink-0"
               ></svg>
-              Overdue by {{ task.overdueDays }} days
+              {{ task.overdueLabel }}
             </div>
             } } @else {
             <div class="mt-2 flex items-center gap-1.5 text-xs text-amber-600">
@@ -226,7 +223,9 @@
                 <span class="truncate">{{ lead.responsibleName }}</span>
               </span>
 
-              <span class="shrink-0">{{ lead.updatedAt | date: 'MMM d' }}</span>
+              <span class="shrink-0"
+                >Updated {{ lead.updatedAt | date: 'MMM d' }}</span
+              >
             </div>
           </li>
           } @empty {
