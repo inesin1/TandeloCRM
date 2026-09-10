@@ -1,0 +1,33 @@
+@let column = this.column();
+
+<div class="flex gap-2 items-center px-1">
+  <span
+    class="size-2 shrink-0 rounded-full"
+    [style.background-color]="column.color"
+  ></span>
+  <span class="text-sm font-semibold">{{ column.name }}</span>
+  <span class="text-sm text-surface-400"> {{ column.leads.length }} </span>
+  <button
+    pButton
+    severity="secondary"
+    text
+    size="small"
+    iconOnly
+    class="ml-auto shrink-0"
+    aria-label="Add lead"
+  >
+    <svg [pIcon]="'plus'"></svg>
+  </button>
+</div>
+
+<span class="px-1 text-xs text-surface-500">{{ column.totalLabel }}</span>
+
+<ul class="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto mt-2">
+  @for (lead of column.leads; track lead.id) {
+  <li class="contents">
+    <app-lead-card [lead]="lead" />
+  </li>
+  } @empty {
+  <li class="px-1 py-3 text-xs text-surface-400">No leads</li>
+  }
+</ul>

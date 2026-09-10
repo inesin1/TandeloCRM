@@ -4,7 +4,6 @@ import { SidebarModule } from 'primeng/sidebar';
 import { ButtonModule } from 'primeng/button';
 import { AvatarModule } from 'primeng/avatar';
 import { PIcon } from '@primeicons/angular/p-icon';
-import { Sidebar } from '@primeicons/angular/sidebar';
 import { Logo } from './logo';
 
 interface NavItem {
@@ -21,7 +20,6 @@ interface NavItem {
     ButtonModule,
     AvatarModule,
     PIcon,
-    Sidebar,
     Logo,
   ],
   selector: 'app-root',

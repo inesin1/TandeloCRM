@@ -8,8 +8,8 @@ import { InputTextModule } from 'primeng/inputtext';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { PIcon } from '@primeicons/angular/p-icon';
-import { LeadCard } from './lead-card/lead-card';
 import { leads, pipelines, tasks, users } from './leads.mock';
+import { BoardColumn } from './board-column/board-column';
 
 @Component({
   templateUrl: './leads-page.html',
@@ -24,7 +24,7 @@ import { leads, pipelines, tasks, users } from './leads.mock';
     IconFieldModule,
     InputIconModule,
     PIcon,
-    LeadCard,
+    BoardColumn,
   ],
 })
 export class LeadsPage {
@@ -52,9 +52,7 @@ export class LeadsPage {
   });
 
   protected readonly pipelineLeads = computed(() =>
-    leads.filter(
-      (lead) => lead.pipelineId === this.selectedPipeline().id,
-    ),
+    leads.filter((lead) => lead.pipelineId === this.selectedPipeline().id),
   );
 
   protected readonly stats = computed(() => {
