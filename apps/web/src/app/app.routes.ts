@@ -10,19 +10,19 @@ export const appRoutes: Route[] = [
     path: 'desktop',
     title: 'Desktop',
     loadComponent: () =>
-      import('../pages/desktop-page/desktop-page').then((m) => m.DesktopPage),
+      import('../features/desktop/desktop-page/desktop-page').then((m) => m.DesktopPage),
   },
   {
     path: 'leads',
     title: 'Leads',
     loadComponent: () =>
-      import('../pages/leads-page/leads-page').then((m) => m.LeadsPage),
+      import('../features/leads/leads-page/leads-page').then((m) => m.LeadsPage),
   },
   {
     path: 'contacts',
     title: 'Contacts',
     loadComponent: () =>
-      import('../pages/contacts-page/contacts-page').then(
+      import('../features/contacts/contacts-page/contacts-page').then(
         (m) => m.ContactsPage,
       ),
   },
@@ -30,7 +30,7 @@ export const appRoutes: Route[] = [
     path: 'companies',
     title: 'Companies',
     loadComponent: () =>
-      import('../pages/companies-page/companies-page').then(
+      import('../features/companies/companies-page/companies-page').then(
         (m) => m.CompaniesPage,
       ),
   },
@@ -38,13 +38,13 @@ export const appRoutes: Route[] = [
     path: 'tasks',
     title: 'Tasks',
     loadComponent: () =>
-      import('../pages/tasks-page/tasks-page').then((m) => m.TasksPage),
+      import('../features/tasks/tasks-page/tasks-page').then((m) => m.TasksPage),
   },
   {
     path: 'analytics',
     title: 'Analytics',
     loadComponent: () =>
-      import('../pages/analytics-page/analytics-page').then(
+      import('../features/analytics/analytics-page/analytics-page').then(
         (m) => m.AnalyticsPage,
       ),
   },
@@ -52,7 +52,7 @@ export const appRoutes: Route[] = [
     path: 'settings',
     title: 'Settings',
     loadComponent: () =>
-      import('../pages/settings-page/settings-page').then(
+      import('../features/settings/settings-page/settings-page').then(
         (m) => m.SettingsPage,
       ),
   },
