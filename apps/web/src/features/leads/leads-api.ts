@@ -99,8 +99,8 @@ export class LeadsApi {
       createdAt: new Date('2026-08-30T11:05'),
       updatedBy: 2,
       updatedAt: new Date('2026-09-06T10:15'),
-      contacts: [{ id: 12, name: 'Maria Kovaleva' }],
-      companies: [{ id: 102, name: 'Forest & House' }],
+      contacts: [{ id: 12, name: 'Aigerim Serikova' }],
+      companies: [{ id: 102, name: 'Altyn Qurylys' }],
     },
     {
       id: 3,
@@ -114,7 +114,7 @@ export class LeadsApi {
       updatedBy: 3,
       updatedAt: new Date('2026-09-08T09:00'),
       contacts: [
-        { id: 13, name: 'Pavel Orlov' },
+        { id: 13, name: 'Aidos Bekturov' },
         { id: 14, name: 'Anna Letova' },
       ],
       companies: [{ id: 103, name: 'Orbit' }],
@@ -144,8 +144,8 @@ export class LeadsApi {
       createdAt: new Date('2026-08-12T10:00'),
       updatedBy: 2,
       updatedAt: new Date('2026-09-04T17:05'),
-      contacts: [{ id: 16, name: 'Olga Titova' }],
-      companies: [{ id: 105, name: 'Nord Studio' }],
+      contacts: [{ id: 16, name: 'Dana Nurlanova' }],
+      companies: [{ id: 105, name: 'Zhetysu Studio' }],
     },
     {
       id: 6,
@@ -172,8 +172,8 @@ export class LeadsApi {
       createdAt: new Date('2026-07-30T08:50'),
       updatedBy: 1,
       updatedAt: new Date('2026-09-07T15:10'),
-      contacts: [{ id: 18, name: 'Ekaterina Rybina' }],
-      companies: [{ id: 107, name: 'Atlas' }],
+      contacts: [{ id: 18, name: 'Nurlan Amanov' }],
+      companies: [{ id: 107, name: 'Atlas Logistics' }],
     },
     {
       id: 8,
@@ -187,7 +187,7 @@ export class LeadsApi {
       updatedBy: 2,
       updatedAt: new Date('2026-09-03T19:30'),
       contacts: [
-        { id: 19, name: 'Artem Nosov' },
+        { id: 19, name: 'Zhanar Kaliyeva' },
         { id: 20, name: 'Lidia Kraynova' },
       ],
       companies: [{ id: 108, name: 'Bureau' }],
