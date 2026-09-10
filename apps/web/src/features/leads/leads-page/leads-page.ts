@@ -1,5 +1,7 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, effect, inject } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { SelectModule } from 'primeng/select';
 import { Plus } from '@primeicons/angular/plus';
@@ -8,8 +10,25 @@ import { InputTextModule } from 'primeng/inputtext';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { PIcon } from '@primeicons/angular/p-icon';
-import { leads, pipelines, tasks, users } from './leads.mock';
-import { BoardColumn } from './board-column/board-column';
+import { Lead, LeadsApi, Status, Task } from '../leads-api';
+import { BoardColumn } from '../board-column/board-column';
+import { TableModule } from 'primeng/table';
+
+interface NextTask extends Task {
+  icon: string;
+  isOverdue: boolean;
+  overdueLabel: string;
+  responsibleName: string;
+}
+
+export interface LeadRow extends Lead {
+  code: string;
+  priceLabel: string;
+  clientName: string;
+  responsibleName: string;
+  status: Status | undefined;
+  task: NextTask | null;
+}
 
 @Component({
   templateUrl: './leads-page.html',
@@ -23,13 +42,18 @@ import { BoardColumn } from './board-column/board-column';
     InputTextModule,
     IconFieldModule,
     InputIconModule,
+    TableModule,
     PIcon,
     BoardColumn,
+    RouterLink,
+    DatePipe,
   ],
 })
 export class LeadsPage {
-  protected readonly pipelines = pipelines;
-  protected readonly users = users;
+  private readonly leadsApi = inject(LeadsApi);
+
+  protected readonly pipelines = this.leadsApi.pipelines;
+  protected readonly users = this.leadsApi.users;
   protected readonly currentUserId = 1;
 
   protected readonly selectedPipeline = signal(this.pipelines[0]);
@@ -37,6 +61,8 @@ export class LeadsPage {
   protected readonly search = signal('');
   protected readonly responsibleFilter = signal<number | null>(null);
   protected readonly statusFilter = signal<number | null>(null);
+
+  protected readonly selectedLeads = signal<LeadRow[]>([]);
 
   private readonly taskIcons = {
     call: 'phone',
@@ -52,7 +78,9 @@ export class LeadsPage {
   });
 
   protected readonly pipelineLeads = computed(() =>
-    leads.filter((lead) => lead.pipelineId === this.selectedPipeline().id),
+    this.leadsApi.leads.filter(
+      (lead) => lead.pipelineId === this.selectedPipeline().id,
+    ),
   );
 
   protected readonly stats = computed(() => {
@@ -136,27 +164,36 @@ export class LeadsPage {
           totalLabel: this.priceFormat.format(
             leads.reduce((acc, lead) => acc + lead.price, 0),
           ),
-          leads: leads.map((lead) => {
-            const company = lead.companies.at(0);
-            const contact = lead.contacts.at(0);
-
-            return {
-              ...lead,
-              code: `DL-${String(lead.id).padStart(4, '0')}`,
-              priceLabel: this.priceFormat.format(lead.price),
-              clientName: company?.name ?? contact?.name ?? 'No client',
-              responsibleName:
-                users.find((user) => user.id === lead.responsibleUserId)
-                  ?.name ?? 'Unassigned',
-              task: this.nextTask(lead.id),
-            };
-          }),
+          leads: leads.map((lead) => this.toRow(lead)),
         };
       });
   });
 
-  private nextTask(leadId: number) {
-    const task = tasks
+  protected readonly rows = computed(() =>
+    this.filteredLeads().map((lead) => this.toRow(lead)),
+  );
+
+  private toRow(lead: Lead): LeadRow {
+    const company = lead.companies.at(0);
+    const contact = lead.contacts.at(0);
+
+    return {
+      ...lead,
+      code: `DL-${String(lead.id).padStart(4, '0')}`,
+      priceLabel: this.priceFormat.format(lead.price),
+      clientName: company?.name ?? contact?.name ?? 'No client',
+      responsibleName:
+        this.users.find((user) => user.id === lead.responsibleUserId)?.name ??
+        'Unassigned',
+      status: this.selectedPipeline().statuses.find(
+        (status) => status.id === lead.statusId,
+      ),
+      task: this.nextTask(lead.id),
+    };
+  }
+
+  private nextTask(leadId: number): NextTask | null {
+    const task = this.leadsApi.tasks
       .filter((item) => item.leadId === leadId && !item.isCompleted)
       .toSorted((a, b) => a.dueAt.getTime() - b.dueAt.getTime())
       .at(0);
@@ -176,7 +213,7 @@ export class LeadsPage {
         ? `Overdue by ${overdueDays} ${overdueDays === 1 ? 'day' : 'days'}`
         : 'Overdue today',
       responsibleName:
-        users.find((user) => user.id === task.responsibleUserId)?.name ??
+        this.users.find((user) => user.id === task.responsibleUserId)?.name ??
         'Unassigned',
     };
   }
@@ -186,5 +223,11 @@ export class LeadsPage {
     { label: 'List', value: 'list', icon: 'list' },
   ];
 
-  protected readonly viewMode = signal(this.viewModes[0].value);
+  protected readonly viewMode = signal(
+    localStorage.getItem('leads:viewMode') ?? this.viewModes[0].value,
+  );
+
+  constructor() {
+    effect(() => localStorage.setItem('leads:viewMode', this.viewMode()));
+  }
 }
