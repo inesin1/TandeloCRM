@@ -5,6 +5,7 @@ import { ButtonModule } from 'primeng/button';
 import { AvatarModule } from 'primeng/avatar';
 import { PIcon } from '@primeicons/angular/p-icon';
 import { Logo } from './logo';
+import { CopilotPanel } from '../features/copilot/copilot-panel/copilot-panel';
 
 interface NavItem {
   icon: string;
@@ -21,6 +22,7 @@ interface NavItem {
     AvatarModule,
     PIcon,
     Logo,
+    CopilotPanel,
   ],
   selector: 'app-root',
   templateUrl: './app.html',
