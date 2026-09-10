@@ -3,6 +3,11 @@
 @import 'primeicons/primeicons.css';
 @import '@fontsource-variable/inter';
 
+button:not(:disabled),
+[role='button']:not(:disabled) {
+  cursor: pointer;
+}
+
 :root {
   color-scheme: light;
   font-family: 'Inter Variable', system-ui, sans-serif;
