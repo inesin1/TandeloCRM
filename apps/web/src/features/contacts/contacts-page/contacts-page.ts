@@ -10,6 +10,7 @@ import { Plus } from '@primeicons/angular/plus';
 import { PIcon } from '@primeicons/angular/p-icon';
 import { Contact, ContactsApi } from '../contacts-api';
 import { LeadsApi } from '../../leads/leads-api';
+import { PageHeader } from '../../../shared/page-header';
 
 export interface ContactRow extends Contact {
   responsibleName: string;
@@ -27,6 +28,7 @@ export interface ContactRow extends Contact {
     TableModule,
     Plus,
     PIcon,
+    PageHeader,
   ],
 })
 export class ContactsPage {

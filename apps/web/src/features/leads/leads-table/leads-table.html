@@ -1,0 +1,107 @@
+<p-table
+  [value]="rows()"
+  [(selection)]="selectedLeads"
+  dataKey="id"
+  removableSort
+  showGridlines
+  [tableStyle]="{ 'min-width': '60rem' }"
+  class="min-h-0 flex-1 overflow-auto"
+>
+  <ng-template #header>
+    <tr>
+      <th style="width: 3rem">
+        <p-table-header-checkbox />
+      </th>
+      <th pSortableColumn="name">
+        <div class="flex items-center gap-2">
+          Lead name
+          <p-sort-icon field="name" />
+        </div>
+      </th>
+      <th pSortableColumn="price" class="text-right">
+        <div class="flex items-center justify-end gap-2">
+          Amount
+          <p-sort-icon field="price" />
+        </div>
+      </th>
+      <th>Stage</th>
+      <th>Next step</th>
+      <th>Responsible</th>
+      <th style="width: 3rem"></th>
+    </tr>
+  </ng-template>
+
+  <ng-template #body let-lead>
+    <tr>
+      <td>
+        <p-table-checkbox [value]="lead" />
+      </td>
+
+      <td>
+        <a
+          [routerLink]="['/leads', lead.id]"
+          class="block text-sm font-medium text-surface-900"
+        >
+          {{ lead.name }}
+        </a>
+        <div class="mt-0.5 flex items-center gap-1.5 text-xs text-surface-500">
+          <span class="truncate">{{ lead.clientName }}</span>
+          <span aria-hidden="true">·</span>
+          <span class="shrink-0 text-surface-400">{{ lead.code }}</span>
+        </div>
+      </td>
+
+      <td>
+        <div class="flex justify-end whitespace-nowrap font-medium">
+          {{ lead.priceLabel }}
+        </div>
+      </td>
+
+      <td>
+        <div class="flex items-center gap-2 whitespace-nowrap text-sm">
+          <span
+            class="size-2 shrink-0 rounded-full"
+            [style.background-color]="lead.status?.color"
+          >
+          </span>
+          {{ lead.status?.name }}
+        </div>
+      </td>
+
+      <td>
+        @if (lead.task; as task) {
+        <div class="flex items-center gap-1.5 text-sm text-surface-700">
+          <svg [pIcon]="task.icon" class="size-3.5 shrink-0"></svg>
+          <span class="truncate">{{ task.text }}</span>
+          <span aria-hidden="true">·</span>
+          <span class="shrink-0 text-surface-500">
+            {{ task.dueAt | date: 'MMM d, HH:mm' }}
+          </span>
+        </div>
+
+        @if (task.isOverdue) {
+        <div class="mt-0.5 text-xs text-red-600">{{ task.overdueLabel }}</div>
+        } } @else {
+        <span class="text-sm text-amber-600">No next task</span>
+        }
+      </td>
+
+      <td>
+        <app-user-chip class="text-sm" [name]="lead.responsibleName" />
+      </td>
+
+      <td>
+        <button
+          pButton
+          severity="secondary"
+          text
+          size="small"
+          iconOnly
+          aria-label="Lead actions"
+        >
+          <svg [pIcon]="'ellipsis-h'"></svg>
+        </button>
+      </td>
+    </tr>
+  </ng-template>
+</p-table>

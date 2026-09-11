@@ -3,6 +3,7 @@ import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { PIcon } from '@primeicons/angular/p-icon';
+import { UserChip } from '../../../shared/user-chip';
 
 export interface LeadCardVm {
   id: number;
@@ -28,7 +29,7 @@ export interface LeadCardVm {
     class:
       'group relative block shrink-0 rounded-lg border border-surface-200 bg-[var(--p-content-background)] p-3 transition-colors hover:border-surface-300',
   },
-  imports: [ButtonModule, PIcon, RouterLink, DatePipe],
+  imports: [ButtonModule, PIcon, RouterLink, DatePipe, UserChip],
 })
 export class LeadCard {
   readonly lead = input.required<LeadCardVm>();

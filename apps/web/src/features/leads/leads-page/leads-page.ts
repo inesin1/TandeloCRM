@@ -1,7 +1,5 @@
 import { Component, signal, computed, effect, inject } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { SelectModule } from 'primeng/select';
 import { Plus } from '@primeicons/angular/plus';
@@ -10,25 +8,10 @@ import { InputTextModule } from 'primeng/inputtext';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { PIcon } from '@primeicons/angular/p-icon';
-import { Lead, LeadsApi, Status, Task } from '../leads-api';
+import { Lead, LeadsApi } from '../leads-api';
 import { BoardColumn } from '../board-column/board-column';
-import { TableModule } from 'primeng/table';
-
-interface NextTask extends Task {
-  icon: string;
-  isOverdue: boolean;
-  overdueLabel: string;
-  responsibleName: string;
-}
-
-export interface LeadRow extends Lead {
-  code: string;
-  priceLabel: string;
-  clientName: string;
-  responsibleName: string;
-  status: Status | undefined;
-  task: NextTask | null;
-}
+import { LeadRow, LeadsTable, NextTask } from '../leads-table/leads-table';
+import { PageHeader } from '../../../shared/page-header';
 
 @Component({
   templateUrl: './leads-page.html',
@@ -42,11 +25,10 @@ export interface LeadRow extends Lead {
     InputTextModule,
     IconFieldModule,
     InputIconModule,
-    TableModule,
     PIcon,
     BoardColumn,
-    RouterLink,
-    DatePipe,
+    LeadsTable,
+    PageHeader,
   ],
 })
 export class LeadsPage {
@@ -61,8 +43,6 @@ export class LeadsPage {
   protected readonly search = signal('');
   protected readonly responsibleFilter = signal<number | null>(null);
   protected readonly statusFilter = signal<number | null>(null);
-
-  protected readonly selectedLeads = signal<LeadRow[]>([]);
 
   private readonly taskIcons = {
     call: 'phone',

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { PIcon } from '@primeicons/angular/p-icon';
 import { SelectButton } from 'primeng/selectbutton';
 import { DatePickerModule } from 'primeng/datepicker';
+import { PageHeader } from '../../../shared/page-header';
 
 @Component({
   templateUrl: './desktop-page.html',
@@ -13,6 +14,7 @@ import { DatePickerModule } from 'primeng/datepicker';
     DatePipe,
     FormsModule,
     DatePickerModule,
+    PageHeader,
   ],
 })
 export class DesktopPage {

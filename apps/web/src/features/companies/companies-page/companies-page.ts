@@ -10,6 +10,8 @@ import { Plus } from '@primeicons/angular/plus';
 import { PIcon } from '@primeicons/angular/p-icon';
 import { Company, CompaniesApi } from '../companies-api';
 import { LeadsApi } from '../../leads/leads-api';
+import { PageHeader } from '../../../shared/page-header';
+import { UserChip } from '../../../shared/user-chip';
 
 export interface CompanyRow extends Company {
   responsibleName: string;
@@ -27,6 +29,8 @@ export interface CompanyRow extends Company {
     TableModule,
     Plus,
     PIcon,
+    PageHeader,
+    UserChip,
   ],
 })
 export class CompaniesPage {

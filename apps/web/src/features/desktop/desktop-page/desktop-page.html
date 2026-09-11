@@ -1,17 +1,10 @@
 <div class="flex h-full flex-col">
-  <div
-    class="px-4 py-3 flex shrink-0 items-center justify-between gap-4 rounded-xl border border-[var(--p-content-border-color)] bg-[var(--p-content-background)] shadow-sm"
-  >
-    <div class="flex items-baseline gap-3">
-      <h1 class="text-2xl font-semibold tracking-tight text-surface-800">
-        Desktop
-      </h1>
-      <span class="whitespace-nowrap text-sm text-surface-500">
-        {{ today | date: 'EEEE, MMMM d' }}
-      </span>
-    </div>
+  <app-page-header title="Desktop">
+    <span class="whitespace-nowrap text-sm text-surface-500">
+      {{ today | date: 'EEEE, MMMM d' }}
+    </span>
 
-    <div class="flex items-center gap-2">
+    <ng-container actions>
       <p-selectbutton
         [options]="rangeModes"
         [ngModel]="rangeMode()"
@@ -45,8 +38,8 @@
           }
         </ng-template>
       </p-selectbutton>
-    </div>
-  </div>
+    </ng-container>
+  </app-page-header>
 
   <div
     class="mt-4 grid shrink-0 grid-cols-4 divide-x divide-[var(--p-content-border-color)] rounded-xl border border-[var(--p-content-border-color)] bg-[var(--p-content-background)] shadow-sm"
@@ -82,7 +75,9 @@
         }
       </header>
 
-      <div class="mt-3 flex-1"></div>
+      <div class="mt-3 flex flex-1 items-center justify-center">
+        <span class="text-sm text-surface-400">Coming soon</span>
+      </div>
     </section>
     }
   </div>
