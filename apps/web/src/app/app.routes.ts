@@ -10,13 +10,17 @@ export const appRoutes: Route[] = [
     path: 'desktop',
     title: 'Desktop',
     loadComponent: () =>
-      import('../features/desktop/desktop-page/desktop-page').then((m) => m.DesktopPage),
+      import('../features/desktop/desktop-page/desktop-page').then(
+        (m) => m.DesktopPage,
+      ),
   },
   {
     path: 'leads',
     title: 'Leads',
     loadComponent: () =>
-      import('../features/leads/leads-page/leads-page').then((m) => m.LeadsPage),
+      import('../features/leads/leads-page/leads-page').then(
+        (m) => m.LeadsPage,
+      ),
   },
   {
     path: 'contacts',
@@ -38,7 +42,9 @@ export const appRoutes: Route[] = [
     path: 'tasks',
     title: 'Tasks',
     loadComponent: () =>
-      import('../features/tasks/tasks-page/tasks-page').then((m) => m.TasksPage),
+      import('../features/tasks/tasks-page/tasks-page').then(
+        (m) => m.TasksPage,
+      ),
   },
   {
     path: 'analytics',
@@ -55,5 +61,48 @@ export const appRoutes: Route[] = [
       import('../features/settings/settings-page/settings-page').then(
         (m) => m.SettingsPage,
       ),
+    children: [
+      { path: '', pathMatch: 'full', redirectTo: 'profile' },
+      {
+        path: 'profile',
+        title: 'Profile',
+        loadComponent: () =>
+          import('../features/settings/tabs/profile-tab/profile-tab').then(
+            (m) => m.ProfileTab,
+          ),
+      },
+      {
+        path: 'notifications',
+        title: 'Notifications',
+        loadComponent: () =>
+          import('../features/settings/tabs/notifications-tab/notifications-tab').then(
+            (m) => m.NotificationsTab,
+          ),
+      },
+      {
+        path: 'workspace',
+        title: 'Workspace',
+        loadComponent: () =>
+          import('../features/settings/tabs/workspace-tab/workspace-tab').then(
+            (m) => m.WorkspaceTab,
+          ),
+      },
+      {
+        path: 'users',
+        title: 'Users',
+        loadComponent: () =>
+          import('../features/settings/tabs/users-tab/users-tab').then(
+            (m) => m.UsersTab,
+          ),
+      },
+      {
+        path: 'integrations',
+        title: 'Integrations',
+        loadComponent: () =>
+          import('../features/settings/tabs/integrations-tab/integrations-tab').then(
+            (m) => m.IntegrationsTab,
+          ),
+      },
+    ],
   },
 ];

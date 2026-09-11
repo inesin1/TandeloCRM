@@ -1,5 +1,38 @@
-<div class="container">
-  <div class="flex p-2 justify-between">
-    <h1>Settings</h1>
+<div class="flex h-full flex-col">
+  <div class="flex min-h-0 flex-1 gap-4">
+    <nav class="w-56 shrink-0 space-y-6 overflow-y-auto">
+      <h1
+        class="px-3 pt-1 text-2xl font-semibold tracking-tight text-surface-800"
+      >
+        Settings
+      </h1>
+
+      @for (group of groups; track group.label) {
+      <div>
+        <div
+          class="px-3 pb-1 text-xs font-medium uppercase tracking-wide text-surface-400"
+        >
+          {{ group.label }}
+        </div>
+
+        @for (item of group.items; track item.routerLink) {
+        <a
+          [routerLink]="item.routerLink"
+          routerLinkActive="bg-surface-100 !text-surface-900 font-medium"
+          class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-surface-600 transition-colors hover:bg-surface-100"
+        >
+          <svg [pIcon]="item.icon" class="size-4 shrink-0"></svg>
+          <span>{{ item.label }}</span>
+        </a>
+        }
+      </div>
+      }
+    </nav>
+
+    <div
+      class="min-h-0 min-w-0 flex-1 overflow-y-auto rounded-xl border border-[var(--p-content-border-color)] bg-[var(--p-content-background)] p-6"
+    >
+      <router-outlet />
+    </div>
   </div>
 </div>
