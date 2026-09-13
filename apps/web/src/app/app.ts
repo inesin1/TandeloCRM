@@ -29,7 +29,7 @@ interface NavItem {
   styleUrl: './app.css',
 })
 export class App {
-  protected title = 'OpenCRM';
+  protected title = 'Tandelo';
 
   navItems: NavItem[] = [
     { label: 'Desktop', icon: 'home', routerLink: '/desktop' },
