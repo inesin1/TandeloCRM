@@ -1,16 +1,9 @@
+# Tandelo ![Tandelo logo](assets/tandelo-logo.svg)
+
 <div align="center">
-  <div style="display:flex; align-items:center; justify-content:center; gap:14px; margin-bottom:12px;">
-    <svg width="48" height="48" viewBox="0 0 32 32" aria-label="Tandelo logo" role="img">
-      <rect x="3" y="3" width="20" height="20" rx="7" fill="#0f5c4e" />
-      <rect x="11" y="11" width="18" height="18" rx="7" fill="#86c440" />
-    </svg>
-    <h1 style="margin:0; display:inline-block;">Tandelo</h1>
-  </div>
-  <div>
-    <img alt="Self-hosted CRM" src="https://img.shields.io/badge/Self--hosted-CRM-1f9d55?style=flat-square&logo=server&logoColor=white" />
-    <img alt="Modular by design" src="https://img.shields.io/badge/Modular-by%20design-0ea5e9?style=flat-square&logo=package&logoColor=white" />
-    <img alt="Integrations first" src="https://img.shields.io/badge/Integrations-first-8b5cf6?style=flat-square&logo=plugged-in&logoColor=white" />
-  </div>
+  <img alt="Self-hosted CRM" src="https://img.shields.io/badge/Self--hosted-CRM-1f9d55?style=flat-square&logo=server&logoColor=white" />
+  <img alt="Modular by design" src="https://img.shields.io/badge/Modular-by%20design-0ea5e9?style=flat-square&logo=package&logoColor=white" />
+  <img alt="Integrations first" src="https://img.shields.io/badge/Integrations-first-8b5cf6?style=flat-square&logo=plugged-in&logoColor=white" />
 </div>
 
 The self-hosted CRM built for modular growth.
