@@ -1,46 +1,99 @@
-# Tandelo
+<div align="center">
+  <div style="display:flex; align-items:center; justify-content:center; gap:14px; margin-bottom:12px;">
+    <svg width="48" height="48" viewBox="0 0 32 32" aria-label="Tandelo logo" role="img">
+      <rect x="3" y="3" width="20" height="20" rx="7" fill="#0f5c4e" />
+      <rect x="11" y="11" width="18" height="18" rx="7" fill="#86c440" />
+    </svg>
+    <h1 style="margin:0; display:inline-block;">Tandelo</h1>
+  </div>
+  <div>
+    <img alt="Self-hosted CRM" src="https://img.shields.io/badge/Self--hosted-CRM-1f9d55?style=flat-square&logo=server&logoColor=white" />
+    <img alt="Modular by design" src="https://img.shields.io/badge/Modular-by%20design-0ea5e9?style=flat-square&logo=package&logoColor=white" />
+    <img alt="Integrations first" src="https://img.shields.io/badge/Integrations-first-8b5cf6?style=flat-square&logo=plugged-in&logoColor=white" />
+  </div>
+</div>
 
 The self-hosted CRM built for modular growth.
 
-Tandelo is a CRM for teams that want a clean sales workflow without being locked into a single stack or a rigid vendor model. It brings leads, companies, contacts, tasks, and pipeline visibility into one place while keeping the core system open to extension.
+Tandelo gives sales teams a clean system for leads, companies, contacts, tasks, and pipeline visibility without locking them into a rigid platform or a brittle custom stack.
 
-The main idea is simple: you should be able to connect external services, custom tooling, and internal workflows without touching the core source. If a team needs a custom integration, an internal API, or a different frontend or backend stack, it should fit in without a rewrite.
+The idea is simple: connect external services, internal tools, and custom business logic without patching the app itself.
 
-## Why Tandelo
+---
 
-Most CRMs are hard to customize because the product itself becomes the integration layer. Tandelo is built around modularity from the start:
+## Why you should choose Tandelo
 
-- clear pipeline and sales workflow management
-- connected records for leads, contacts, and companies
-- task tracking tied to the deal lifecycle
-- reporting and analytics for pipeline health
-- AI assistance for setup and operational questions
-- extension points for external systems and custom logic
+| Feature                     | Why it matters                                                                         |
+| --------------------------- | -------------------------------------------------------------------------------------- |
+| 🧭 Pipeline clarity         | Keep deals moving with a visible, structured workflow.                                 |
+| 📦 Modular architecture     | Add features and integrations without turning the core into a fragile monolith.        |
+| 🔌 Integration-first design | Connect CRMs, APIs, and internal tools without editing source code.                    |
+| 🤖 AI support               | Get setup help and day-to-day guidance without adding overhead.                        |
+| 🏠 Self-hosted              | Keep the system on your own infrastructure with full control over deployment and data. |
 
-You can run the project on your own infrastructure, keep your own backend if needed, and connect any service that matters to your business. No forced platform lock-in, no need to patch the core app just to add a new integration.
+## Built for integrations
 
-## Built to integrate
+Tandelo is built for real-world business systems, not just a fixed CRM feature set.
 
-Tandelo is designed for real-world business systems.
-
-- connect third-party services without modifying the core CRM
-- build integrations in any JavaScript ecosystem you prefer
+- connect third-party services without modifying the core product
+- build integrations in the JavaScript stack that fits your team
 - keep your own backend logic separate when the workflow needs it
-- add business-specific adapters and automations without forking the product
-- evolve the platform as your stack changes over time
+- add adapters and automations without forking the platform
+- evolve the system as your stack grows and changes
 
-The plugin SDK and module boundaries are the foundation here. They let teams add capabilities without turning the core into a fragile, over-customized monolith.
+The plugin SDK and module boundaries are the foundation here. They let teams extend the product without creating hidden dependencies or fragile patches in the core.
 
-## Core features
+---
+
+## Core workflow
 
 - pipeline management with kanban and list views
-- lead, company, and contact records in one place
+- lead, company, and contact records in one system
 - tasks connected to deals and people
 - analytics and reporting across the pipeline
-- AI copilot for setup and operational guidance
 - user and team management inside the app
 
+---
+
+## Modular architecture
+
+```text
++----------------------+      +----------------------+
+| External Services    |      | Internal Workflows   |
+| Slack, email, ERP   | ---> | custom automation    |
+| marketing tools     |      | scripts / APIs       |
++----------------------+      +----------------------+
+             \                     /
+              \                   /
+               v                 v
+            +-------------------------------+
+            |      Tandelo integration      |
+            |      layer / plugin SDK       |
+            +-------------------------------+
+                           v
+            +-------------------------------+
+            |        Core CRM module        |
+            | leads, contacts, pipeline     |
+            +-------------------------------+
+```
+
+This architecture keeps the platform stable while making integrations an explicit extension point instead of a source-code surgery project.
+
+---
+
 ## Tech stack
+
+<div align="left">
+
+<img alt="Angular" src="https://img.shields.io/badge/Angular-DD0031?style=flat-square&logo=angular&logoColor=white" />
+<img alt="PrimeNG" src="https://img.shields.io/badge/PrimeNG-8B5CF6?style=flat-square&logo=prime&logoColor=white" />
+<img alt="NestJS" src="https://img.shields.io/badge/NestJS-E0234E?style=flat-square&logo=nestjs&logoColor=white" />
+<img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white" />
+<img alt="Nx" src="https://img.shields.io/badge/Nx-143055?style=flat-square&logo=nx&logoColor=white" />
+<img alt="Vitest" src="https://img.shields.io/badge/Vitest-6E9F18?style=flat-square&logo=vitest&logoColor=white" />
+<img alt="Playwright" src="https://img.shields.io/badge/Playwright-45ba4b?style=flat-square&logo=playwright&logoColor=white" />
+
+</div>
 
 - Angular 22 + PrimeNG for the frontend
 - NestJS for backend services
@@ -49,16 +102,7 @@ The plugin SDK and module boundaries are the foundation here. They let teams add
 - Vitest for unit tests
 - Playwright for end-to-end testing
 
-## Modular architecture
-
-Tandelo is organized as a monorepo with clear boundaries between apps, features, and libraries. That makes it simpler to extend without creating hidden dependencies between modules.
-
-The goal is not just to separate code, but to separate concerns:
-
-- core CRM logic stays stable
-- integrations live in dedicated extension points
-- custom business flows can be added without touching the platform core
-- teams can adopt the parts they need without replacing everything else
+---
 
 ## Quick start
 
@@ -85,6 +129,8 @@ pnpm nx run web-e2e:e2e
 pnpm nx graph
 ```
 
+---
+
 ## Project structure
 
 ```text
@@ -106,23 +152,29 @@ pnpm nx graph
 └── tsconfig.base.json
 ```
 
+---
+
 ## Status
 
-Tandelo is in active development. The project is already structured around a modular product foundation, with flexibility for integrations and custom workflows as a first-class concern.
+Tandelo is in active development. The project is already structured around a modular foundation, with integrations and custom workflows as a first-class concern.
+
+---
 
 ## Roadmap
-
-Planned work includes:
 
 - richer workflow and reporting features
 - stronger integration adapters for external services
 - better automation around tasks and lifecycle events
 - more extension hooks for custom business logic
-- support for more flexible deployment and backend patterns
+- support for more flexible deployment patterns and backend choices
+
+---
 
 ## Contributing
 
-Contributions are welcome. If you want to improve the product, extend the SDK, or build a custom integration flow, start by opening an issue or proposing a change in the repository.
+Contributions are welcome. If you want to improve the product, extend the SDK, or build a custom integration flow, open an issue or propose a change in the repository.
+
+---
 
 ## License
 
