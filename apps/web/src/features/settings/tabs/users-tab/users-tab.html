@@ -54,13 +54,16 @@
     </ng-template>
 
     <ng-template #body let-user>
-      <tr>
+      <tr
+        (click)="openUserDrawer(user)"
+        class="cursor-pointer transition-colors"
+        [class.hover:bg-surface-50]="!isRowSelected(user)"
+        [class.bg-surface-100]="isRowSelected(user)"
+      >
         <td>
-          <p-avatar
-            [label]="user.initials"
-            shape="circle"
-            class="size-8 shrink-0 text-xs"
-          />
+          <p-avatar shape="circle" class="size-8 shrink-0">
+            <svg data-p-icon="user" class="p-avatar-icon"></svg>
+          </p-avatar>
         </td>
 
         <td>
@@ -95,3 +98,116 @@
     </ng-template>
   </p-table>
 </div>
+
+<p-drawer
+  [(visible)]="drawerVisible"
+  position="right"
+  [styleClass]="'!w-full sm:!w-[28rem] md:!w-[32rem]'"
+>
+  <ng-template #header>
+    @if (selectedUser(); as user) {
+    <div class="flex items-center gap-3">
+      <p-avatar shape="circle" class="size-10 shrink-0">
+        <svg data-p-icon="user" class="p-avatar-icon"></svg>
+      </p-avatar>
+      <div class="min-w-0 flex-1">
+        <div class="truncate text-base font-semibold text-surface-900">
+          {{ editForm().name || user.name }}
+        </div>
+        <div class="truncate text-xs text-surface-500">{{ user.email }}</div>
+      </div>
+    </div>
+    }
+  </ng-template>
+
+  @if (selectedUser()) {
+  <div class="flex flex-col gap-5 py-2">
+    <div class="flex flex-col gap-1.5">
+      <label for="userName" class="text-xs font-medium text-surface-700">
+        Имя
+      </label>
+      <input
+        id="userName"
+        pInputText
+        type="text"
+        class="w-full"
+        [ngModel]="editForm().name"
+        (ngModelChange)="updateFormField('name', $event)"
+        placeholder="Введите имя"
+      />
+    </div>
+
+    <div class="flex flex-col gap-1.5">
+      <label for="userEmail" class="text-xs font-medium text-surface-700">
+        Email
+      </label>
+      <input
+        id="userEmail"
+        pInputText
+        type="email"
+        class="w-full"
+        [ngModel]="editForm().email"
+        (ngModelChange)="updateFormField('email', $event)"
+        placeholder="user@example.com"
+      />
+    </div>
+
+    <div class="flex flex-col gap-1.5">
+      <label for="userRole" class="text-xs font-medium text-surface-700"
+        >Роль</label
+      >
+      <p-select
+        id="userRole"
+        [options]="roleOptions"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="editForm().role"
+        (ngModelChange)="updateFormField('role', $event)"
+        class="w-full"
+        appendTo="body"
+      />
+    </div>
+
+    <div class="flex flex-col gap-1.5">
+      <label for="userGroup" class="text-xs font-medium text-surface-700"
+        >Группа</label
+      >
+      <p-select
+        id="userGroup"
+        [options]="groupOptions()"
+        [editable]="true"
+        [ngModel]="editForm().group"
+        (ngModelChange)="updateFormField('group', $event)"
+        class="w-full"
+        appendTo="body"
+        placeholder="Выберите или укажите группу"
+      />
+    </div>
+  </div>
+  }
+
+  <ng-template #footer>
+    <div
+      class="flex items-center justify-end gap-2 border-t border-surface-200 pt-3"
+    >
+      <button
+        pButton
+        type="button"
+        severity="secondary"
+        outlined
+        (click)="closeDrawer()"
+      >
+        Закрыть
+      </button>
+
+      <button
+        pButton
+        type="button"
+        [disabled]="!hasChanges() || !isValid()"
+        (click)="saveUser()"
+      >
+        Сохранить
+      </button>
+    </div>
+  </ng-template>
+</p-drawer>
