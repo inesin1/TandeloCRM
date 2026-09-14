@@ -24,7 +24,7 @@ const preset = definePreset(Aura, {
       },
     },
     sidebar: {
-      aside: { padding: '1rem' },
+      aside: { padding: '0.5rem' },
       panel: {
         floatingBorderRadius: '0.75rem',
         floatingShadow: '0 1px 3px 0 rgb(0 0 0 / 0.08)',

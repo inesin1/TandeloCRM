@@ -26,6 +26,9 @@ export interface Pipeline {
 export interface User {
   id: number;
   name: string;
+  email: string;
+  role: 'Admin' | 'Manager';
+  group: string;
 }
 
 export interface Lead {
@@ -68,9 +71,90 @@ export class LeadsApi {
   ];
 
   readonly users: User[] = [
-    { id: 1, name: 'Andrey N.' },
-    { id: 2, name: 'Elena K.' },
-    { id: 3, name: 'Mikhail S.' },
+    {
+      id: 1,
+      name: 'Andrey N.',
+      email: 'andrey@tandelo.dev',
+      role: 'Admin',
+      group: 'Sales',
+    },
+    {
+      id: 2,
+      name: 'Elena K.',
+      email: 'elena@tandelo.dev',
+      role: 'Manager',
+      group: 'Sales',
+    },
+    {
+      id: 3,
+      name: 'Mikhail S.',
+      email: 'mikhail@tandelo.dev',
+      role: 'Manager',
+      group: 'Support',
+    },
+    {
+      id: 4,
+      name: 'Anna S.',
+      email: 'anna@tandelo.dev',
+      role: 'Manager',
+      group: 'Sales',
+    },
+    {
+      id: 5,
+      name: 'Denis K.',
+      email: 'denis@tandelo.dev',
+      role: 'Manager',
+      group: 'Sales',
+    },
+    {
+      id: 6,
+      name: 'Olga M.',
+      email: 'olga@tandelo.dev',
+      role: 'Manager',
+      group: 'Marketing',
+    },
+    {
+      id: 7,
+      name: 'Ilya S.',
+      email: 'ilya@tandelo.dev',
+      role: 'Manager',
+      group: 'Support',
+    },
+    {
+      id: 8,
+      name: 'Maria B.',
+      email: 'maria@tandelo.dev',
+      role: 'Manager',
+      group: 'Sales',
+    },
+    {
+      id: 9,
+      name: 'Alexey R.',
+      email: 'alexey@tandelo.dev',
+      role: 'Manager',
+      group: 'Marketing',
+    },
+    {
+      id: 10,
+      name: 'Pavel T.',
+      email: 'pavel@tandelo.dev',
+      role: 'Manager',
+      group: 'Support',
+    },
+    {
+      id: 11,
+      name: 'Irina V.',
+      email: 'irina@tandelo.dev',
+      role: 'Admin',
+      group: 'Operations',
+    },
+    {
+      id: 12,
+      name: 'Sergey D.',
+      email: 'sergey@tandelo.dev',
+      role: 'Manager',
+      group: 'Sales',
+    },
   ];
 
   readonly leads: Lead[] = [

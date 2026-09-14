@@ -1,4 +1,97 @@
-<h2 class="text-lg font-semibold text-surface-800">Users</h2>
-<p class="mt-1 text-sm text-surface-500">
-  Members of the workspace, their roles and access.
-</p>
+<div class="flex shrink-0 items-center justify-between gap-2">
+  <p-iconfield class="w-64">
+    <p-inputicon>
+      <svg [pIcon]="'search'"></svg>
+    </p-inputicon>
+    <input
+      pInputText
+      type="search"
+      size="small"
+      class="w-full"
+      placeholder="Name or email"
+      [ngModel]="search()"
+      (ngModelChange)="search.set($event)"
+    />
+  </p-iconfield>
+
+  <button pButton>
+    <svg data-p-icon="plus"></svg>
+    <span>User</span>
+  </button>
+</div>
+
+<div class="mt-4">
+  <p-table
+    [value]="rows()"
+    dataKey="id"
+    removableSort
+    showGridlines
+    [tableStyle]="{ 'min-width': '40rem' }"
+  >
+    <ng-template #header>
+      <tr>
+        <th style="width: 3rem"></th>
+        <th pSortableColumn="name">
+          <div class="flex items-center gap-2">
+            Name
+            <p-sort-icon field="name" />
+          </div>
+        </th>
+        <th>Email</th>
+        <th pSortableColumn="role">
+          <div class="flex items-center gap-2">
+            Role
+            <p-sort-icon field="role" />
+          </div>
+        </th>
+        <th pSortableColumn="group">
+          <div class="flex items-center gap-2">
+            Group
+            <p-sort-icon field="group" />
+          </div>
+        </th>
+      </tr>
+    </ng-template>
+
+    <ng-template #body let-user>
+      <tr>
+        <td>
+          <p-avatar
+            [label]="user.initials"
+            shape="circle"
+            class="size-8 shrink-0 text-xs"
+          />
+        </td>
+
+        <td>
+          <div class="text-sm font-medium text-surface-900">
+            {{ user.name }}
+          </div>
+        </td>
+
+        <td>
+          <span class="text-sm text-surface-700">{{ user.email }}</span>
+        </td>
+
+        <td>
+          <p-tag
+            [value]="user.role"
+            [severity]="user.role === 'Admin' ? 'info' : 'secondary'"
+          />
+        </td>
+
+        <td>
+          <span class="text-sm text-surface-700">{{ user.group }}</span>
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template #emptymessage>
+      <tr>
+        <td colspan="5" class="py-6 text-center text-sm text-surface-500">
+          No users found
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</div>

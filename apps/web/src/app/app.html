@@ -5,6 +5,7 @@
     collapsible="icon"
     side="left"
     iconWidth="3.75rem"
+    [open]="false"
   >
     <p-sidebar-spacer />
     <p-sidebar-aside>
@@ -12,7 +13,12 @@
         <p-sidebar-header>
           <p-sidebar-menu>
             <p-sidebar-menu-item>
-              <button pSidebarMenuButton routerLink="/">
+              <button
+                pSidebarMenuButton
+                routerLink="/"
+                [pTooltip]="title"
+                tooltipPosition="right"
+              >
                 <app-logo />
                 <span class="font-semibold text-sm">{{ title }}</span>
               </button>
@@ -30,6 +36,8 @@
                   routerLinkActive
                   #rla="routerLinkActive"
                   [isActive]="rla.isActive"
+                  [pTooltip]="item.label"
+                  tooltipPosition="right"
                 >
                   <svg [pIcon]="item.icon"></svg>
                   <span>{{ item.label }}</span>
@@ -45,7 +53,7 @@
         <p-sidebar-footer>
           <p-sidebar-menu>
             <p-sidebar-menu-item>
-              <button pSidebarMenuButton>
+              <button pSidebarMenuButton pTooltip="John Doe" tooltipPosition="right">
                 <p-avatar
                   label="JD"
                   shape="circle"
@@ -56,7 +64,6 @@
             </p-sidebar-menu-item>
           </p-sidebar-menu>
         </p-sidebar-footer>
-        <button pSidebarRail aria-label="Toggle sidebar"></button>
       </p-sidebar-panel>
     </p-sidebar-aside>
   </p-sidebar>

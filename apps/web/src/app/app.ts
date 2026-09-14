@@ -3,6 +3,7 @@ import { RouterModule } from '@angular/router';
 import { SidebarModule } from 'primeng/sidebar';
 import { ButtonModule } from 'primeng/button';
 import { AvatarModule } from 'primeng/avatar';
+import { Tooltip } from 'primeng/tooltip';
 import { PIcon } from '@primeicons/angular/p-icon';
 import { Logo } from './logo';
 import { CopilotPanel } from '../features/copilot/copilot-panel/copilot-panel';
@@ -20,6 +21,7 @@ interface NavItem {
     SidebarModule,
     ButtonModule,
     AvatarModule,
+    Tooltip,
     PIcon,
     Logo,
     CopilotPanel,
