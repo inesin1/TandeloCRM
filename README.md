@@ -1,4 +1,7 @@
-# Tandelo ![Tandelo logo](assets/tandelo-logo.svg)
+<div align="center" style="display:flex; align-items:center; justify-content:center; gap:12px; margin-bottom:12px;">
+  <img src="assets/tandelo-logo.svg" alt="Tandelo logo" width="64" height="64" />
+  <h1 style="margin:0; font-size:2.4em; line-height:1.1; display:inline-block;">Tandelo</h1>
+</div>
 
 <div align="center">
   <img alt="Self-hosted CRM" src="https://img.shields.io/badge/Self--hosted-CRM-1f9d55?style=flat-square&logo=server&logoColor=white" />
