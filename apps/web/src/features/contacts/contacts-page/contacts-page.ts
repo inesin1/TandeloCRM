@@ -13,7 +13,7 @@ import { LeadsApi } from '../../leads/leads-api';
 import { PageHeader } from '../../../shared/page-header';
 
 export interface ContactRow extends Contact {
-  responsibleName: string;
+  ownerName: string;
 }
 
 @Component({
@@ -37,18 +37,18 @@ export class ContactsPage {
   protected readonly users = inject(LeadsApi).users;
 
   protected readonly search = signal('');
-  protected readonly responsibleFilter = signal<number | null>(null);
+  protected readonly ownerFilter = signal<number | null>(null);
   protected readonly selectedContacts = signal<ContactRow[]>([]);
 
   protected readonly total = this.contactsApi.contacts.length;
 
   protected readonly rows = computed(() => {
     const search = this.search().toLowerCase();
-    const responsible = this.responsibleFilter();
+    const owner = this.ownerFilter();
 
     return this.contactsApi.contacts
       .filter((contact) => {
-        if (responsible && contact.responsibleUserId !== responsible) {
+        if (owner && contact.ownerId !== owner) {
           return false;
         }
 
@@ -65,8 +65,8 @@ export class ContactsPage {
       })
       .map((contact) => ({
         ...contact,
-        responsibleName:
-          this.users.find((user) => user.id === contact.responsibleUserId)
+        ownerName:
+          this.users.find((user) => user.id === contact.ownerId)
             ?.name ?? 'Unassigned',
       }));
   });

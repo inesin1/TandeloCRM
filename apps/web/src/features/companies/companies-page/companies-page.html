@@ -34,8 +34,8 @@
 
       <p-select
         [options]="users"
-        [ngModel]="responsibleFilter()"
-        (ngModelChange)="responsibleFilter.set($event)"
+        [ngModel]="ownerFilter()"
+        (ngModelChange)="ownerFilter.set($event)"
         optionLabel="name"
         optionValue="id"
         placeholder="Responsible"
@@ -107,7 +107,7 @@
           </td>
 
           <td>
-            <app-user-chip class="text-sm" [name]="company.responsibleName" />
+            <app-user-chip class="text-sm" [name]="company.ownerName" />
           </td>
         </tr>
       </ng-template>

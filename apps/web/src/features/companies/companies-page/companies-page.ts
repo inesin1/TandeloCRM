@@ -14,7 +14,7 @@ import { PageHeader } from '../../../shared/page-header';
 import { UserChip } from '../../../shared/user-chip';
 
 export interface CompanyRow extends Company {
-  responsibleName: string;
+  ownerName: string;
 }
 
 @Component({
@@ -39,18 +39,18 @@ export class CompaniesPage {
   protected readonly users = inject(LeadsApi).users;
 
   protected readonly search = signal('');
-  protected readonly responsibleFilter = signal<number | null>(null);
+  protected readonly ownerFilter = signal<number | null>(null);
   protected readonly selectedCompanies = signal<CompanyRow[]>([]);
 
   protected readonly total = this.companiesApi.companies.length;
 
   protected readonly rows = computed(() => {
     const search = this.search().toLowerCase();
-    const responsible = this.responsibleFilter();
+    const owner = this.ownerFilter();
 
     return this.companiesApi.companies
       .filter((company) => {
-        if (responsible && company.responsibleUserId !== responsible) {
+        if (owner && company.ownerId !== owner) {
           return false;
         }
 
@@ -67,8 +67,8 @@ export class CompaniesPage {
       })
       .map((company) => ({
         ...company,
-        responsibleName:
-          this.users.find((user) => user.id === company.responsibleUserId)
+        ownerName:
+          this.users.find((user) => user.id === company.ownerId)
             ?.name ?? 'Unassigned',
       }));
   });

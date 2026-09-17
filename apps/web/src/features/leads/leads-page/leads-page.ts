@@ -41,7 +41,7 @@ export class LeadsPage {
   protected readonly selectedPipeline = signal(this.pipelines[0]);
   protected readonly activeTab = signal('all');
   protected readonly search = signal('');
-  protected readonly responsibleFilter = signal<number | null>(null);
+  protected readonly ownerFilter = signal<number | null>(null);
   protected readonly statusFilter = signal<number | null>(null);
 
   private readonly taskIcons = {
@@ -86,7 +86,7 @@ export class LeadsPage {
         value: 'mine',
         label: 'Mine',
         count: leads.filter(
-          (lead) => lead.responsibleUserId === this.currentUserId,
+          (lead) => lead.ownerId === this.currentUserId,
         ).length,
       },
       {
@@ -100,11 +100,11 @@ export class LeadsPage {
   protected readonly filteredLeads = computed(() => {
     const tab = this.activeTab();
     const search = this.search().toLowerCase();
-    const responsible = this.responsibleFilter();
+    const owner = this.ownerFilter();
     const status = this.statusFilter();
 
     return this.pipelineLeads().filter((lead) => {
-      if (responsible && lead.responsibleUserId !== responsible) {
+      if (owner && lead.ownerId !== owner) {
         return false;
       }
 
@@ -117,7 +117,7 @@ export class LeadsPage {
       }
 
       if (tab === 'mine') {
-        return lead.responsibleUserId === this.currentUserId;
+        return lead.ownerId === this.currentUserId;
       }
 
       if (tab === 'attention') {
@@ -162,8 +162,8 @@ export class LeadsPage {
       code: `DL-${String(lead.id).padStart(4, '0')}`,
       priceLabel: this.priceFormat.format(lead.price),
       clientName: company?.name ?? contact?.name ?? 'No client',
-      responsibleName:
-        this.users.find((user) => user.id === lead.responsibleUserId)?.name ??
+      ownerName:
+        this.users.find((user) => user.id === lead.ownerId)?.name ??
         'Unassigned',
       status: this.selectedPipeline().statuses.find(
         (status) => status.id === lead.statusId,
@@ -192,8 +192,8 @@ export class LeadsPage {
       overdueLabel: overdueDays
         ? `Overdue by ${overdueDays} ${overdueDays === 1 ? 'day' : 'days'}`
         : 'Overdue today',
-      responsibleName:
-        this.users.find((user) => user.id === task.responsibleUserId)?.name ??
+      assigneeName:
+        this.users.find((user) => user.id === task.assigneeId)?.name ??
         'Unassigned',
     };
   }

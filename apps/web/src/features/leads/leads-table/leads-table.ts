@@ -11,14 +11,14 @@ export interface NextTask extends Task {
   icon: string;
   isOverdue: boolean;
   overdueLabel: string;
-  responsibleName: string;
+  assigneeName: string;
 }
 
 export interface LeadRow extends Lead {
   code: string;
   priceLabel: string;
   clientName: string;
-  responsibleName: string;
+  ownerName: string;
   status: Status | undefined;
   task: NextTask | null;
 }

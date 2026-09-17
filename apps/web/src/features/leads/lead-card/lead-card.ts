@@ -11,7 +11,7 @@ export interface LeadCardVm {
   name: string;
   clientName: string;
   priceLabel: string;
-  responsibleName: string;
+  ownerName: string;
   updatedAt: Date;
   task: {
     icon: string;

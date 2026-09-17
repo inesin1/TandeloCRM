@@ -7,7 +7,7 @@ export interface Task {
   text: string;
   dueAt: Date;
   isCompleted: boolean;
-  responsibleUserId: number;
+  assigneeId: number;
 }
 
 export interface Status {
@@ -35,7 +35,7 @@ export interface Lead {
   id: number;
   name: string;
   price: number;
-  responsibleUserId: number;
+  ownerId: number;
   statusId: number;
   pipelineId: number;
   createdBy: number;
@@ -74,84 +74,84 @@ export class LeadsApi {
     {
       id: 1,
       name: 'Andrey N.',
-      email: 'andrey@tandelo.dev',
+      email: 'andrey@example.com',
       role: 'Admin',
       group: 'Sales',
     },
     {
       id: 2,
       name: 'Elena K.',
-      email: 'elena@tandelo.dev',
+      email: 'elena@example.org',
       role: 'Manager',
       group: 'Sales',
     },
     {
       id: 3,
       name: 'Mikhail S.',
-      email: 'mikhail@tandelo.dev',
+      email: 'mikhail@example.net',
       role: 'Manager',
       group: 'Support',
     },
     {
       id: 4,
       name: 'Anna S.',
-      email: 'anna@tandelo.dev',
+      email: 'anna@example.com',
       role: 'Manager',
       group: 'Sales',
     },
     {
       id: 5,
       name: 'Denis K.',
-      email: 'denis@tandelo.dev',
+      email: 'denis@example.org',
       role: 'Manager',
       group: 'Sales',
     },
     {
       id: 6,
       name: 'Olga M.',
-      email: 'olga@tandelo.dev',
+      email: 'olga@example.net',
       role: 'Manager',
       group: 'Marketing',
     },
     {
       id: 7,
       name: 'Ilya S.',
-      email: 'ilya@tandelo.dev',
+      email: 'ilya@example.com',
       role: 'Manager',
       group: 'Support',
     },
     {
       id: 8,
       name: 'Maria B.',
-      email: 'maria@tandelo.dev',
+      email: 'maria@example.org',
       role: 'Manager',
       group: 'Sales',
     },
     {
       id: 9,
       name: 'Alexey R.',
-      email: 'alexey@tandelo.dev',
+      email: 'alexey@example.net',
       role: 'Manager',
       group: 'Marketing',
     },
     {
       id: 10,
       name: 'Pavel T.',
-      email: 'pavel@tandelo.dev',
+      email: 'pavel@example.com',
       role: 'Manager',
       group: 'Support',
     },
     {
       id: 11,
       name: 'Irina V.',
-      email: 'irina@tandelo.dev',
+      email: 'irina@example.org',
       role: 'Admin',
       group: 'Operations',
     },
     {
       id: 12,
       name: 'Sergey D.',
-      email: 'sergey@tandelo.dev',
+      email: 'sergey@example.net',
       role: 'Manager',
       group: 'Sales',
     },
@@ -162,7 +162,7 @@ export class LeadsApi {
       id: 1,
       name: 'CRM for sales team',
       price: 480_000,
-      responsibleUserId: 1,
+      ownerId: 1,
       statusId: 1,
       pipelineId: 1,
       createdBy: 1,
@@ -170,13 +170,13 @@ export class LeadsApi {
       updatedBy: 1,
       updatedAt: new Date('2026-09-07T18:40'),
       contacts: [{ id: 11, name: 'Igor Smirnov' }],
-      companies: [{ id: 101, name: 'Forma' }],
+      companies: [{ id: 101, name: 'Velum Kite' }],
     },
     {
       id: 2,
       name: 'Request automation',
       price: 240_000,
-      responsibleUserId: 2,
+      ownerId: 2,
       statusId: 1,
       pipelineId: 1,
       createdBy: 2,
@@ -184,13 +184,13 @@ export class LeadsApi {
       updatedBy: 2,
       updatedAt: new Date('2026-09-06T10:15'),
       contacts: [{ id: 12, name: 'Aigerim Serikova' }],
-      companies: [{ id: 102, name: 'Altyn Qurylys' }],
+      companies: [{ id: 102, name: 'Qora Nimbus' }],
     },
     {
       id: 3,
       name: 'Unified customer base',
       price: 650_000,
-      responsibleUserId: 3,
+      ownerId: 3,
       statusId: 2,
       pipelineId: 1,
       createdBy: 1,
@@ -201,13 +201,13 @@ export class LeadsApi {
         { id: 13, name: 'Aidos Bekturov' },
         { id: 14, name: 'Anna Letova' },
       ],
-      companies: [{ id: 103, name: 'Orbit' }],
+      companies: [{ id: 103, name: 'Mirahedron' }],
     },
     {
       id: 4,
       name: 'Telephony integration',
       price: 180_000,
-      responsibleUserId: 1,
+      ownerId: 1,
       statusId: 2,
       pipelineId: 1,
       createdBy: 3,
@@ -215,13 +215,13 @@ export class LeadsApi {
       updatedBy: 1,
       updatedAt: new Date('2026-09-05T12:20'),
       contacts: [{ id: 15, name: 'Denis Volkov' }],
-      companies: [{ id: 104, name: 'Growth Point' }],
+      companies: [{ id: 104, name: 'Copper Finch' }],
     },
     {
       id: 5,
       name: 'Rollout for 3 teams',
       price: 960_000,
-      responsibleUserId: 2,
+      ownerId: 2,
       statusId: 3,
       pipelineId: 1,
       createdBy: 2,
@@ -229,13 +229,13 @@ export class LeadsApi {
       updatedBy: 2,
       updatedAt: new Date('2026-09-04T17:05'),
       contacts: [{ id: 16, name: 'Dana Nurlanova' }],
-      companies: [{ id: 105, name: 'Zhetysu Studio' }],
+      companies: [{ id: 105, name: 'Sable Metric' }],
     },
     {
       id: 6,
       name: 'Customer portal',
       price: 420_000,
-      responsibleUserId: 3,
+      ownerId: 3,
       statusId: 3,
       pipelineId: 1,
       createdBy: 1,
@@ -243,13 +243,13 @@ export class LeadsApi {
       updatedBy: 3,
       updatedAt: new Date('2026-09-08T11:40'),
       contacts: [{ id: 17, name: 'Sergey Gavrilov' }],
-      companies: [{ id: 106, name: 'Layer' }],
+      companies: [{ id: 106, name: 'Juniper Relay' }],
     },
     {
       id: 7,
       name: 'Annual support',
       price: 720_000,
-      responsibleUserId: 1,
+      ownerId: 1,
       statusId: 4,
       pipelineId: 1,
       createdBy: 1,
@@ -257,13 +257,13 @@ export class LeadsApi {
       updatedBy: 1,
       updatedAt: new Date('2026-09-07T15:10'),
       contacts: [{ id: 18, name: 'Nurlan Amanov' }],
-      companies: [{ id: 107, name: 'Atlas Logistics' }],
+      companies: [{ id: 107, name: 'Lumen Orchard' }],
     },
     {
       id: 8,
       name: 'Team expansion',
       price: 190_000,
-      responsibleUserId: 2,
+      ownerId: 2,
       statusId: 5,
       pipelineId: 2,
       createdBy: 3,
@@ -274,7 +274,7 @@ export class LeadsApi {
         { id: 19, name: 'Zhanar Kaliyeva' },
         { id: 20, name: 'Lidia Kraynova' },
       ],
-      companies: [{ id: 108, name: 'Bureau' }],
+      companies: [{ id: 108, name: 'Cinder Vale' }],
     },
   ];
 
@@ -286,7 +286,7 @@ export class LeadsApi {
       text: 'First call',
       dueAt: new Date('2026-09-09T14:00'),
       isCompleted: false,
-      responsibleUserId: 1,
+      assigneeId: 1,
     },
     {
       id: 2,
@@ -295,7 +295,7 @@ export class LeadsApi {
       text: 'Send follow-up',
       dueAt: new Date('2026-09-01T10:00'),
       isCompleted: true,
-      responsibleUserId: 1,
+      assigneeId: 1,
     },
     {
       id: 3,
@@ -304,7 +304,7 @@ export class LeadsApi {
       text: 'Send proposal',
       dueAt: new Date('2026-09-12T11:00'),
       isCompleted: false,
-      responsibleUserId: 2,
+      assigneeId: 2,
     },
     {
       id: 4,
@@ -313,7 +313,7 @@ export class LeadsApi {
       text: 'Send proposal',
       dueAt: new Date('2026-09-09T17:30'),
       isCompleted: false,
-      responsibleUserId: 3,
+      assigneeId: 3,
     },
     {
       id: 5,
@@ -322,7 +322,7 @@ export class LeadsApi {
       text: 'First call',
       dueAt: new Date('2026-09-15T09:30'),
       isCompleted: false,
-      responsibleUserId: 1,
+      assigneeId: 1,
     },
     {
       id: 6,
@@ -331,7 +331,7 @@ export class LeadsApi {
       text: 'Demo for the team',
       dueAt: new Date('2026-09-05T12:00'),
       isCompleted: false,
-      responsibleUserId: 2,
+      assigneeId: 2,
     },
     {
       id: 7,
@@ -340,7 +340,7 @@ export class LeadsApi {
       text: 'Discuss contract',
       dueAt: new Date('2026-09-10T12:00'),
       isCompleted: false,
-      responsibleUserId: 3,
+      assigneeId: 3,
     },
     {
       id: 8,
@@ -349,7 +349,7 @@ export class LeadsApi {
       text: 'Discuss contract',
       dueAt: new Date('2026-09-09T10:00'),
       isCompleted: false,
-      responsibleUserId: 1,
+      assigneeId: 1,
     },
   ];
 }
