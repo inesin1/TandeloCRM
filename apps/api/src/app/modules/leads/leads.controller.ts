@@ -14,7 +14,6 @@ import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { LeadsService } from './leads.service';
 import { CreateLeadDto } from './dto/create-lead.dto';
 import { UpdateLeadDto } from './dto/update-lead.dto';
-import { LEAD_STATUSES } from './lead.entity';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @ApiTags('leads')
@@ -31,14 +30,17 @@ export class LeadsController {
 
   @Get()
   @ApiQuery({ name: 'ownerId', required: false, type: Number })
-  @ApiQuery({ name: 'status', required: false, enum: LEAD_STATUSES })
+  @ApiQuery({ name: 'pipelineId', required: false, type: Number })
+  @ApiQuery({ name: 'statusId', required: false, type: Number })
   @ApiQuery({ name: 'search', required: false, type: String })
   findAll(
     @Query('ownerId', new ParseIntPipe({ optional: true })) ownerId?: number,
-    @Query('status') status?: string,
+    @Query('pipelineId', new ParseIntPipe({ optional: true }))
+    pipelineId?: number,
+    @Query('statusId', new ParseIntPipe({ optional: true })) statusId?: number,
     @Query('search') search?: string,
   ) {
-    return this.leadsService.findAll({ ownerId, status, search });
+    return this.leadsService.findAll({ ownerId, pipelineId, statusId, search });
   }
 
   @Get(':id')

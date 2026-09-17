@@ -6,8 +6,7 @@
     "db:generate": "drizzle-kit generate --config=apps/api/drizzle.config.ts",
     "db:migrate": "drizzle-kit migrate --config=apps/api/drizzle.config.ts",
     "db:seed": "ts-node --project apps/api/tsconfig.app.json apps/api/src/app/modules/database/seed.ts",
-    "db:seed-admin": "ts-node --project apps/api/tsconfig.app.json apps/api/src/app/modules/database/seed-admin.ts",
-    "db:seed-leads": "ts-node --project apps/api/tsconfig.app.json apps/api/src/app/modules/database/seed-leads.ts"
+    "db:seed-admin": "ts-node --project apps/api/tsconfig.app.json apps/api/src/app/modules/database/seed-admin.ts"
   },
   "private": true,
   "pnpm": {
