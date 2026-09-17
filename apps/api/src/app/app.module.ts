@@ -6,6 +6,10 @@ import { AccessControlModule } from './modules/access-control/access-control.mod
 import { DatabaseModule } from './modules/database/database.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { LeadsModule } from './modules/leads/leads.module';
+import { PipelinesModule } from './modules/pipelines/pipelines.module';
+import { CompaniesModule } from './modules/companies/companies.module';
+import { ContactsModule } from './modules/contacts/contacts.module';
+import { CustomFieldsModule } from './modules/custom-fields/custom-fields.module';
 import { AppController } from './app.controller';
 
 @Module({
@@ -19,6 +23,10 @@ import { AppController } from './app.controller';
     UsersModule,
     AuthModule,
     AccessControlModule,
+    CustomFieldsModule,
+    PipelinesModule,
+    CompaniesModule,
+    ContactsModule,
     LeadsModule,
   ],
 })
