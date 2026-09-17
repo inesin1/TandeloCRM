@@ -13,7 +13,12 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "argon2"
-    ]
+    ],
+    "overrides": {
+      "multer": "^2.4.0",
+      "qs": "^6.16.0",
+      "smol-toml": "^1.8.0"
+    }
   },
   "dependencies": {
     "@angular-devkit/build-angular": "22.1.8",
