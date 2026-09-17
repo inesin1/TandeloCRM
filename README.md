@@ -135,12 +135,6 @@ pnpm nx graph
 │   ├── web-e2e/      - Playwright e2e tests
 │   ├── api/          - NestJS backend
 │   └── api-e2e/      - API e2e coverage
-├── libs/
-│   ├── plugin-sdk/   - extension point for integrations
-│   └── shared/       - shared utilities
-├── packages/
-│   ├── shared/models/ - shared models
-│   └── api/products/  - API-facing libraries
 ├── nx.json           - Nx workspace config
 ├── package.json      - workspace dependencies
 ├── pnpm-lock.yaml    - lockfile
