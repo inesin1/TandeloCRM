@@ -1,107 +1,115 @@
 import { Route } from '@angular/router';
+import { authGuard } from '../features/auth/auth-guard';
 
 export const appRoutes: Route[] = [
   {
+    path: 'login',
+    title: 'Login',
+    loadComponent: () =>
+      import('../features/auth/login-page/login-page').then((m) => m.LoginPage),
+  },
+  {
     path: '',
-    pathMatch: 'full',
-    redirectTo: 'desktop',
-  },
-  {
-    path: 'desktop',
-    title: 'Desktop',
-    loadComponent: () =>
-      import('../features/desktop/desktop-page/desktop-page').then(
-        (m) => m.DesktopPage,
-      ),
-  },
-  {
-    path: 'leads',
-    title: 'Leads',
-    loadComponent: () =>
-      import('../features/leads/leads-page/leads-page').then(
-        (m) => m.LeadsPage,
-      ),
-  },
-  {
-    path: 'contacts',
-    title: 'Contacts',
-    loadComponent: () =>
-      import('../features/contacts/contacts-page/contacts-page').then(
-        (m) => m.ContactsPage,
-      ),
-  },
-  {
-    path: 'companies',
-    title: 'Companies',
-    loadComponent: () =>
-      import('../features/companies/companies-page/companies-page').then(
-        (m) => m.CompaniesPage,
-      ),
-  },
-  {
-    path: 'tasks',
-    title: 'Tasks',
-    loadComponent: () =>
-      import('../features/tasks/tasks-page/tasks-page').then(
-        (m) => m.TasksPage,
-      ),
-  },
-  {
-    path: 'analytics',
-    title: 'Analytics',
-    loadComponent: () =>
-      import('../features/analytics/analytics-page/analytics-page').then(
-        (m) => m.AnalyticsPage,
-      ),
-  },
-  {
-    path: 'settings',
-    title: 'Settings',
-    loadComponent: () =>
-      import('../features/settings/settings-page/settings-page').then(
-        (m) => m.SettingsPage,
-      ),
+    canActivate: [authGuard],
     children: [
-      { path: '', pathMatch: 'full', redirectTo: 'profile' },
       {
-        path: 'profile',
-        title: 'Profile',
+        path: 'desktop',
+        title: 'Desktop',
         loadComponent: () =>
-          import('../features/settings/tabs/profile-tab/profile-tab').then(
-            (m) => m.ProfileTab,
+          import('../features/desktop/desktop-page/desktop-page').then(
+            (m) => m.DesktopPage,
           ),
       },
       {
-        path: 'notifications',
-        title: 'Notifications',
+        path: 'leads',
+        title: 'Leads',
         loadComponent: () =>
-          import('../features/settings/tabs/notifications-tab/notifications-tab').then(
-            (m) => m.NotificationsTab,
+          import('../features/leads/leads-page/leads-page').then(
+            (m) => m.LeadsPage,
           ),
       },
       {
-        path: 'workspace',
-        title: 'Workspace',
+        path: 'contacts',
+        title: 'Contacts',
         loadComponent: () =>
-          import('../features/settings/tabs/workspace-tab/workspace-tab').then(
-            (m) => m.WorkspaceTab,
+          import('../features/contacts/contacts-page/contacts-page').then(
+            (m) => m.ContactsPage,
           ),
       },
       {
-        path: 'users',
-        title: 'Users',
+        path: 'companies',
+        title: 'Companies',
         loadComponent: () =>
-          import('../features/settings/tabs/users-tab/users-tab').then(
-            (m) => m.UsersTab,
+          import('../features/companies/companies-page/companies-page').then(
+            (m) => m.CompaniesPage,
           ),
       },
       {
-        path: 'integrations',
-        title: 'Integrations',
+        path: 'tasks',
+        title: 'Tasks',
         loadComponent: () =>
-          import('../features/settings/tabs/integrations-tab/integrations-tab').then(
-            (m) => m.IntegrationsTab,
+          import('../features/tasks/tasks-page/tasks-page').then(
+            (m) => m.TasksPage,
           ),
+      },
+      {
+        path: 'analytics',
+        title: 'Analytics',
+        loadComponent: () =>
+          import('../features/analytics/analytics-page/analytics-page').then(
+            (m) => m.AnalyticsPage,
+          ),
+      },
+      {
+        path: 'settings',
+        title: 'Settings',
+        loadComponent: () =>
+          import('../features/settings/settings-page/settings-page').then(
+            (m) => m.SettingsPage,
+          ),
+        children: [
+          { path: '', pathMatch: 'full', redirectTo: 'profile' },
+          {
+            path: 'profile',
+            title: 'Profile',
+            loadComponent: () =>
+              import('../features/settings/tabs/profile-tab/profile-tab').then(
+                (m) => m.ProfileTab,
+              ),
+          },
+          {
+            path: 'notifications',
+            title: 'Notifications',
+            loadComponent: () =>
+              import('../features/settings/tabs/notifications-tab/notifications-tab').then(
+                (m) => m.NotificationsTab,
+              ),
+          },
+          {
+            path: 'workspace',
+            title: 'Workspace',
+            loadComponent: () =>
+              import('../features/settings/tabs/workspace-tab/workspace-tab').then(
+                (m) => m.WorkspaceTab,
+              ),
+          },
+          {
+            path: 'users',
+            title: 'Users',
+            loadComponent: () =>
+              import('../features/settings/tabs/users-tab/users-tab').then(
+                (m) => m.UsersTab,
+              ),
+          },
+          {
+            path: 'integrations',
+            title: 'Integrations',
+            loadComponent: () =>
+              import('../features/settings/tabs/integrations-tab/integrations-tab').then(
+                (m) => m.IntegrationsTab,
+              ),
+          },
+        ],
       },
     ],
   },

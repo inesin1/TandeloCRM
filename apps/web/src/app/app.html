@@ -1,3 +1,4 @@
+@if(authApi.isAuthenticated()) {
 <p-sidebar-layout class="h-dvh overflow-x-clip">
   <p-sidebar
     id="app-sidebar"
@@ -53,13 +54,12 @@
         <p-sidebar-footer>
           <p-sidebar-menu>
             <p-sidebar-menu-item>
-              <button pSidebarMenuButton pTooltip="John Doe" tooltipPosition="right">
-                <p-avatar
-                  label="JD"
-                  shape="circle"
-                  class="size-6 shrink-0 text-xs"
-                />
-                <span>John Doe</span>
+              <button
+                pSidebarMenuButton
+                pTooltip="John Doe"
+                tooltipPosition="right"
+              >
+                <span>Logout</span>
               </button>
             </p-sidebar-menu-item>
           </p-sidebar-menu>
@@ -76,3 +76,6 @@
 
   <app-copilot-panel />
 </p-sidebar-layout>
+} @else {
+<router-outlet />
+}

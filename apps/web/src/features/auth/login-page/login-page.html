@@ -1,0 +1,78 @@
+<form
+  novalidate
+  (submit)="onSubmit($event)"
+  class="flex flex-col w-full max-w-sm p-6 gap-4 rounded-xl border border-[var(--p-content-border-color)] bg-[var(--p-content-background)] shadow-sm"
+>
+  <header>
+    <div class="flex items-center gap-2">
+      <app-logo />
+      <span class="text-sm font-semibold text-surface-800">Tandelo</span>
+    </div>
+
+    <h1 class="mt-6 text-2xl font-semibold tracking-tight text-surface-800">
+      Sign in
+    </h1>
+  </header>
+
+  <div class="flex flex-col gap-1">
+    <p-iftalabel>
+      <input
+        pInputText
+        id="email"
+        autocomplete="username"
+        fluid
+        [formField]="loginForm.email"
+      />
+      <label for="email">Email</label>
+    </p-iftalabel>
+    @if (loginForm.email().touched() && loginForm.email().invalid()) { @for
+    (error of loginForm.email().errors(); track error.kind) {
+    <p-message severity="error" size="small" variant="simple"
+      >{{ error.message }}</p-message
+    >
+    } }
+  </div>
+
+  <div class="flex flex-col gap-1">
+    <p-iconfield>
+      <p-iftalabel>
+        <input
+          pInputPassword
+          id="password"
+          autocomplete="current-password"
+          fluid
+          [formField]="loginForm.password"
+          [(mask)]="passwordMask"
+        />
+        <label for="password">Password</label>
+        <p-inputicon>
+          <button
+            type="button"
+            aria-label="Show password"
+            [attr.aria-pressed]="!passwordMask"
+            (click)="passwordMask = !passwordMask"
+          >
+            @if (passwordMask) {
+            <svg data-p-icon="eye"></svg>
+            } @else {
+            <svg data-p-icon="eye-slash"></svg>
+            }
+          </button>
+        </p-inputicon>
+      </p-iftalabel>
+    </p-iconfield>
+
+    @if (loginForm.password().touched() && loginForm.password().invalid()) {
+    @for (error of loginForm.password().errors(); track error.kind) {
+    <p-message severity="error" size="small" variant="simple"
+      >{{ error.message }}</p-message
+    >
+    } }
+  </div>
+
+  @if (serverError()) {
+  <p-message severity="error" size="small">{{ serverError() }}</p-message>
+  }
+
+  <button pButton type="submit" fluid>Sign in</button>
+</form>

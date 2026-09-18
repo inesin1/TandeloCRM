@@ -1,12 +1,13 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { SidebarModule } from 'primeng/sidebar';
 import { ButtonModule } from 'primeng/button';
 import { AvatarModule } from 'primeng/avatar';
 import { Tooltip } from 'primeng/tooltip';
 import { PIcon } from '@primeicons/angular/p-icon';
-import { Logo } from './logo';
+import { Logo } from '../shared/logo';
 import { CopilotPanel } from '../features/copilot/copilot-panel/copilot-panel';
+import { AuthApi } from '../features/auth/auth-api';
 
 interface NavItem {
   icon: string;
@@ -31,6 +32,8 @@ interface NavItem {
   styleUrl: './app.css',
 })
 export class App {
+  protected readonly authApi = inject(AuthApi);
+
   protected title = 'Tandelo';
 
   navItems: NavItem[] = [

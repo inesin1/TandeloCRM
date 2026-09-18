@@ -1,0 +1,28 @@
+import { computed, inject, Service, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
+
+@Service()
+export class AuthApi {
+  private readonly http = inject(HttpClient);
+  private readonly _token = signal(localStorage.getItem('accessToken'));
+
+  readonly token = this._token.asReadonly();
+  readonly isAuthenticated = computed(() => !!this._token());
+
+  async login(email: string, password: string) {
+    const res = await firstValueFrom(
+      this.http.post<{ accessToken: string }>('/api/auth/login', {
+        email,
+        password,
+      }),
+    );
+    localStorage.setItem('accessToken', res.accessToken);
+    this._token.set(res.accessToken);
+  }
+
+  logout() {
+    localStorage.removeItem('accessToken');
+    this._token.set(null);
+  }
+}
