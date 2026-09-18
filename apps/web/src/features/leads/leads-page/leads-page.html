@@ -1,7 +1,14 @@
 <div class="flex h-full flex-col">
+  @if (loadError()) {
+  <app-page-header title="Leads" />
+
+  <p-message severity="error" class="mt-4">
+    Failed to load leads. Try again later.
+  </p-message>
+  } @else {
   <app-page-header title="Leads" [count]="stats().open">
     <p-select
-      [options]="pipelines"
+      [options]="pipelines.value()"
       [ngModel]="selectedPipeline()"
       (ngModelChange)="selectedPipeline.set($event)"
       optionLabel="name"
@@ -47,6 +54,14 @@
   <div
     class="mt-4 flex min-h-0 flex-1 flex-col rounded-xl border border-surface-200 bg-[var(--p-content-background)]"
   >
+    @if (isLoading()) {
+    <p-progressbar
+      mode="indeterminate"
+      [dt]="{ height: '0.25rem' }"
+      aria-label="Loading leads"
+    />
+    }
+
     <div
       class="flex shrink-0 items-center gap-1 border-b border-surface-200 px-2"
     >
@@ -83,7 +98,7 @@
       </p-iconfield>
 
       <p-select
-        [options]="users"
+        [options]="users.value()"
         [ngModel]="ownerFilter()"
         (ngModelChange)="ownerFilter.set($event)"
         optionLabel="name"
@@ -94,7 +109,7 @@
       />
 
       <p-select
-        [options]="selectedPipeline().statuses"
+        [options]="statuses.value()"
         [ngModel]="statusFilter()"
         (ngModelChange)="statusFilter.set($event)"
         optionLabel="name"
@@ -121,4 +136,5 @@
     <app-leads-table [rows]="rows()" />
     }
   </div>
+  }
 </div>

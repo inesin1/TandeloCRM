@@ -1,3 +1,6 @@
+@if (loadError()) {
+<p-message severity="error">Failed to load users. Try again later.</p-message>
+} @else {
 <div class="flex shrink-0 items-center justify-between gap-2">
   <p-iconfield class="w-64">
     <p-inputicon>
@@ -23,6 +26,7 @@
 <div class="mt-4">
   <p-table
     [value]="rows()"
+    [loading]="users.isLoading()"
     dataKey="id"
     removableSort
     showGridlines
@@ -38,16 +42,11 @@
           </div>
         </th>
         <th>Email</th>
-        <th pSortableColumn="role">
+        <th>Roles</th>
+        <th pSortableColumn="groupNames">
           <div class="flex items-center gap-2">
-            Role
-            <p-sort-icon field="role" />
-          </div>
-        </th>
-        <th pSortableColumn="group">
-          <div class="flex items-center gap-2">
-            Group
-            <p-sort-icon field="group" />
+            Groups
+            <p-sort-icon field="groupNames" />
           </div>
         </th>
       </tr>
@@ -77,14 +76,15 @@
         </td>
 
         <td>
-          <p-tag
-            [value]="user.role"
-            [severity]="user.role === 'Admin' ? 'info' : 'secondary'"
-          />
+          <div class="flex flex-wrap gap-1">
+            @for (role of user.roles; track role.id) {
+            <p-tag [value]="role.name" severity="secondary" />
+            }
+          </div>
         </td>
 
         <td>
-          <span class="text-sm text-surface-700">{{ user.group }}</span>
+          <span class="text-sm text-surface-700">{{ user.groupNames }}</span>
         </td>
       </tr>
     </ng-template>
@@ -112,7 +112,7 @@
       </p-avatar>
       <div class="min-w-0 flex-1">
         <div class="truncate text-base font-semibold text-surface-900">
-          {{ editForm().name || user.name }}
+          {{ userForm.name().value() || user.name }}
         </div>
         <div class="truncate text-xs text-surface-500">{{ user.email }}</div>
       </div>
@@ -120,8 +120,12 @@
     }
   </ng-template>
 
-  @if (selectedUser()) {
-  <div class="flex flex-col gap-5 py-2">
+  <form
+    id="userForm"
+    novalidate
+    (submit)="onSubmit($event)"
+    class="flex flex-col gap-5 py-2"
+  >
     <div class="flex flex-col gap-1.5">
       <label for="userName" class="text-xs font-medium text-surface-700">
         Имя
@@ -131,10 +135,15 @@
         pInputText
         type="text"
         class="w-full"
-        [ngModel]="editForm().name"
-        (ngModelChange)="updateFormField('name', $event)"
         placeholder="Введите имя"
+        [formField]="userForm.name"
       />
+      @if (userForm.name().touched() && userForm.name().invalid()) { @for
+      (error of userForm.name().errors(); track error.kind) {
+      <p-message severity="error" size="small" variant="simple">
+        {{ error.message }}
+      </p-message>
+      } }
     </div>
 
     <div class="flex flex-col gap-1.5">
@@ -146,45 +155,57 @@
         pInputText
         type="email"
         class="w-full"
-        [ngModel]="editForm().email"
-        (ngModelChange)="updateFormField('email', $event)"
         placeholder="user@example.com"
+        [formField]="userForm.email"
+      />
+      @if (userForm.email().touched() && userForm.email().invalid()) { @for
+      (error of userForm.email().errors(); track error.kind) {
+      <p-message severity="error" size="small" variant="simple">
+        {{ error.message }}
+      </p-message>
+      } }
+    </div>
+
+    <div class="flex flex-col gap-1.5">
+      <label for="userRoles" class="text-xs font-medium text-surface-700">
+        Роли
+      </label>
+      <p-select
+        multiple
+        checkmark
+        inputId="userRoles"
+        [options]="roles.value()"
+        optionLabel="name"
+        optionValue="id"
+        placeholder="Выберите роли"
+        appendTo="body"
+        class="w-full"
+        [formField]="userForm.roleIds"
       />
     </div>
 
     <div class="flex flex-col gap-1.5">
-      <label for="userRole" class="text-xs font-medium text-surface-700"
-        >Роль</label
-      >
+      <label for="userGroups" class="text-xs font-medium text-surface-700">
+        Группы
+      </label>
       <p-select
-        id="userRole"
-        [options]="roleOptions"
-        optionLabel="label"
-        optionValue="value"
-        [ngModel]="editForm().role"
-        (ngModelChange)="updateFormField('role', $event)"
-        class="w-full"
+        multiple
+        checkmark
+        inputId="userGroups"
+        [options]="groups.value()"
+        optionLabel="name"
+        optionValue="id"
+        placeholder="Выберите группы"
         appendTo="body"
+        class="w-full"
+        [formField]="userForm.groupIds"
       />
     </div>
 
-    <div class="flex flex-col gap-1.5">
-      <label for="userGroup" class="text-xs font-medium text-surface-700"
-        >Группа</label
-      >
-      <p-select
-        id="userGroup"
-        [options]="groupOptions()"
-        [editable]="true"
-        [ngModel]="editForm().group"
-        (ngModelChange)="updateFormField('group', $event)"
-        class="w-full"
-        appendTo="body"
-        placeholder="Выберите или укажите группу"
-      />
-    </div>
-  </div>
-  }
+    @if (saveError()) {
+    <p-message severity="error" size="small">{{ saveError() }}</p-message>
+    }
+  </form>
 
   <ng-template #footer>
     <div
@@ -202,12 +223,13 @@
 
       <button
         pButton
-        type="button"
-        [disabled]="!hasChanges() || !isValid()"
-        (click)="saveUser()"
+        type="submit"
+        form="userForm"
+        [disabled]="!userForm().dirty() || userForm().submitting()"
       >
         Сохранить
       </button>
     </div>
   </ng-template>
 </p-drawer>
+}

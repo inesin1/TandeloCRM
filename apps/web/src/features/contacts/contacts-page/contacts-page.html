@@ -1,5 +1,12 @@
 <div class="flex h-full flex-col">
-  <app-page-header title="Contacts" [count]="total">
+  @if (loadError()) {
+  <app-page-header title="Contacts" />
+
+  <p-message severity="error" class="mt-4">
+    Failed to load contacts. Try again later.
+  </p-message>
+  } @else {
+  <app-page-header title="Contacts" [count]="contacts.value().length">
     <ng-container actions>
       <button pButton severity="secondary" outlined>
         <svg [pIcon]="'upload'"></svg>
@@ -33,7 +40,7 @@
       </p-iconfield>
 
       <p-select
-        [options]="users"
+        [options]="users.value()"
         [ngModel]="ownerFilter()"
         (ngModelChange)="ownerFilter.set($event)"
         optionLabel="name"
@@ -51,6 +58,7 @@
 
     <p-table
       [value]="rows()"
+      [loading]="contacts.isLoading()"
       [(selection)]="selectedContacts"
       dataKey="id"
       removableSort
@@ -108,4 +116,5 @@
       </ng-template>
     </p-table>
   </div>
+  }
 </div>

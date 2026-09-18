@@ -1,10 +1,130 @@
-<div class="container">
-  <div class="flex p-2 justify-between">
-    <h1>Tasks</h1>
+<div class="flex h-full flex-col">
+  @if(loadError()) {
+  <app-page-header title="Tasks" />
 
-    <button pButton severity="success">
-      <svg data-p-icon="plus"></svg>
-      <span>Task</span>
-    </button>
+  <p-message severity="error" class="mt-4">
+    Failed to load tasks. Try again later.
+  </p-message>
+  } @else {
+  <app-page-header title="Tasks" [count]="tasks.value().length">
+    <ng-container actions>
+      <button pButton>
+        <svg data-p-icon="plus"></svg>
+        <span>Task</span>
+      </button>
+    </ng-container>
+  </app-page-header>
+
+  <div
+    class="mt-4 flex min-h-0 flex-1 flex-col rounded-xl border border-surface-200 bg-[var(--p-content-background)]"
+  >
+    <div class="flex shrink-0 flex-wrap items-center gap-2 p-4">
+      <p-select
+        [options]="users.value()"
+        [ngModel]="assigneeFilter()"
+        (ngModelChange)="assigneeFilter.set($event)"
+        optionLabel="name"
+        optionValue="id"
+        placeholder="Assignee"
+        showClear
+        class="w-48"
+      />
+
+      <p-select
+        [options]="statusOptions"
+        [ngModel]="statusFilter()"
+        (ngModelChange)="statusFilter.set($event)"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Status"
+        showClear
+        class="w-48"
+      />
+    </div>
+
+    <p-table
+      [value]="rows()"
+      [loading]="tasks.isLoading()"
+      [(selection)]="selectedTasks"
+      dataKey="id"
+      removableSort
+      showGridlines
+      [tableStyle]="{ 'min-width': '50rem' }"
+      class="min-h-0 flex-1 overflow-auto"
+    >
+      <ng-template #header>
+        <tr>
+          <th style="width: 3rem">
+            <p-table-header-checkbox />
+          </th>
+          <th pSortableColumn="text">
+            <div class="flex items-center gap-2">
+              Task
+              <p-sort-icon field="text" />
+            </div>
+          </th>
+          <th pSortableColumn="dueAt">
+            <div class="flex items-center gap-2">
+              Due
+              <p-sort-icon field="dueAt" />
+            </div>
+          </th>
+          <th>Assignee</th>
+          <th pSortableColumn="isCompleted">
+            <div class="flex items-center gap-2">
+              Status
+              <p-sort-icon field="isCompleted" />
+            </div>
+          </th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-task>
+        <tr>
+          <td>
+            <p-table-checkbox [value]="task" />
+          </td>
+
+          <td>
+            <div class="flex items-center gap-1.5 text-sm text-surface-900">
+              <svg [pIcon]="task.icon" class="size-3.5 shrink-0"></svg>
+              <span class="truncate font-medium">{{ task.text }}</span>
+            </div>
+            <div class="mt-0.5 truncate text-xs text-surface-500">
+              {{ task.leadName }}
+            </div>
+          </td>
+
+          <td>
+            <div
+              class="whitespace-nowrap text-sm"
+              [class]="task.isOverdue ? 'text-red-600' : 'text-surface-700'"
+            >
+              {{ task.dueAt | date: 'MMM d, HH:mm' }}
+            </div>
+          </td>
+
+          <td>
+            <app-user-chip class="text-sm" [name]="task.assigneeName" />
+          </td>
+
+          <td>
+            <p-tag
+              [value]="task.isCompleted ? 'Done' : 'Open'"
+              [severity]="task.isCompleted ? 'success' : 'secondary'"
+            />
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="5" class="py-6 text-center text-sm text-surface-500">
+            No tasks found
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
   </div>
+  }
 </div>

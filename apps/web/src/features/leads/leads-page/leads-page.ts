@@ -7,8 +7,13 @@ import { SelectButtonModule } from 'primeng/selectbutton';
 import { InputTextModule } from 'primeng/inputtext';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
+import { MessageModule } from 'primeng/message';
+import { ProgressBar } from 'primeng/progressbar';
 import { PIcon } from '@primeicons/angular/p-icon';
 import { Lead, LeadsApi } from '../leads-api';
+import { PipelinesApi } from '../pipelines-api';
+import { UsersApi } from '../../settings/tabs/users-tab/users-api';
+import { TasksApi } from '../../tasks/tasks-api';
 import { BoardColumn } from '../board-column/board-column';
 import { LeadRow, LeadsTable, NextTask } from '../leads-table/leads-table';
 import { PageHeader } from '../../../shared/page-header';
@@ -25,6 +30,8 @@ import { PageHeader } from '../../../shared/page-header';
     InputTextModule,
     IconFieldModule,
     InputIconModule,
+    MessageModule,
+    ProgressBar,
     PIcon,
     BoardColumn,
     LeadsTable,
@@ -33,12 +40,34 @@ import { PageHeader } from '../../../shared/page-header';
 })
 export class LeadsPage {
   private readonly leadsApi = inject(LeadsApi);
+  private readonly pipelinesApi = inject(PipelinesApi);
 
-  protected readonly pipelines = this.leadsApi.pipelines;
-  protected readonly users = this.leadsApi.users;
+  protected readonly leads = this.leadsApi.leads;
+  protected readonly pipelines = this.pipelinesApi.pipelines;
+  protected readonly selectedPipeline = this.pipelinesApi.selectedPipeline;
+  protected readonly statuses = this.pipelinesApi.statuses;
+  protected readonly users = inject(UsersApi).users;
+  protected readonly tasks = inject(TasksApi).tasks;
   protected readonly currentUserId = 1;
 
-  protected readonly selectedPipeline = signal(this.pipelines[0]);
+  // value() throws while a resource is in error state, so the template must not read it then.
+  protected readonly loadError = computed(
+    () =>
+      this.leads.error() ??
+      this.pipelines.error() ??
+      this.statuses.error() ??
+      this.tasks.error() ??
+      this.users.error(),
+  );
+
+  protected readonly isLoading = computed(
+    () =>
+      this.leads.isLoading() ||
+      this.pipelines.isLoading() ||
+      this.statuses.isLoading() ||
+      this.tasks.isLoading(),
+  );
+
   protected readonly activeTab = signal('all');
   protected readonly search = signal('');
   protected readonly ownerFilter = signal<number | null>(null);
@@ -58,9 +87,9 @@ export class LeadsPage {
   });
 
   protected readonly pipelineLeads = computed(() =>
-    this.leadsApi.leads.filter(
-      (lead) => lead.pipelineId === this.selectedPipeline().id,
-    ),
+    this.leads
+      .value()
+      .filter((lead) => lead.pipelineId === this.selectedPipeline()?.id),
   );
 
   protected readonly stats = computed(() => {
@@ -129,60 +158,50 @@ export class LeadsPage {
     });
   });
 
-  protected readonly columns = computed(() => {
-    const pipeline = this.selectedPipeline();
+  protected readonly columns = computed(() =>
+    this.statuses.value().map((status) => {
+      const leads = this.filteredLeads().filter(
+        (lead) => lead.statusId === status.id,
+      );
 
-    return pipeline.statuses
-      .toSorted((a, b) => a.sort - b.sort)
-      .map((status) => {
-        const leads = this.filteredLeads().filter(
-          (lead) => lead.statusId === status.id,
-        );
-
-        return {
-          ...status,
-          totalLabel: this.priceFormat.format(
-            leads.reduce((acc, lead) => acc + lead.price, 0),
-          ),
-          leads: leads.map((lead) => this.toRow(lead)),
-        };
-      });
-  });
+      return {
+        ...status,
+        totalLabel: this.priceFormat.format(
+          leads.reduce((acc, lead) => acc + lead.price, 0),
+        ),
+        leads: leads.map((lead) => this.toRow(lead)),
+      };
+    }),
+  );
 
   protected readonly rows = computed(() =>
     this.filteredLeads().map((lead) => this.toRow(lead)),
   );
 
   private toRow(lead: Lead): LeadRow {
-    const company = lead.companies.at(0);
-    const contact = lead.contacts.at(0);
-
     return {
       ...lead,
       code: `DL-${String(lead.id).padStart(4, '0')}`,
       priceLabel: this.priceFormat.format(lead.price),
-      clientName: company?.name ?? contact?.name ?? 'No client',
-      ownerName:
-        this.users.find((user) => user.id === lead.ownerId)?.name ??
-        'Unassigned',
-      status: this.selectedPipeline().statuses.find(
-        (status) => status.id === lead.statusId,
-      ),
+      clientName:
+        lead.company?.name ?? lead.contacts.at(0)?.name ?? 'No client',
+      ownerName: lead.owner?.name ?? 'Unassigned',
       task: this.nextTask(lead.id),
     };
   }
 
   private nextTask(leadId: number): NextTask | null {
-    const task = this.leadsApi.tasks
+    const task = this.tasks
+      .value()
       .filter((item) => item.leadId === leadId && !item.isCompleted)
-      .toSorted((a, b) => a.dueAt.getTime() - b.dueAt.getTime())
+      .toSorted((a, b) => a.dueAt.localeCompare(b.dueAt))
       .at(0);
 
     if (!task) {
       return null;
     }
 
-    const overdueMs = Date.now() - task.dueAt.getTime();
+    const overdueMs = Date.now() - new Date(task.dueAt).getTime();
     const overdueDays = Math.floor(overdueMs / 86_400_000);
 
     return {
@@ -192,9 +211,7 @@ export class LeadsPage {
       overdueLabel: overdueDays
         ? `Overdue by ${overdueDays} ${overdueDays === 1 ? 'day' : 'days'}`
         : 'Overdue today',
-      assigneeName:
-        this.users.find((user) => user.id === task.assigneeId)?.name ??
-        'Unassigned',
+      assigneeName: task.assignee?.name ?? 'Unassigned',
     };
   }
 

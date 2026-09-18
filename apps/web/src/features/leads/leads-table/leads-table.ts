@@ -4,7 +4,8 @@ import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { TableModule } from 'primeng/table';
 import { PIcon } from '@primeicons/angular/p-icon';
-import { Lead, Status, Task } from '../leads-api';
+import { Lead } from '../leads-api';
+import { Task } from '../../tasks/tasks-api';
 import { UserChip } from '../../../shared/user-chip';
 
 export interface NextTask extends Task {
@@ -19,7 +20,6 @@ export interface LeadRow extends Lead {
   priceLabel: string;
   clientName: string;
   ownerName: string;
-  status: Status | undefined;
   task: NextTask | null;
 }
 

@@ -12,11 +12,11 @@ export interface LeadCardVm {
   clientName: string;
   priceLabel: string;
   ownerName: string;
-  updatedAt: Date;
+  updatedAt: string;
   task: {
     icon: string;
     text: string;
-    dueAt: Date;
+    dueAt: string;
     isOverdue: boolean;
     overdueLabel: string;
   } | null;
