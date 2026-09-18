@@ -58,5 +58,3 @@ vitest.config.*.timestamp*
 .nx/polygraph
 .nx/self-healing
 .nx/migrate-runs
-# Локальный аудит демо-данных: содержит реальные значения, не публиковать
-DEMO_DATA_AUDIT.md

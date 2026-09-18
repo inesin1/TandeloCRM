@@ -23,7 +23,10 @@
 - **e2e-заглушки**: `api-e2e` проверяет health, `web-e2e` — реально отображаемый заголовок Desktop.
 - **`auth.service.spec.ts`** — 4 теста, к доменной модели не привязаны.
 - **Нейминг во фронте**: `responsibleUserId` → `ownerId`, `Task.responsibleUserId` → `assigneeId`, `responsibleName` → `ownerName`/`assigneeName`, `responsibleFilter` → `ownerFilter`. Вхождений `responsible` в `apps/web/src` не осталось.
-- **Аудит демо-данных** → `DEMO_DATA_AUDIT.md`. Блокер открыт, см. ниже.
+- **Аудит демо-данных** — проведён, блокер закрыт, см. ниже.
+- **Фронт на реальном API** (Этап 6) — auth, guard, интерсептор, dev-прокси; leads/pipelines/companies/contacts/users читаются через `httpResource`, вкладка Users в настройках редактирует пользователя через `PUT /api/users/:id`. Моков в `apps/web` не осталось.
+- **Модуль задач** — `apps/api/src/app/modules/tasks/`: таблица `tasks` (миграция `0002_hesitant_lockjaw.sql`), CRUD с фильтрами `leadId`/`assigneeId`/`isCompleted`, задачи удаляются каскадом вместе с лидом. Страница Tasks и блок «Next step» на канбане читают этот эндпоинт.
+- **Фильтры списков** — `leads`, `contacts`, `companies` и `tasks` принимают фильтры одним query-DTO, поэтому мусор в параметре отбивается 400, а Swagger собирает параметры из DTO.
 
 ## Что выбрасывается и переписывается
 
@@ -32,7 +35,6 @@
 - `apps/api/src/app/modules/database/seed-leads.ts` — переписать под связи.
 - `apps/api/src/app/modules/leads/leads.service.spec.ts` — 16 тестов ассертят точный SQL, после джойнов не выживет ни один.
 - `leads.service.ts`, `leads.controller.ts`, `dto/*` — переписать.
-- `FRONTEND_GUIDE.md` — Шаги 12–13 описывают миграцию на плоский статус, она отменена.
 
 ---
 
@@ -138,7 +140,7 @@ Postgres сам не даст вставить лид со статусом из
 
 ### Этап 6 — Фронт
 
-Переписать `FRONTEND_GUIDE.md` под новую модель и делать по нему. Объём работ сократился: интерфейсы `Lead`/`Status`/`Pipeline`/`Contact`/`Company` в моках уже совпадают со схемой, меняется в основном источник данных — массивы заменяются на `httpResource`. Плюс то, что от модели не зависит и остаётся в силе: auth-фича, интерсептор, guard, форма логина на Signal Forms, dev-прокси.
+**Сделано** (сделано раньше сидов, поэтому до Этапа 4 все списки в UI пустые). Моки лидов, компаний, контактов и пользователей удалены из `apps/web` — если понадобятся как источник для сидов, они есть в git-истории до этого изменения.
 
 ### Этап 7 — Публикация
 
