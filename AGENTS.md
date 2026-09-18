@@ -1,7 +1,7 @@
 <!-- nx configuration start-->
 <!-- Leave the start & end comments to automatically receive updates. -->
 
-## General Guidelines for working with Nx
+# General Guidelines for working with Nx
 
 - For navigating/exploring the workspace, invoke the `nx-workspace` skill first - it has patterns for querying projects, targets, and dependencies
 - When running tasks (for example build, lint, test, e2e, etc.), always prefer running the task through `nx` (i.e. `nx run`, `nx run-many`, `nx affected`) instead of using the underlying tooling directly
@@ -21,13 +21,3 @@
 - The `nx-generate` skill handles generator discovery internally - don't call nx_docs just to look up generator syntax
 
 <!-- nx configuration end-->
-
-# Project rules
-
-@~/.claude/rules-project/angular.md
-
-## Commits
-
-- Concise conventional commit message, one line only, max 70 characters
-- Describe the actual change, no marketing language
-- No `Co-Authored-By` trailer
