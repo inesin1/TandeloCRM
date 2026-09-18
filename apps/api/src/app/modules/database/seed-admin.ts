@@ -25,7 +25,7 @@ async function seedAdmin() {
   await db
     .insert(users)
     .values({ email, name, passwordHash })
-    .onConflictDoNothing({ target: users.email });
+    .onConflictDoUpdate({ target: users.email, set: { passwordHash } });
 
   await pool.end();
   console.log(`Admin user ready: ${email}`);
