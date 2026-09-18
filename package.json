@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
+    "dev": "nx run-many -t serve -p api web",
     "db:generate": "drizzle-kit generate --config=apps/api/drizzle.config.ts",
     "db:migrate": "drizzle-kit migrate --config=apps/api/drizzle.config.ts",
     "db:seed": "ts-node --project apps/api/tsconfig.app.json apps/api/src/app/modules/database/seed.ts",
