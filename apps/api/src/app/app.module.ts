@@ -10,6 +10,7 @@ import { PipelinesModule } from './modules/pipelines/pipelines.module';
 import { CompaniesModule } from './modules/companies/companies.module';
 import { ContactsModule } from './modules/contacts/contacts.module';
 import { CustomFieldsModule } from './modules/custom-fields/custom-fields.module';
+import { TasksModule } from './modules/tasks/tasks.module';
 import { AppController } from './app.controller';
 
 @Module({
@@ -28,6 +29,7 @@ import { AppController } from './app.controller';
     CompaniesModule,
     ContactsModule,
     LeadsModule,
+    TasksModule,
   ],
 })
 export class AppModule {}
