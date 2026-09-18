@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { SidebarModule } from 'primeng/sidebar';
 import { ButtonModule } from 'primeng/button';
 import { AvatarModule } from 'primeng/avatar';
@@ -33,6 +33,7 @@ interface NavItem {
 })
 export class App {
   protected readonly authApi = inject(AuthApi);
+  private readonly router = inject(Router);
 
   protected title = 'Tandelo';
 
@@ -45,4 +46,9 @@ export class App {
     { label: 'Analytics', icon: 'chart-bar', routerLink: '/analytics' },
     { label: 'Settings', icon: 'cog', routerLink: '/settings' },
   ];
+
+  protected logout() {
+    this.authApi.logout();
+    this.router.navigateByUrl('/login', { replaceUrl: true });
+  }
 }

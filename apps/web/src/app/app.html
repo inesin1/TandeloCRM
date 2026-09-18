@@ -55,9 +55,11 @@
           <p-sidebar-menu>
             <p-sidebar-menu-item>
               <button
+                type="button"
                 pSidebarMenuButton
                 pTooltip="John Doe"
                 tooltipPosition="right"
+                (click)="logout()"
               >
                 <span>Logout</span>
               </button>

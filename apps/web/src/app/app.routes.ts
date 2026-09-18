@@ -12,6 +12,7 @@ export const appRoutes: Route[] = [
     path: '',
     canActivate: [authGuard],
     children: [
+      { path: '', pathMatch: 'full', redirectTo: 'desktop' },
       {
         path: 'desktop',
         title: 'Desktop',

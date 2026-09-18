@@ -79,6 +79,7 @@
     },
     {
       "plugin": "@nx/vitest",
+      "exclude": ["apps/api-e2e/**/*"],
       "options": {
         "testTargetName": "test"
       }
