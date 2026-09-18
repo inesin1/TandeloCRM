@@ -4,6 +4,7 @@ import { CustomFieldsService } from '../custom-fields/custom-fields.service';
 import { DATABASE_CONNECTION, Database } from '../database/database.module';
 import { contacts } from './contact.entity';
 import { CreateContactDto } from './dto/create-contact.dto';
+import { FindContactsDto } from './dto/find-contacts.dto';
 import { UpdateContactDto } from './dto/update-contact.dto';
 
 @Injectable()
@@ -22,9 +23,7 @@ export class ContactsService {
     return contact;
   }
 
-  findAll(
-    filters: { ownerId?: number; companyId?: number; search?: string } = {},
-  ) {
+  findAll(filters: FindContactsDto = {}) {
     return this.db
       .select()
       .from(contacts)

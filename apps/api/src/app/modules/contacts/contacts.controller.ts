@@ -4,16 +4,16 @@ import {
   Delete,
   Get,
   Param,
-  ParseIntPipe,
   Post,
   Put,
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ContactsService } from './contacts.service';
 import { CreateContactDto } from './dto/create-contact.dto';
+import { FindContactsDto } from './dto/find-contacts.dto';
 import { UpdateContactDto } from './dto/update-contact.dto';
 
 @ApiTags('contacts')
@@ -29,16 +29,8 @@ export class ContactsController {
   }
 
   @Get()
-  @ApiQuery({ name: 'ownerId', required: false, type: Number })
-  @ApiQuery({ name: 'companyId', required: false, type: Number })
-  @ApiQuery({ name: 'search', required: false, type: String })
-  findAll(
-    @Query('ownerId', new ParseIntPipe({ optional: true })) ownerId?: number,
-    @Query('companyId', new ParseIntPipe({ optional: true }))
-    companyId?: number,
-    @Query('search') search?: string,
-  ) {
-    return this.contactsService.findAll({ ownerId, companyId, search });
+  findAll(@Query() filters: FindContactsDto) {
+    return this.contactsService.findAll(filters);
   }
 
   @Get(':id')

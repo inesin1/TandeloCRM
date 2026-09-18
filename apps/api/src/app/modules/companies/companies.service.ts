@@ -4,6 +4,7 @@ import { CustomFieldsService } from '../custom-fields/custom-fields.service';
 import { DATABASE_CONNECTION, Database } from '../database/database.module';
 import { companies } from './company.entity';
 import { CreateCompanyDto } from './dto/create-company.dto';
+import { FindCompaniesDto } from './dto/find-companies.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
 
 @Injectable()
@@ -22,7 +23,7 @@ export class CompaniesService {
     return company;
   }
 
-  findAll(filters: { ownerId?: number; search?: string } = {}) {
+  findAll(filters: FindCompaniesDto = {}) {
     return this.db
       .select()
       .from(companies)

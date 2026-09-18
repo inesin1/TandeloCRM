@@ -8,6 +8,7 @@ import { statuses } from '../pipelines/pipeline.entity';
 import { users } from '../users/user.entity';
 import { leadContacts, leads } from './lead.entity';
 import { CreateLeadDto } from './dto/create-lead.dto';
+import { FindLeadsDto } from './dto/find-leads.dto';
 import { UpdateLeadDto } from './dto/update-lead.dto';
 
 @Injectable()
@@ -36,14 +37,7 @@ export class LeadsService {
     });
   }
 
-  async findAll(
-    filters: {
-      ownerId?: number;
-      pipelineId?: number;
-      statusId?: number;
-      search?: string;
-    } = {},
-  ) {
+  async findAll(filters: FindLeadsDto = {}) {
     const records = await this.selectLeads(this.db).where(
       and(
         filters.ownerId !== undefined
@@ -79,6 +73,7 @@ export class LeadsService {
     return this.db.transaction(async (tx) => {
       const [lead] = await tx
         .update(leads)
+        // Keeps SET non-empty when only contactIds change, and the UPDATE is what detects a missing lead.
         .set({ ...values, updatedAt: new Date() })
         .where(eq(leads.id, leadId))
         .returning();

@@ -4,15 +4,15 @@ import {
   Delete,
   Get,
   Param,
-  ParseIntPipe,
   Post,
   Put,
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { LeadsService } from './leads.service';
 import { CreateLeadDto } from './dto/create-lead.dto';
+import { FindLeadsDto } from './dto/find-leads.dto';
 import { UpdateLeadDto } from './dto/update-lead.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
@@ -29,18 +29,8 @@ export class LeadsController {
   }
 
   @Get()
-  @ApiQuery({ name: 'ownerId', required: false, type: Number })
-  @ApiQuery({ name: 'pipelineId', required: false, type: Number })
-  @ApiQuery({ name: 'statusId', required: false, type: Number })
-  @ApiQuery({ name: 'search', required: false, type: String })
-  findAll(
-    @Query('ownerId', new ParseIntPipe({ optional: true })) ownerId?: number,
-    @Query('pipelineId', new ParseIntPipe({ optional: true }))
-    pipelineId?: number,
-    @Query('statusId', new ParseIntPipe({ optional: true })) statusId?: number,
-    @Query('search') search?: string,
-  ) {
-    return this.leadsService.findAll({ ownerId, pipelineId, statusId, search });
+  findAll(@Query() filters: FindLeadsDto) {
+    return this.leadsService.findAll(filters);
   }
 
   @Get(':id')

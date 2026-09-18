@@ -4,16 +4,16 @@ import {
   Delete,
   Get,
   Param,
-  ParseIntPipe,
   Post,
   Put,
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CompaniesService } from './companies.service';
 import { CreateCompanyDto } from './dto/create-company.dto';
+import { FindCompaniesDto } from './dto/find-companies.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
 
 @ApiTags('companies')
@@ -29,13 +29,8 @@ export class CompaniesController {
   }
 
   @Get()
-  @ApiQuery({ name: 'ownerId', required: false, type: Number })
-  @ApiQuery({ name: 'search', required: false, type: String })
-  findAll(
-    @Query('ownerId', new ParseIntPipe({ optional: true })) ownerId?: number,
-    @Query('search') search?: string,
-  ) {
-    return this.companiesService.findAll({ ownerId, search });
+  findAll(@Query() filters: FindCompaniesDto) {
+    return this.companiesService.findAll(filters);
   }
 
   @Get(':id')
