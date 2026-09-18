@@ -1,9 +1,9 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { asc, eq } from 'drizzle-orm';
 import * as argon2 from 'argon2';
 import { DATABASE_CONNECTION, Database } from '../database/database.module';
-import { userRoles } from '../access-control/access-control.entity';
-import { publicUserColumns, users, userGroups } from './user.entity';
+import { roles, userRoles } from '../access-control/access-control.entity';
+import { groups, publicUserColumns, users, userGroups } from './user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
@@ -36,8 +36,28 @@ export class UsersService {
     });
   }
 
-  findAll() {
-    return this.db.select(publicUserColumns).from(users);
+  async findAll() {
+    const [records, roleLinks, groupLinks] = await Promise.all([
+      this.db.select(publicUserColumns).from(users).orderBy(asc(users.id)),
+      this.db
+        .select({ userId: userRoles.userId, id: roles.id, name: roles.name })
+        .from(userRoles)
+        .innerJoin(roles, eq(userRoles.roleId, roles.id)),
+      this.db
+        .select({ userId: userGroups.userId, id: groups.id, name: groups.name })
+        .from(userGroups)
+        .innerJoin(groups, eq(userGroups.groupId, groups.id)),
+    ]);
+
+    return records.map((user) => ({
+      ...user,
+      roles: roleLinks
+        .filter((link) => link.userId === user.id)
+        .map(({ id, name }) => ({ id, name })),
+      groups: groupLinks
+        .filter((link) => link.userId === user.id)
+        .map(({ id, name }) => ({ id, name })),
+    }));
   }
 
   async findOne(id: string) {
