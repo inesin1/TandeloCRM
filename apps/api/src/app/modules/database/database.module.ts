@@ -14,10 +14,23 @@ export type Database = NodePgDatabase;
     {
       provide: DATABASE_CONNECTION,
       inject: [ConfigService],
-      useFactory: (configService: ConfigService<Env, true>): Database => {
+      useFactory: async (
+        configService: ConfigService<Env, true>,
+      ): Promise<Database> => {
         const pool = new Pool({
           connectionString: configService.get('DATABASE_URL', { infer: true }),
         });
+
+        try {
+          await pool.query('SELECT 1');
+        } catch (error) {
+          await pool.end();
+          throw new Error(
+            'Failed to connect to PostgreSQL. Check DATABASE_URL and database availability.',
+            { cause: error },
+          );
+        }
+
         return drizzle(pool);
       },
     },
