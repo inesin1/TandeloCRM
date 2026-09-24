@@ -61,6 +61,8 @@ const linksSql =
   'insert into "lead_contacts" ("leadId", "contactId") values ($1, $2), ($3, $4)';
 const clearSql =
   'delete from "lead_contacts" where "lead_contacts"."leadId" = $1';
+const activitySql =
+  'insert into "lead_activities" ("id", "leadId", "kind", "body", "authorId", "createdAt") values (default, $1, $2, $3, default, default)';
 
 function leadRow(value = lead): unknown[] {
   return [
@@ -259,6 +261,7 @@ describe('LeadsService', () => {
         result(),
         result([leadRow()]),
         result(),
+        result(),
         result([joinedRow()]),
         result([contactRow(), contactRow(7, { ...contact, id: 12 })]),
         result(),
@@ -283,6 +286,7 @@ describe('LeadsService', () => {
           ['Renewal', 200, 'Website', 2, 3, 4, 5, '{"priority":"high"}'],
         ),
         sqlCall(linksSql, [7, 11, 7, 12]),
+        sqlCall(activitySql, [7, 'created', 'Lead created']),
         sqlCall(idSql, [7]),
         sqlCall(
           `${contactSql} where "lead_contacts"."leadId" in ($1) order by "contacts"."id" asc`,
@@ -306,6 +310,7 @@ describe('LeadsService', () => {
         const { service, query, validate } = setup(
           result(),
           result([leadRow(record)]),
+          result(),
           result([joinedRow(record)]),
           result(),
           result(),
@@ -332,7 +337,7 @@ describe('LeadsService', () => {
             ['Renewal', 2, 3],
           ),
         );
-        expect(query).toHaveBeenCalledTimes(5);
+        expect(query).toHaveBeenCalledTimes(6);
       },
     );
 
@@ -386,10 +391,13 @@ describe('LeadsService', () => {
       };
       const { service, query, validate, release } = setup(
         result(),
+        result([joinedRow()]),
+        result([contactRow()]),
         result([leadRow(updated)]),
         result(),
         result(),
         result([joinedRow(updated)]),
+        result(),
         result(),
         result(),
       );
@@ -408,6 +416,11 @@ describe('LeadsService', () => {
       expect(validate).toHaveBeenCalledExactlyOnceWith('lead', {});
       expect(query.mock.calls).toEqual([
         sqlCall('begin'),
+        sqlCall(idSql, [7]),
+        sqlCall(
+          `${contactSql} where "lead_contacts"."leadId" in ($1) order by "contacts"."id" asc`,
+          [7],
+        ),
         sqlCall(
           `update "leads" set "name" = $1, "price" = $2, "source" = $3, "pipelineId" = $4, "statusId" = $5, "companyId" = $6, "ownerId" = $7, "customFields" = $8, "updatedAt" = $9 where "leads"."id" = $10 returning ${columns}`,
           ['Changed', 0, null, 6, 9, null, null, '{}', now.toISOString(), 7],
@@ -419,6 +432,11 @@ describe('LeadsService', () => {
           `${contactSql} where "lead_contacts"."leadId" in ($1) order by "contacts"."id" asc`,
           [7],
         ),
+        sqlCall(activitySql, [
+          7,
+          'updated',
+          'Updated: Name, Price, Source, Pipeline, Status, Responsible, Company, Contacts, Custom fields',
+        ]),
         sqlCall('commit'),
       ]);
       expect(release).toHaveBeenCalledTimes(1);
@@ -429,9 +447,12 @@ describe('LeadsService', () => {
       vi.setSystemTime(now);
       const { service, query, validate } = setup(
         result(),
+        result([joinedRow()]),
+        result([contactRow()]),
         result([leadRow()]),
         result(),
         result([joinedRow()]),
+        result(),
         result(),
         result(),
       );
@@ -440,15 +461,15 @@ describe('LeadsService', () => {
         contacts: [],
       });
       expect(query).toHaveBeenNthCalledWith(
-        2,
+        4,
         ...sqlCall(
           `update "leads" set "updatedAt" = $1 where "leads"."id" = $2 returning ${columns}`,
           [now.toISOString(), 7],
         ),
       );
-      expect(query).toHaveBeenNthCalledWith(3, ...sqlCall(clearSql, [7]));
+      expect(query).toHaveBeenNthCalledWith(5, ...sqlCall(clearSql, [7]));
       expect(query).toHaveBeenLastCalledWith(...sqlCall('commit'));
-      expect(query).toHaveBeenCalledTimes(6);
+      expect(query).toHaveBeenCalledTimes(9);
       expect(validate).not.toHaveBeenCalled();
     });
 
@@ -457,6 +478,8 @@ describe('LeadsService', () => {
       vi.setSystemTime(now);
       const { service, query, validate } = setup(
         result(),
+        result([joinedRow()]),
+        result([contactRow()]),
         result([leadRow()]),
         result([joinedRow()]),
         result([contactRow()]),
@@ -464,20 +487,22 @@ describe('LeadsService', () => {
       );
       expect(await service.update('7', { price: 0 })).toEqual(hydrated);
       expect(query).toHaveBeenNthCalledWith(
-        2,
+        4,
         ...sqlCall(
           `update "leads" set "price" = $1, "updatedAt" = $2 where "leads"."id" = $3 returning ${columns}`,
           [0, now.toISOString(), 7],
         ),
       );
-      expect(query).toHaveBeenNthCalledWith(3, ...sqlCall(idSql, [7]));
-      expect(query).toHaveBeenCalledTimes(5);
+      expect(query).toHaveBeenNthCalledWith(5, ...sqlCall(idSql, [7]));
+      expect(query).toHaveBeenCalledTimes(7);
       expect(validate).not.toHaveBeenCalled();
     });
 
     it('rolls back both changed fields and removed links when replacement fails', async () => {
       const { service, query, release } = setup(
         result(),
+        result([joinedRow()]),
+        result([contactRow()]),
         result([leadRow()]),
         result(),
         new Error('contact FK'),
@@ -486,13 +511,13 @@ describe('LeadsService', () => {
       await expect(
         service.update('7', { name: 'Changed', contactIds: [11, 12] }),
       ).rejects.toThrow();
-      expect(query).toHaveBeenNthCalledWith(3, ...sqlCall(clearSql, [7]));
+      expect(query).toHaveBeenNthCalledWith(5, ...sqlCall(clearSql, [7]));
       expect(query).toHaveBeenNthCalledWith(
-        4,
+        6,
         ...sqlCall(linksSql, [7, 11, 7, 12]),
       );
       expect(query).toHaveBeenLastCalledWith(...sqlCall('rollback'));
-      expect(query).toHaveBeenCalledTimes(5);
+      expect(query).toHaveBeenCalledTimes(7);
       expect(release).toHaveBeenCalledTimes(1);
     });
 

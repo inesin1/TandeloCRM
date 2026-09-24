@@ -7,6 +7,7 @@ import {
   Post,
   Put,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
@@ -15,6 +16,9 @@ import { CompaniesService } from './companies.service';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { FindCompaniesDto } from './dto/find-companies.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
+import { Request } from 'express';
+import { JwtPayload } from '../auth/jwt.strategy';
+import { CreateRecordNoteDto } from '../record-notes/dto/create-record-note.dto';
 
 @ApiTags('companies')
 @ApiBearerAuth()
@@ -36,6 +40,25 @@ export class CompaniesController {
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.companiesService.findOne(id);
+  }
+
+  @Get(':id/leads')
+  findLeads(@Param('id') id: string) {
+    return this.companiesService.findLeads(id);
+  }
+
+  @Get(':id/activity')
+  findActivity(@Param('id') id: string) {
+    return this.companiesService.findActivity(id);
+  }
+
+  @Post(':id/notes')
+  addNote(
+    @Param('id') id: string,
+    @Body() dto: CreateRecordNoteDto,
+    @Req() request: Request & { user: JwtPayload },
+  ) {
+    return this.companiesService.addNote(id, dto.body, request.user.sub);
   }
 
   @Put(':id')

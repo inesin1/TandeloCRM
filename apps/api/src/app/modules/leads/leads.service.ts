@@ -6,6 +6,7 @@ import { CustomFieldsService } from '../custom-fields/custom-fields.service';
 import { DATABASE_CONNECTION, Database } from '../database/database.module';
 import { statuses } from '../pipelines/pipeline.entity';
 import { users } from '../users/user.entity';
+import { leadActivities } from './lead-activity.entity';
 import { leadContacts, leads } from './lead.entity';
 import { CreateLeadDto } from './dto/create-lead.dto';
 import { FindLeadsDto } from './dto/find-leads.dto';
@@ -33,6 +34,11 @@ export class LeadsService {
             contactIds.map((contactId) => ({ leadId: lead.id, contactId })),
           );
       }
+      await tx.insert(leadActivities).values({
+        leadId: lead.id,
+        kind: 'created',
+        body: 'Lead created',
+      });
       return this.getLead(String(lead.id), tx);
     });
   }
@@ -61,6 +67,47 @@ export class LeadsService {
     return this.getLead(id, this.db);
   }
 
+  async findActivity(id: string) {
+    await this.getLead(id, this.db);
+    return this.db
+      .select({
+        id: leadActivities.id,
+        kind: leadActivities.kind,
+        body: leadActivities.body,
+        createdAt: leadActivities.createdAt,
+        author: { id: users.id, name: users.name },
+      })
+      .from(leadActivities)
+      .leftJoin(users, eq(leadActivities.authorId, users.id))
+      .where(eq(leadActivities.leadId, Number(id)))
+      .orderBy(asc(leadActivities.createdAt), asc(leadActivities.id));
+  }
+
+  async addNote(id: string, body: string, authorId: number) {
+    await this.getLead(id, this.db);
+    const [note] = await this.db
+      .insert(leadActivities)
+      .values({
+        leadId: Number(id),
+        kind: 'note',
+        body: body.trim(),
+        authorId,
+      })
+      .returning({ id: leadActivities.id });
+    const [result] = await this.db
+      .select({
+        id: leadActivities.id,
+        kind: leadActivities.kind,
+        body: leadActivities.body,
+        createdAt: leadActivities.createdAt,
+        author: { id: users.id, name: users.name },
+      })
+      .from(leadActivities)
+      .leftJoin(users, eq(leadActivities.authorId, users.id))
+      .where(eq(leadActivities.id, note.id));
+    return result;
+  }
+
   async update(id: string, dto: UpdateLeadDto) {
     if (dto.customFields !== undefined) {
       await this.customFieldsService.validate('lead', dto.customFields);
@@ -71,9 +118,9 @@ export class LeadsService {
     const { contactIds, ...values } = dto;
     const leadId = Number(id);
     return this.db.transaction(async (tx) => {
+      const previous = await this.getLead(id, tx);
       const [lead] = await tx
         .update(leads)
-        // Keeps SET non-empty when only contactIds change, and the UPDATE is what detects a missing lead.
         .set({ ...values, updatedAt: new Date() })
         .where(eq(leads.id, leadId))
         .returning();
@@ -88,7 +135,39 @@ export class LeadsService {
             .values(contactIds.map((contactId) => ({ leadId, contactId })));
         }
       }
-      return this.getLead(id, tx);
+      const updated = await this.getLead(id, tx);
+      const changed = [
+        ['name', 'Name'],
+        ['price', 'Price'],
+        ['source', 'Source'],
+        ['pipelineId', 'Pipeline'],
+        ['statusId', 'Status'],
+        ['ownerId', 'Responsible'],
+      ] as const;
+      const fields: string[] = changed
+        .filter(([key]) => previous[key] !== updated[key])
+        .map(([, label]) => label);
+      if (previous.company?.id !== updated.company?.id) fields.push('Company');
+      if (
+        previous.contacts.map((contact) => contact.id).join(',') !==
+        updated.contacts.map((contact) => contact.id).join(',')
+      ) {
+        fields.push('Contacts');
+      }
+      if (
+        JSON.stringify(previous.customFields) !==
+        JSON.stringify(updated.customFields)
+      ) {
+        fields.push('Custom fields');
+      }
+      if (fields.length) {
+        await tx.insert(leadActivities).values({
+          leadId,
+          kind: 'updated',
+          body: `Updated: ${fields.join(', ')}`,
+        });
+      }
+      return updated;
     });
   }
 
