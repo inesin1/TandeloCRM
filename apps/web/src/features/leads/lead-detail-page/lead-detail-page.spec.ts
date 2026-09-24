@@ -11,6 +11,7 @@ import { Lead } from '../lead-types';
 import { LeadsApi } from '../leads-api';
 import { PipelinesApi } from '../pipelines-api';
 import { UsersApi } from '../../settings/tabs/users-tab/users-api';
+import { TasksApi } from '../../tasks/tasks-api';
 import { LeadDetailPage } from './lead-detail-page';
 
 const existingLead: Lead = {
@@ -48,6 +49,14 @@ describe('LeadDetailPage', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         { provide: AuthApi, useValue: { isAuthenticated: () => true } },
+        {
+          provide: TasksApi,
+          useFactory: () => ({
+            tasks: httpResource(() => undefined, { defaultValue: [] }),
+            create: vi.fn(),
+            setCompleted: vi.fn(),
+          }),
+        },
         {
           provide: PipelinesApi,
           useFactory: () => ({
