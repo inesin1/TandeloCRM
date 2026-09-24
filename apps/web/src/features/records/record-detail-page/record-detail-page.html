@@ -1,0 +1,553 @@
+<div
+  class="flex min-h-[36rem] flex-col rounded-xl border border-surface-200 bg-[var(--p-content-background)] shadow-[0_1px_3px_#0001] lg:h-full lg:overflow-hidden"
+>
+  @if (invalidId()) {
+  <div class="p-5">
+    <a [routerLink]="basePath" class="text-sm text-surface-500"
+      >← All {{ kind }}s</a
+    >
+    <p-message severity="error" class="mt-3">Invalid {{ kind }} ID.</p-message>
+  </div>
+  } @else if (loadError()) {
+  <div class="p-5">
+    <a [routerLink]="basePath" class="text-sm text-surface-500"
+      >← All {{ kind }}s</a
+    >
+    <p-message severity="error" class="mt-3"
+      >The {{ kind }} could not be loaded.</p-message
+    >
+    <button
+      pButton
+      type="button"
+      severity="secondary"
+      class="mt-3"
+      (click)="retry()"
+    >
+      Try again
+    </button>
+  </div>
+  } @else if (isLoading()) {
+  <div class="p-5 text-sm text-surface-500">Loading {{ kind }}…</div>
+  } @else {
+  <div
+    class="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[minmax(19rem,22rem)_minmax(0,1fr)]"
+  >
+    <aside
+      class="flex min-h-0 flex-col border-b border-surface-200 bg-surface-50 lg:overflow-y-auto lg:border-r lg:border-b-0"
+    >
+      <div
+        class="relative z-2 shrink-0 bg-linear-to-br from-[#1b4d43] to-[#123832] px-5 pt-3.5 pb-4 text-white"
+      >
+        <div
+          class="flex items-center gap-2.5 text-xs font-medium tracking-wide text-white/60"
+        >
+          <a
+            [routerLink]="basePath"
+            class="flex size-6 items-center justify-center rounded-sm text-lg text-white hover:bg-white/15"
+            [attr.aria-label]="'All ' + kind + 's'"
+            >←</a
+          >
+          <span>{{ isNew() ? 'NEW ' + label.toUpperCase() : '#' + id() }}</span>
+        </div>
+        <div class="mt-2.5 flex items-center gap-3">
+          <span
+            class="flex size-12 shrink-0 items-center justify-center rounded-full bg-white/15 text-sm font-bold"
+            >{{ initials(draft().name) }}</span
+          >
+          @if (isEditingName()) {
+          <input
+            #titleInput
+            pInputText
+            class="w-full text-xl font-[650]"
+            [attr.aria-label]="label + ' name'"
+            [ngModel]="draft().name"
+            (ngModelChange)="updateField('name', $event)"
+            (blur)="isEditingName.set(false)"
+            (keydown.enter)="$event.preventDefault(); isEditingName.set(false)"
+          />
+          } @else {
+          <button
+            type="button"
+            class="block w-full break-words text-left text-xl leading-snug font-[650]"
+            [attr.aria-label]="'Edit ' + kind + ' name'"
+            (click)="editName()"
+          >
+            {{ draft().name }}
+            <span class="text-base font-normal text-white/60" aria-hidden="true"
+              >✎</span
+            >
+          </button>
+          }
+        </div>
+      </div>
+
+      <div class="px-5 py-3">
+        <form
+          id="recordForm"
+          #recordForm="ngForm"
+          (ngSubmit)="recordForm.valid && save()"
+        >
+          @if (kind === 'contact') {
+          <div class="detail-field">
+            <label for="record-position">Position</label>
+            <input
+              pInputText
+              id="record-position"
+              name="position"
+              class="w-full"
+              [disabled]="isSaving()"
+              [ngModel]="draft().position"
+              (ngModelChange)="updateField('position', $event)"
+            />
+          </div>
+          } @else {
+          <div class="detail-field">
+            <label for="record-industry">Industry</label>
+            <input
+              pInputText
+              id="record-industry"
+              name="industry"
+              class="w-full"
+              [disabled]="isSaving()"
+              [ngModel]="draft().industry"
+              (ngModelChange)="updateField('industry', $event)"
+            />
+          </div>
+          <div class="detail-field">
+            <label for="record-address">Address</label>
+            <input
+              pInputText
+              id="record-address"
+              name="address"
+              class="w-full"
+              [disabled]="isSaving()"
+              [ngModel]="draft().address"
+              (ngModelChange)="updateField('address', $event)"
+            />
+          </div>
+          }
+          <div class="detail-field">
+            <label for="record-email">Email</label>
+            <input
+              pInputText
+              id="record-email"
+              name="email"
+              type="email"
+              class="w-full"
+              [disabled]="isSaving()"
+              [ngModel]="draft().email"
+              (ngModelChange)="updateField('email', $event)"
+            />
+          </div>
+          <div class="detail-field">
+            <label for="record-phone">Phone</label>
+            <input
+              pInputText
+              id="record-phone"
+              name="phone"
+              type="tel"
+              class="w-full"
+              [disabled]="isSaving()"
+              [ngModel]="draft().phone"
+              (ngModelChange)="updateField('phone', $event)"
+            />
+          </div>
+          <div class="detail-field">
+            <label for="record-responsible">Responsible</label>
+            <p-select
+              [options]="users.value()"
+              optionLabel="name"
+              optionValue="id"
+              name="ownerId"
+              inputId="record-responsible"
+              [disabled]="isSaving()"
+              [ngModel]="draft().ownerId"
+              (ngModelChange)="updateField('ownerId', $event)"
+              class="w-full"
+              placeholder="Unassigned"
+              showClear
+            />
+          </div>
+          @for (field of customFields.value(); track field.id) {
+          <div class="detail-field">
+            <label [for]="'record-custom-' + field.id"
+              >{{ field.label }}{{ field.isRequired ? ' *' : '' }}</label
+            >
+            @switch (field.type) { @case ('text') {
+            <input
+              pInputText
+              class="w-full"
+              [id]="'record-custom-' + field.id"
+              [name]="'custom-' + field.id"
+              [disabled]="isSaving()"
+              [required]="field.isRequired"
+              [ngModel]="customFieldValue(field)"
+              (ngModelChange)="updateCustomField(field, $event)"
+            />
+            } @case ('number') {
+            <p-inputnumber
+              class="w-full"
+              inputStyleClass="w-full"
+              [inputId]="'record-custom-' + field.id"
+              [name]="'custom-' + field.id"
+              [disabled]="isSaving()"
+              [required]="field.isRequired"
+              [ngModel]="customFieldValue(field)"
+              (ngModelChange)="updateCustomField(field, $event)"
+            />
+            } @case ('date') {
+            <input
+              type="date"
+              class="detail-native-input"
+              [id]="'record-custom-' + field.id"
+              [name]="'custom-' + field.id"
+              [disabled]="isSaving()"
+              [required]="field.isRequired"
+              [ngModel]="customFieldValue(field)"
+              (ngModelChange)="updateCustomField(field, $event)"
+            />
+            } @case ('boolean') {
+            <p-select
+              class="w-full"
+              [inputId]="'record-custom-' + field.id"
+              [name]="'custom-' + field.id"
+              [options]="booleanOptions"
+              optionLabel="label"
+              optionValue="value"
+              showClear
+              [disabled]="isSaving()"
+              [required]="field.isRequired"
+              placeholder="Choose"
+              [ngModel]="customFieldValue(field)"
+              (ngModelChange)="updateCustomField(field, $event)"
+            />
+            } @case ('select') {
+            <p-select
+              class="w-full"
+              [inputId]="'record-custom-' + field.id"
+              [name]="'custom-' + field.id"
+              [options]="field.options ?? []"
+              showClear
+              [disabled]="isSaving()"
+              [required]="field.isRequired"
+              placeholder="Choose"
+              [ngModel]="customFieldValue(field)"
+              (ngModelChange)="updateCustomField(field, $event)"
+            />
+            } }
+          </div>
+          }
+        </form>
+        @if (saveError()) {
+        <p-message severity="error" class="mt-3">{{ saveError() }}</p-message> }
+      </div>
+
+      <div
+        class="mt-1 border-t border-surface-200 bg-[var(--p-content-background)] p-5"
+      >
+        @if (kind === 'contact') {
+        <h2 class="mb-2 text-[0.8rem] font-semibold text-surface-700">
+          Company
+        </h2>
+        @if (selectedCompany(); as company) {
+        <div
+          class="mb-2 flex min-h-[4.5rem] items-center gap-3 rounded-lg border border-surface-200 p-2.5"
+        >
+          <span
+            class="flex size-12 shrink-0 items-center justify-center rounded-full bg-surface-100 text-xs font-bold text-[var(--p-primary-700)]"
+            >{{ initials(company.name) }}</span
+          >
+          <a
+            class="min-w-0 flex-1 truncate text-sm font-semibold text-surface-800 hover:underline"
+            [routerLink]="['/companies', company.id]"
+            >{{ company.name }}</a
+          >
+          <button
+            type="button"
+            class="size-6 shrink-0 text-xl leading-none text-surface-400 hover:text-surface-800"
+            aria-label="Remove company"
+            [disabled]="isSaving()"
+            (click)="updateField('companyId', null)"
+          >
+            ×
+          </button>
+        </div>
+        }
+        <select
+          class="detail-native-input"
+          aria-label="Add or change company"
+          [disabled]="isSaving()"
+          (change)="updateCompany($event)"
+        >
+          <option value="">
+            {{ selectedCompany() ? 'Change company' : 'Add company' }}
+          </option>
+          @for (company of companies.value(); track company.id) {
+          <option [value]="company.id">{{ company.name }}</option>
+          }
+        </select>
+        } @else {
+        <h2 class="mb-2 text-[0.8rem] font-semibold text-surface-700">
+          Contacts
+        </h2>
+        @if (contactLinkError()) {
+        <p-message severity="error" class="mb-3"
+          >{{ contactLinkError() }}</p-message
+        >
+        } @for (contact of companyContacts(); track contact.id) {
+        <div
+          class="mb-2 flex min-h-[4.5rem] items-center gap-3 rounded-lg border border-surface-200 p-2.5"
+        >
+          <span
+            class="flex size-12 shrink-0 items-center justify-center rounded-full bg-surface-100 text-xs font-bold text-[var(--p-primary-700)]"
+            >{{ initials(contact.name) }}</span
+          >
+          <a
+            class="min-w-0 flex-1 hover:underline"
+            [routerLink]="['/contacts', contact.id]"
+          >
+            <span class="block truncate text-sm font-semibold text-surface-800"
+              >{{ contact.name }}</span
+            >
+            <span class="block truncate text-xs text-surface-500"
+              >{{ contact.position || contact.email || 'Contact' }}</span
+            >
+          </a>
+          <button
+            type="button"
+            class="size-6 shrink-0 text-xl leading-none text-surface-400 hover:text-surface-800"
+            [attr.aria-label]="'Remove ' + contact.name"
+            [disabled]="busyContactId() !== null"
+            (click)="removeCompanyContact(contact)"
+          >
+            ×
+          </button>
+        </div>
+        } @empty {
+        <p class="text-sm text-surface-500">
+          No contacts linked to this company.
+        </p>
+        }
+        <select
+          class="detail-native-input"
+          aria-label="Link a contact"
+          [disabled]="isNew() || busyContactId() !== null || !availableCompanyContacts().length"
+          (change)="addCompanyContact($event)"
+        >
+          <option value="">Link a contact</option>
+          @for (contact of availableCompanyContacts(); track contact.id) {
+          <option [value]="contact.id">{{ contact.name }}</option>
+          }
+        </select>
+        }
+      </div>
+    </aside>
+
+    <section
+      class="flex min-h-0 min-w-0 flex-col px-6 py-5 max-lg:min-h-[30rem]"
+    >
+      <div
+        class="flex items-center justify-between gap-4 border-b border-surface-200 pb-4 max-[480px]:flex-wrap"
+      >
+        <h2 class="text-base font-semibold text-surface-900">Activity</h2>
+        @if (showActions()) {
+        <div
+          class="flex items-center gap-2 max-[480px]:w-full max-[480px]:justify-end"
+        >
+          <button
+            pButton
+            severity="secondary"
+            outlined
+            size="small"
+            type="button"
+            [disabled]="isSaving()"
+            (click)="cancel()"
+          >
+            Cancel
+          </button>
+          <button
+            pButton
+            size="small"
+            type="submit"
+            form="recordForm"
+            [disabled]="!canSave()"
+          >
+            {{ isSaving() ? 'Saving…' : isNew() ? 'Create ' + kind : 'Save
+            changes' }}
+          </button>
+        </div>
+        }
+      </div>
+      @if (isNew()) {
+      <div class="flex flex-1 items-center justify-center p-8 text-center">
+        <p class="max-w-sm text-sm text-surface-500">
+          Create the {{ kind }} to link leads and add notes.
+        </p>
+      </div>
+      } @else {
+      <div class="min-h-0 flex-1 overflow-y-auto pt-2">
+        <div class="border-b border-surface-200 pt-3 pb-5">
+          <div class="mb-3 flex items-center justify-between gap-3">
+            <h3 class="text-sm font-semibold text-surface-800">Linked leads</h3>
+            <span class="text-xs text-surface-500"
+              >{{ links.value().length }}</span
+            >
+          </div>
+          @if (linkError()) {
+          <p-message severity="error" class="mb-3">{{ linkError() }}</p-message>
+          } @if (links.error()) {
+          <p-message severity="error">Could not load linked leads.</p-message>
+          <button
+            pButton
+            type="button"
+            severity="secondary"
+            class="mt-2"
+            (click)="links.reload()"
+          >
+            Retry
+          </button>
+          } @else if (links.isLoading()) {
+          <p class="text-sm text-surface-500">Loading linked leads…</p>
+          } @else { @for (lead of links.value(); track lead.id) {
+          <div
+            class="mb-2 flex min-h-11 items-center gap-2.5 rounded-lg border border-surface-200 px-3 py-2"
+          >
+            <span
+              class="size-2.5 shrink-0 rounded-full"
+              [style.background-color]="lead.status.color"
+            ></span>
+            <a
+              [routerLink]="['/leads', lead.id]"
+              class="min-w-0 flex-1 hover:underline"
+            >
+              <span class="block truncate text-sm font-medium text-surface-800"
+                >{{ lead.name }}</span
+              >
+              <span class="block text-xs text-surface-500"
+                >#{{ lead.id }} · {{ lead.price | currency: 'USD' }}</span
+              >
+            </a>
+            <span class="text-xs text-surface-500">{{ lead.status.name }}</span>
+            <button
+              type="button"
+              class="size-6 shrink-0 text-xl leading-none text-surface-400 hover:text-surface-800"
+              [attr.aria-label]="'Remove ' + lead.name"
+              [disabled]="busyLeadId() !== null || leads.isLoading() || !!leads.error()"
+              (click)="removeLead(lead.id)"
+            >
+              ×
+            </button>
+          </div>
+          } @empty {
+          <p class="mb-3 text-sm text-surface-500">No leads linked yet.</p>
+          } } @if (leads.error()) {
+          <p-message severity="error"
+            >Could not load available leads.</p-message
+          >
+          <button
+            pButton
+            type="button"
+            severity="secondary"
+            class="mt-2"
+            (click)="leads.reload()"
+          >
+            Retry
+          </button>
+          } @else {
+          <select
+            class="detail-native-input mt-3"
+            aria-label="Link a lead"
+            [disabled]="busyLeadId() !== null || links.isLoading() || !!links.error() || leads.isLoading() || !availableLeads().length"
+            (change)="addLead($event)"
+          >
+            <option value="">Link a lead</option>
+            @for (lead of availableLeads(); track lead.id) {
+            <option [value]="lead.id">{{ lead.name }}</option>
+            }
+          </select>
+          }
+        </div>
+        <div class="pt-6">
+          <h3 class="mb-4 text-sm font-semibold text-surface-800">History</h3>
+          @if (activity.error()) {
+          <p-message severity="error">Could not load activity.</p-message>
+          <button
+            pButton
+            type="button"
+            severity="secondary"
+            class="mt-2"
+            (click)="activity.reload()"
+          >
+            Retry
+          </button>
+          } @else if (activity.isLoading()) {
+          <p class="text-sm text-surface-500">Loading activity…</p>
+          } @else {
+          <div class="my-4 ml-1.5 border-l border-surface-200">
+            @for (entry of activity.value(); track entry.id) {
+            <div class="relative pb-5 pl-5">
+              <span
+                class="absolute top-1 -left-[0.35rem] size-2.5 rounded-full border-2 border-[var(--p-primary-700)] bg-[var(--p-content-background)]"
+                [style.background-color]="entry.kind === 'note' ? 'var(--p-primary-700)' : 'var(--p-content-background)'"
+              ></span>
+              <div class="min-w-0">
+                @if (entry.lead; as lead) {
+                <a
+                  [routerLink]="['/leads', lead.id]"
+                  class="mb-1 inline-block max-w-full truncate rounded-md bg-surface-100 px-2 py-1 text-xs font-semibold text-[var(--p-primary-700)] hover:underline"
+                  >Lead · #{{ lead.id }} · {{ lead.name }}</a
+                >
+                }
+                <p
+                  class="whitespace-pre-wrap break-words text-sm text-surface-800"
+                >
+                  {{ entry.body }}
+                </p>
+                <p class="mt-1 text-xs text-surface-400">
+                  {{ entry.author?.name ? entry.author.name + ' · ' : '' }}{{
+                  entry.createdAt | date: 'medium' }}
+                </p>
+              </div>
+            </div>
+            }
+          </div>
+          }
+        </div>
+      </div>
+      <form
+        class="mt-4 shrink-0 rounded-lg border border-surface-200 bg-surface-50 p-3.5"
+        (ngSubmit)="postNote()"
+      >
+        <label for="record-note" class="text-xs font-medium text-surface-600"
+          >Note</label
+        >
+        <textarea
+          id="record-note"
+          name="body"
+          rows="2"
+          maxlength="5000"
+          class="detail-native-input mt-1 resize-y"
+          placeholder="Add a note…"
+          [disabled]="isPostingNote()"
+          [ngModel]="noteText()"
+          (ngModelChange)="noteText.set($event)"
+        ></textarea>
+        <div class="mt-2 flex items-center justify-between gap-3">
+          @if (noteError()) {
+          <span class="text-xs text-red-600">{{ noteError() }}</span> }
+          <button
+            pButton
+            type="submit"
+            size="small"
+            class="ml-auto"
+            [disabled]="!noteText().trim() || isPostingNote()"
+          >
+            {{ isPostingNote() ? 'Posting…' : 'Add note' }}
+          </button>
+        </div>
+      </form>
+      }
+    </section>
+  </div>
+  }
+</div>

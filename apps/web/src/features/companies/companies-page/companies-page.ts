@@ -1,4 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { SelectModule } from 'primeng/select';
@@ -33,6 +34,7 @@ export interface CompanyRow extends Company {
     PIcon,
     PageHeader,
     UserChip,
+    RouterLink,
   ],
 })
 export class CompaniesPage {

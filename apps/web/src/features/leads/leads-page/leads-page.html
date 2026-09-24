@@ -44,9 +44,13 @@
         <span>Import</span>
       </button>
 
-      <button pButton>
+      <button
+        pButton
+        routerLink="/leads/new"
+        [queryParams]="{ pipelineId: selectedPipeline()?.id }"
+      >
         <svg data-p-icon="plus"></svg>
-        <span>Lead</span>
+        <span>New lead</span>
       </button>
     </ng-container>
   </app-page-header>
@@ -114,7 +118,7 @@
         (ngModelChange)="statusFilter.set($event)"
         optionLabel="name"
         optionValue="id"
-        placeholder="Stage"
+        placeholder="Status"
         showClear
         class="w-48"
       />

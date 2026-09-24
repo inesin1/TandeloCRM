@@ -1,5 +1,6 @@
 import { Component, signal, computed, effect, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { SelectModule } from 'primeng/select';
 import { Plus } from '@primeicons/angular/plus';
@@ -10,7 +11,8 @@ import { InputIconModule } from 'primeng/inputicon';
 import { MessageModule } from 'primeng/message';
 import { ProgressBar } from 'primeng/progressbar';
 import { PIcon } from '@primeicons/angular/p-icon';
-import { Lead, LeadsApi } from '../leads-api';
+import { LeadsApi } from '../leads-api';
+import { Lead } from '../lead-types';
 import { PipelinesApi } from '../pipelines-api';
 import { UsersApi } from '../../settings/tabs/users-tab/users-api';
 import { TasksApi } from '../../tasks/tasks-api';
@@ -25,6 +27,7 @@ import { PageHeader } from '../../../shared/page-header';
     ButtonModule,
     SelectModule,
     FormsModule,
+    RouterLink,
     Plus,
     SelectButtonModule,
     InputTextModule,
@@ -181,7 +184,7 @@ export class LeadsPage {
   private toRow(lead: Lead): LeadRow {
     return {
       ...lead,
-      code: `DL-${String(lead.id).padStart(4, '0')}`,
+      code: `#${lead.id}`,
       priceLabel: this.priceFormat.format(lead.price),
       clientName:
         lead.company?.name ?? lead.contacts.at(0)?.name ?? 'No client',

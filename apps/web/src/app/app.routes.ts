@@ -30,6 +30,19 @@ export const appRoutes: Route[] = [
           ),
       },
       {
+        path: 'leads/:id',
+        title: 'Lead',
+        canDeactivate: [
+          (
+            component: import('../features/leads/lead-detail-page/lead-detail-page').LeadDetailPage,
+          ) => component.canLeave(),
+        ],
+        loadComponent: () =>
+          import('../features/leads/lead-detail-page/lead-detail-page').then(
+            (m) => m.LeadDetailPage,
+          ),
+      },
+      {
         path: 'contacts',
         title: 'Contacts',
         loadComponent: () =>
@@ -38,11 +51,39 @@ export const appRoutes: Route[] = [
           ),
       },
       {
+        path: 'contacts/:id',
+        title: 'Contact',
+        data: { recordKind: 'contact' },
+        canDeactivate: [
+          (
+            component: import('../features/records/record-detail-page/record-detail-page').RecordDetailPage,
+          ) => component.canLeave(),
+        ],
+        loadComponent: () =>
+          import('../features/records/record-detail-page/record-detail-page').then(
+            (m) => m.RecordDetailPage,
+          ),
+      },
+      {
         path: 'companies',
         title: 'Companies',
         loadComponent: () =>
           import('../features/companies/companies-page/companies-page').then(
             (m) => m.CompaniesPage,
+          ),
+      },
+      {
+        path: 'companies/:id',
+        title: 'Company',
+        data: { recordKind: 'company' },
+        canDeactivate: [
+          (
+            component: import('../features/records/record-detail-page/record-detail-page').RecordDetailPage,
+          ) => component.canLeave(),
+        ],
+        loadComponent: () =>
+          import('../features/records/record-detail-page/record-detail-page').then(
+            (m) => m.RecordDetailPage,
           ),
       },
       {

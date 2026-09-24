@@ -1,9 +1,12 @@
 import { Component, input } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { PIcon } from '@primeicons/angular/p-icon';
 import { LeadCard, LeadCardVm } from '../lead-card/lead-card';
 import { ButtonModule } from 'primeng/button';
 
 export interface BoardColumnVm {
+  id: number;
+  pipelineId: number;
   name: string;
   color: string;
   totalLabel: string;
@@ -17,7 +20,7 @@ export interface BoardColumnVm {
     class:
       'flex h-full flex-col shrink-0 w-80 rounded-xl border border-surface-200 bg-surface-50 p-2',
   },
-  imports: [PIcon, LeadCard, ButtonModule],
+  imports: [PIcon, LeadCard, ButtonModule, RouterLink],
 })
 export class BoardColumn {
   readonly column = input.required<BoardColumnVm>();

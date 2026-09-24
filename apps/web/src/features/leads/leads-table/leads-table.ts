@@ -4,7 +4,7 @@ import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { TableModule } from 'primeng/table';
 import { PIcon } from '@primeicons/angular/p-icon';
-import { Lead } from '../leads-api';
+import { Lead } from '../lead-types';
 import { Task } from '../../tasks/tasks-api';
 import { UserChip } from '../../../shared/user-chip';
 

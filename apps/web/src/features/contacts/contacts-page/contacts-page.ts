@@ -1,4 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { SelectModule } from 'primeng/select';
@@ -33,6 +34,7 @@ export interface ContactRow extends Contact {
     Plus,
     PIcon,
     PageHeader,
+    RouterLink,
   ],
 })
 export class ContactsPage {
@@ -45,8 +47,7 @@ export class ContactsPage {
   protected readonly selectedContacts = signal<ContactRow[]>([]);
 
   protected readonly loadError = computed(
-    () =>
-      this.contacts.error() ?? this.companies.error() ?? this.users.error(),
+    () => this.contacts.error() ?? this.companies.error() ?? this.users.error(),
   );
 
   protected readonly rows = computed(() => {

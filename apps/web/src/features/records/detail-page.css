@@ -1,0 +1,37 @@
+.detail-field {
+  display: grid;
+  grid-template-columns: 5.8rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.7rem;
+  min-height: 2.7rem;
+  padding: 0.25rem 0;
+}
+
+.detail-field > label {
+  color: var(--p-surface-500);
+  font-size: 0.78rem;
+  line-height: 1.2;
+}
+
+.detail-field :is(input, select) {
+  min-width: 0;
+}
+
+.detail-native-input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 2.35rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--p-surface-300);
+  border-radius: 0.4rem;
+  background: var(--p-content-background);
+  color: var(--p-surface-800);
+  font: inherit;
+  font-size: 0.875rem;
+}
+
+.detail-native-input:focus-visible {
+  outline: 2px solid var(--p-primary-700);
+  outline-offset: 1px;
+}

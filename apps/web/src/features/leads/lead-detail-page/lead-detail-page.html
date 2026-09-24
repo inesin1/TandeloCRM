@@ -1,0 +1,639 @@
+<div
+  class="flex min-h-[36rem] flex-col rounded-xl border border-surface-200 bg-[var(--p-content-background)] shadow-[0_1px_3px_#0001] lg:h-full lg:overflow-hidden"
+>
+  @if (invalidId()) {
+  <div class="p-5">
+    <a routerLink="/leads" class="text-sm text-surface-500">← All leads</a>
+    <p-message severity="error" class="mt-3">Invalid lead ID.</p-message>
+  </div>
+  } @else if (loadError()) {
+  <div class="p-5">
+    <a routerLink="/leads" class="text-sm text-surface-500">← All leads</a>
+    <p-message severity="error"
+      >The lead details could not be loaded.</p-message
+    >
+    <button
+      pButton
+      type="button"
+      severity="secondary"
+      class="mt-3"
+      (click)="retry()"
+    >
+      Try again
+    </button>
+  </div>
+  } @else if (isLoading()) {
+  <div class="p-5 text-sm text-surface-500">Loading lead…</div>
+  } @else {
+  <div
+    class="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[minmax(19rem,22rem)_minmax(0,1fr)]"
+  >
+    <aside
+      class="flex min-h-0 flex-col border-b border-surface-200 bg-surface-50 lg:overflow-y-auto lg:border-r lg:border-b-0"
+    >
+      <div
+        class="relative z-2 shrink-0 bg-linear-to-br from-[#1b4d43] to-[#123832] px-5 pt-3.5 pb-4 text-white"
+      >
+        <a
+          routerLink="/leads"
+          class="flex size-6 items-center justify-center rounded-sm text-lg text-white hover:bg-white/15"
+          aria-label="All leads"
+          >←</a
+        >
+
+        @if (isEditingName()) {
+        <input
+          #titleInput
+          pInputText
+          class="my-0.5 mb-2 w-full text-xl font-[650]"
+          aria-label="Lead name"
+          [ngModel]="draft().name"
+          (ngModelChange)="updateField('name', $event)"
+          (blur)="isEditingName.set(false)"
+          (keydown.enter)="$event.preventDefault(); isEditingName.set(false)"
+        />
+        } @else {
+        <button
+          type="button"
+          class="block w-full break-words py-0.5 pb-2 text-left text-xl leading-snug font-[650]"
+          aria-label="Edit lead name"
+          (click)="editName()"
+        >
+          {{ draft().name }}
+          <span class="text-base font-normal text-white/60" aria-hidden="true">
+            ✎
+          </span>
+        </button>
+        }
+
+        <div
+          class="flex items-center gap-2.5 text-xs font-medium tracking-wide text-white/60"
+        >
+          <span>{{ isNew() ? 'NEW LEAD' : '#' + id() }}</span>
+        </div>
+
+        <details #statusMenu class="relative">
+          <summary
+            class="status-summary flex cursor-pointer list-none items-center justify-between gap-3"
+          >
+            <span class="min-w-0">
+              <span class="block truncate text-xs text-white/60">
+                {{ selectedPipeline()?.name ?? 'Choose pipeline' }}</span
+              >
+              <span class="block truncate text-sm font-semibold">
+                {{ selectedStatus()?.name ?? 'Choose status' }}</span
+              >
+            </span>
+            <span class="text-white/70" aria-hidden="true">⌄</span>
+          </summary>
+          <div
+            class="absolute inset-x-0 top-[calc(100%+0.75rem)] z-10 max-h-[22rem] overflow-y-auto rounded-lg border border-surface-200 bg-[var(--p-content-background)] p-3 text-surface-800 shadow-[0_12px_30px_#0003]"
+          >
+            <label
+              for="lead-pipeline"
+              class="mb-1 block text-xs font-medium text-surface-500"
+            >
+              Pipeline</label
+            >
+            <p-select
+              [options]="pipelines.value()"
+              optionLabel="name"
+              optionValue="id"
+              inputId="lead-pipeline"
+              [disabled]="isSaving()"
+              [ngModel]="draft().pipelineId"
+              (ngModelChange)="onPipelineChange($event)"
+              class="mb-2 w-full"
+              placeholder="Choose pipeline"
+            />
+            @if (statuses.error()) {
+            <p-message severity="error">Could not load statuses.</p-message>
+            <button
+              pButton
+              type="button"
+              severity="secondary"
+              (click)="statuses.reload()"
+            >
+              Retry
+            </button>
+            } @else if (statuses.isLoading()) {
+            <p class="py-3 text-sm text-surface-500">Loading statuses…</p>
+            } @else { @for (status of statuses.value(); track status.id) {
+            <button
+              type="button"
+              class="flex w-full items-center gap-2.5 rounded-md px-2 py-2.5 text-left text-sm hover:bg-surface-100"
+              [class.bg-surface-100]="draft().statusId === status.id"
+              [disabled]="isSaving()"
+              (click)="updateField('statusId', status.id); statusMenu.open = false"
+            >
+              <span
+                class="size-2.5 shrink-0 rounded-full"
+                [style.background-color]="status.color"
+              ></span>
+              <span class="truncate">{{ status.name }}</span>
+              @if (draft().statusId === status.id) {
+              <span class="ml-auto">✓</span> }
+            </button>
+            } @empty {
+            <p class="py-3 text-sm text-surface-500">
+              No statuses in this pipeline.
+            </p>
+            } }
+          </div>
+        </details>
+        <div
+          class="mt-3 h-1 overflow-hidden rounded-full bg-white/15"
+          aria-hidden="true"
+        >
+          <span
+            class="block h-full bg-[#9bddbe] transition-[width] duration-200"
+            [style.width.%]="statusProgress()"
+          ></span>
+        </div>
+      </div>
+
+      <div class="px-5 py-3">
+        <form
+          id="leadForm"
+          #leadForm="ngForm"
+          (ngSubmit)="leadForm.valid && save()"
+        >
+          <div class="detail-field">
+            <label for="lead-price">Price</label>
+            <p-inputnumber
+              [ngModel]="draft().price"
+              (ngModelChange)="updateField('price', $event)"
+              name="price"
+              inputId="lead-price"
+              [disabled]="isSaving()"
+              [min]="0"
+              [minFractionDigits]="0"
+              [maxFractionDigits]="0"
+              mode="currency"
+              currency="USD"
+              locale="en-US"
+              class="w-full"
+              inputStyleClass="w-full"
+              placeholder="Enter price"
+            />
+          </div>
+          <div class="detail-field">
+            <label for="lead-responsible">Responsible</label>
+            <p-select
+              [options]="users.value()"
+              optionLabel="name"
+              optionValue="id"
+              name="ownerId"
+              inputId="lead-responsible"
+              [disabled]="isSaving()"
+              [ngModel]="draft().ownerId"
+              (ngModelChange)="updateField('ownerId', $event)"
+              class="w-full"
+              placeholder="Unassigned"
+              showClear
+            />
+          </div>
+          @for (field of customFields.value(); track field.id) {
+          <div class="detail-field">
+            <label [for]="'lead-custom-' + field.id"
+              >{{ field.label }}{{ field.isRequired ? ' *' : '' }}</label
+            >
+            @switch (field.type) { @case ('text') {
+            <input
+              pInputText
+              class="w-full"
+              [id]="'lead-custom-' + field.id"
+              [name]="'custom-' + field.id"
+              [disabled]="isSaving()"
+              [required]="field.isRequired"
+              [ngModel]="customFieldValue(field)"
+              (ngModelChange)="updateCustomField(field, $event)"
+            />
+            } @case ('number') {
+            <p-inputnumber
+              class="w-full"
+              inputStyleClass="w-full"
+              [inputId]="'lead-custom-' + field.id"
+              [name]="'custom-' + field.id"
+              [disabled]="isSaving()"
+              [required]="field.isRequired"
+              [ngModel]="customFieldValue(field)"
+              (ngModelChange)="updateCustomField(field, $event)"
+            />
+            } @case ('date') {
+            <input
+              type="date"
+              class="detail-native-input"
+              [id]="'lead-custom-' + field.id"
+              [name]="'custom-' + field.id"
+              [disabled]="isSaving()"
+              [required]="field.isRequired"
+              [ngModel]="customFieldValue(field)"
+              (ngModelChange)="updateCustomField(field, $event)"
+            />
+            } @case ('boolean') {
+            <p-select
+              class="w-full"
+              [inputId]="'lead-custom-' + field.id"
+              [name]="'custom-' + field.id"
+              [options]="booleanOptions"
+              optionLabel="label"
+              optionValue="value"
+              showClear
+              [disabled]="isSaving()"
+              [required]="field.isRequired"
+              placeholder="Choose"
+              [ngModel]="customFieldValue(field)"
+              (ngModelChange)="updateCustomField(field, $event)"
+            />
+            } @case ('select') {
+            <p-select
+              class="w-full"
+              [inputId]="'lead-custom-' + field.id"
+              [name]="'custom-' + field.id"
+              [options]="field.options ?? []"
+              showClear
+              [disabled]="isSaving()"
+              [required]="field.isRequired"
+              placeholder="Choose"
+              [ngModel]="customFieldValue(field)"
+              (ngModelChange)="updateCustomField(field, $event)"
+            />
+            } }
+          </div>
+          }
+        </form>
+        @if (statuses.error()) {
+        <p-message severity="error" class="mt-3"
+          >Could not load statuses.</p-message
+        >
+        } @else if (draft().pipelineId && !statuses.isLoading() &&
+        !statuses.value().length) {
+        <p-message severity="warn" class="mt-3"
+          >A status is required to save this lead.</p-message
+        >
+        } @if (saved()) {
+        <p-message severity="success" class="mt-3">Changes saved.</p-message> }
+        @if (saveError()) {
+        <p-message severity="error" class="mt-3">{{ saveError() }}</p-message> }
+      </div>
+
+      <div
+        class="mt-1 border-t border-surface-200 bg-[var(--p-content-background)] p-5"
+      >
+        <h2 class="mb-2 text-[0.8rem] font-semibold text-surface-700">
+          Company
+        </h2>
+        @if (selectedCompany(); as company) {
+        <div
+          class="mb-2 flex min-h-[4.5rem] items-center gap-3 rounded-lg border border-surface-200 p-2.5"
+        >
+          <span
+            class="flex size-12 shrink-0 items-center justify-center rounded-full bg-surface-100 text-xs font-bold text-[var(--p-primary-700)]"
+            >{{ initials(company.name) }}</span
+          >
+          <div class="min-w-0 flex-1">
+            <a
+              [routerLink]="['/companies', company.id]"
+              class="block truncate text-sm font-semibold text-surface-800 hover:underline"
+            >
+              {{ company.name }}
+            </a>
+            <div class="truncate text-xs text-surface-500">
+              {{ company.phone || company.email || 'Company' }}
+            </div>
+          </div>
+          <button
+            type="button"
+            class="size-6 shrink-0 text-xl leading-none text-surface-400 hover:text-surface-800"
+            aria-label="Remove company"
+            [disabled]="isSaving()"
+            (click)="updateField('companyId', null)"
+          >
+            ×
+          </button>
+        </div>
+        }
+        <select
+          class="detail-native-input"
+          aria-label="Add or change company"
+          [disabled]="isSaving()"
+          (change)="changeCompany($event)"
+        >
+          <option value="">
+            {{ selectedCompany() ? 'Change company' : 'Add company' }}
+          </option>
+          @for (company of companies.value(); track company.id) {
+          <option [value]="company.id">{{ company.name }}</option>
+          }
+        </select>
+
+        <h2 class="mt-5 mb-2 text-[0.8rem] font-semibold text-surface-700">
+          Contacts
+        </h2>
+        @for (contact of selectedContacts(); track contact.id) {
+        <div
+          class="mb-2 flex min-h-[4.5rem] items-center gap-3 rounded-lg border border-surface-200 p-2.5"
+        >
+          <span
+            class="flex size-12 shrink-0 items-center justify-center rounded-full bg-surface-100 text-xs font-bold text-[var(--p-primary-700)]"
+            >{{ initials(contact.name) }}</span
+          >
+          <div class="min-w-0 flex-1">
+            <a
+              [routerLink]="['/contacts', contact.id]"
+              class="block truncate text-sm font-semibold text-surface-800 hover:underline"
+            >
+              {{ contact.name }}
+            </a>
+            <div class="truncate text-xs text-surface-500">
+              {{ contact.position || contact.phone || contact.email || 'Contact'
+              }}
+            </div>
+          </div>
+          <button
+            type="button"
+            class="size-6 shrink-0 text-xl leading-none text-surface-400 hover:text-surface-800"
+            [attr.aria-label]="'Remove ' + contact.name"
+            [disabled]="isSaving()"
+            (click)="removeContact(contact.id)"
+          >
+            ×
+          </button>
+        </div>
+        }
+        <select
+          class="detail-native-input"
+          aria-label="Add contact"
+          [disabled]="isSaving() || !availableContacts().length"
+          (change)="addContact($event)"
+        >
+          <option value="">Add contact</option>
+          @for (contact of availableContacts(); track contact.id) {
+          <option [value]="contact.id">{{ contact.name }}</option>
+          }
+        </select>
+      </div>
+    </aside>
+
+    <section
+      class="flex min-h-0 min-w-0 flex-col px-6 py-5 max-lg:min-h-[30rem]"
+    >
+      <div
+        class="flex items-center justify-between gap-4 border-b border-surface-200 pb-4 max-[480px]:flex-wrap"
+      >
+        <h2 class="text-base font-semibold text-surface-900">Activity</h2>
+        @if (showActions()) {
+        <div
+          class="flex items-center gap-2 max-[480px]:w-full max-[480px]:justify-end"
+        >
+          <button
+            pButton
+            severity="secondary"
+            outlined
+            size="small"
+            type="button"
+            [disabled]="isSaving()"
+            (click)="cancel()"
+          >
+            Cancel
+          </button>
+          <button
+            pButton
+            size="small"
+            type="submit"
+            form="leadForm"
+            [disabled]="!canSave()"
+          >
+            {{ isSaving() ? 'Saving…' : isNew() ? 'Create lead' : 'Save changes'
+            }}
+          </button>
+        </div>
+        }
+      </div>
+      @if (isNew()) {
+      <div class="flex flex-1 items-center justify-center p-8 text-center">
+        <div class="max-w-sm">
+          <h3 class="text-sm font-semibold text-surface-800">
+            Create the lead to start its activity
+          </h3>
+          <p class="mt-1 text-sm text-surface-500">
+            Notes and tasks will appear here once the lead is saved.
+          </p>
+        </div>
+      </div>
+      } @else {
+      <div class="min-h-0 flex-1 overflow-y-auto pt-2">
+        @if (activity.error()) {
+        <p-message severity="error">Could not load activity.</p-message>
+        <button
+          pButton
+          type="button"
+          severity="secondary"
+          class="mt-2"
+          (click)="activity.reload()"
+        >
+          Retry
+        </button>
+        } @else if (activity.isLoading()) {
+        <p class="py-4 text-sm text-surface-500">Loading activity…</p>
+        } @else {
+        <div class="my-4 ml-1.5 border-l border-surface-200">
+          @for (entry of activityItems(); track entry.id) {
+          <div class="relative pb-5 pl-5">
+            <span
+              class="absolute top-1 -left-[0.35rem] size-2.5 rounded-full border-2 border-[var(--p-primary-700)] bg-[var(--p-content-background)]"
+              [style.background-color]="entry.kind === 'note' ? 'var(--p-primary-700)' : 'var(--p-content-background)'"
+            ></span>
+            <div class="min-w-0">
+              <div
+                class="whitespace-pre-wrap break-words text-sm text-surface-800"
+              >
+                {{ entry.body }}
+              </div>
+              <div class="mt-1 text-xs text-surface-400">
+                {{ entry.author?.name ? entry.author.name + ' · ' : '' }}{{
+                entry.createdAt | date: 'medium' }}
+              </div>
+            </div>
+          </div>
+          }
+        </div>
+        }
+
+        <div class="mt-7 border-t border-surface-200 pt-5">
+          <div class="mb-3 flex items-center justify-between gap-3">
+            <h3 class="text-sm font-semibold text-surface-800">Tasks</h3>
+            <button
+              pButton
+              type="button"
+              severity="secondary"
+              outlined
+              size="small"
+              (click)="showTaskForm.set(!showTaskForm())"
+            >
+              {{ showTaskForm() ? 'Cancel' : 'Add task' }}
+            </button>
+          </div>
+          @if (taskError()) {
+          <p-message severity="error" class="mb-3">{{ taskError() }}</p-message>
+          } @if (showTaskForm()) {
+          <form
+            class="mb-4 grid gap-2 rounded-lg border border-surface-200 bg-surface-50 p-3.5"
+            (ngSubmit)="addTask()"
+          >
+            <label for="task-text" class="text-xs font-medium text-surface-600"
+              >Task</label
+            >
+            <input
+              pInputText
+              id="task-text"
+              name="text"
+              class="w-full"
+              required
+              [disabled]="isSavingTask()"
+              [ngModel]="taskDraft().text"
+              (ngModelChange)="updateTaskDraft('text', $event)"
+            />
+            <div class="grid grid-cols-2 gap-3">
+              <label class="grid gap-1 text-xs font-medium text-surface-600"
+                >Type
+                <select
+                  class="detail-native-input"
+                  name="type"
+                  [disabled]="isSavingTask()"
+                  [ngModel]="taskDraft().type"
+                  (ngModelChange)="updateTaskDraft('type', $event)"
+                >
+                  @for (type of taskTypes; track type.value) {
+                  <option [value]="type.value">{{ type.label }}</option>
+                  }
+                </select>
+              </label>
+              <label class="grid gap-1 text-xs font-medium text-surface-600"
+                >Due
+                <input
+                  type="datetime-local"
+                  class="detail-native-input"
+                  name="dueAt"
+                  required
+                  [disabled]="isSavingTask()"
+                  [ngModel]="taskDraft().dueAt"
+                  (ngModelChange)="updateTaskDraft('dueAt', $event)"
+                />
+              </label>
+            </div>
+            <label
+              for="task-assignee"
+              class="text-xs font-medium text-surface-600"
+              >Responsible</label
+            >
+            <p-select
+              [options]="users.value()"
+              optionLabel="name"
+              optionValue="id"
+              inputId="task-assignee"
+              name="assigneeId"
+              class="w-full"
+              showClear
+              placeholder="Unassigned"
+              [disabled]="isSavingTask()"
+              [ngModel]="taskDraft().assigneeId"
+              (ngModelChange)="updateTaskDraft('assigneeId', $event)"
+            />
+            <button
+              pButton
+              type="submit"
+              class="justify-self-end"
+              [disabled]="isSavingTask() || !taskDraft().text.trim() || !taskDraft().dueAt"
+            >
+              {{ isSavingTask() ? 'Saving…' : 'Create task' }}
+            </button>
+          </form>
+          } @if (tasks.error()) {
+          <p-message severity="error">Could not load tasks.</p-message>
+          <button
+            pButton
+            type="button"
+            severity="secondary"
+            class="mt-2"
+            (click)="tasks.reload()"
+          >
+            Retry
+          </button>
+          } @else if (tasks.isLoading()) {
+          <p class="text-sm text-surface-500">Loading tasks…</p>
+          } @else { @for (task of tasks.value(); track task.id) {
+          <div
+            class="mb-2 flex items-start justify-between gap-3 rounded-lg border border-surface-200 p-3.5"
+          >
+            <div class="flex min-w-0 flex-1 gap-3">
+              <input
+                type="checkbox"
+                class="mt-1 accent-emerald-800"
+                [checked]="task.isCompleted"
+                [disabled]="busyTaskId() !== null"
+                [attr.aria-label]="'Complete ' + task.text"
+                (change)="toggleTask(task)"
+              />
+              <div class="min-w-0">
+                <p
+                  class="text-sm font-medium text-surface-800"
+                  [class.line-through]="task.isCompleted"
+                >
+                  {{ task.text }}
+                </p>
+                <p class="mt-1 text-xs text-surface-500">
+                  {{ task.dueAt | date: 'medium' }} · {{ task.assignee?.name ??
+                  'Unassigned' }}
+                </p>
+              </div>
+            </div>
+            <span class="text-xs text-surface-500"
+              >{{ task.isCompleted ? 'Done' : 'Planned' }}</span
+            >
+          </div>
+          } @empty {
+          <p class="text-sm text-surface-500">
+            No tasks scheduled for this lead.
+          </p>
+          } }
+        </div>
+      </div>
+      <form
+        class="mt-4 shrink-0 rounded-lg border border-surface-200 bg-surface-50 p-3.5"
+        (ngSubmit)="postNote()"
+      >
+        <label for="lead-note" class="text-xs font-medium text-surface-600"
+          >Note</label
+        >
+        <textarea
+          id="lead-note"
+          name="body"
+          rows="2"
+          maxlength="5000"
+          class="detail-native-input mt-1 resize-y"
+          placeholder="Add a note…"
+          [disabled]="isPostingNote()"
+          [ngModel]="noteText()"
+          (ngModelChange)="noteText.set($event)"
+        ></textarea>
+        <div class="mt-2 flex items-center justify-between gap-3">
+          @if (noteError()) {
+          <span class="text-xs text-red-600">{{ noteError() }}</span> }
+          <button
+            pButton
+            type="submit"
+            size="small"
+            class="ml-auto"
+            [disabled]="!noteText().trim() || isPostingNote()"
+          >
+            {{ isPostingNote() ? 'Posting…' : 'Add note' }}
+          </button>
+        </div>
+      </form>
+      }
+    </section>
+  </div>
+  }
+</div>

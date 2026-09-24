@@ -13,7 +13,7 @@
         <span>Import</span>
       </button>
 
-      <button pButton>
+      <button pButton routerLink="/contacts/new">
         <svg data-p-icon="plus"></svg>
         <span>Contact</span>
       </button>
@@ -88,9 +88,12 @@
           </td>
 
           <td>
-            <div class="text-sm font-medium text-surface-900">
+            <a
+              [routerLink]="['/contacts', contact.id]"
+              class="text-sm font-medium text-surface-900 hover:underline"
+            >
               {{ contact.name }}
-            </div>
+            </a>
             <div
               class="mt-0.5 flex items-center gap-1.5 text-xs text-surface-500"
             >

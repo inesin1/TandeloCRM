@@ -85,7 +85,7 @@ export class TasksPage {
         icon: this.taskIcons[task.type],
         leadName:
           this.leads.value().find((lead) => lead.id === task.leadId)?.name ??
-          `Lead #${task.leadId}`,
+          `id${task.leadId}`,
         assigneeName: task.assignee?.name ?? 'Unassigned',
         isOverdue: !task.isCompleted && new Date(task.dueAt).getTime() < now,
       }));
