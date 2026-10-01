@@ -18,7 +18,8 @@ export interface BoardColumnVm {
   templateUrl: './board-column.html',
   host: {
     class:
-      'flex h-full flex-col shrink-0 w-80 rounded-xl border border-surface-200 bg-surface-50 p-2',
+      'flex h-full w-80 shrink-0 flex-col rounded-xl border border-surface-200 border-t-2 bg-surface-100 p-3',
+    '[style.border-top-color]': 'column().color',
   },
   imports: [PIcon, LeadCard, ButtonModule, RouterLink],
 })

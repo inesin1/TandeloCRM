@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RequirePermissions } from '../access-control/require-permissions.decorator';
@@ -15,5 +15,24 @@ export class AnalyticsController {
   @RequirePermissions('analytics:read')
   getPipeline() {
     return this.analyticsService.getPipeline();
+  }
+
+  @Get('team')
+  @RequirePermissions('analytics:read')
+  getTeam(@Query('days') days = '30') {
+    const requestedDays = Number(days);
+    const validDays = [7, 30, 90].includes(requestedDays)
+      ? requestedDays
+      : days === 'all'
+        ? undefined
+        : 30;
+
+    return this.analyticsService.getTeam(validDays);
+  }
+
+  @Get('tasks')
+  @RequirePermissions('analytics:read')
+  getTasks() {
+    return this.analyticsService.getTasks();
   }
 }

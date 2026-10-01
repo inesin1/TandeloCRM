@@ -1,22 +1,46 @@
-<main class="container mx-auto flex flex-col gap-4 p-4">
-  <app-page-header title="Analytics" />
-
+<div class="min-w-0">
   @if (loadError()) {
-  <p class="rounded-lg bg-red-50 p-4 text-red-700" role="alert">
-    Analytics could not be loaded. Please try again.
-  </p>
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <p class="text-red-700" role="alert">
+      Analytics could not be loaded. Please try again.
+    </p>
+    <button
+      type="button"
+      class="rounded-lg border border-[var(--p-content-border-color)] px-3 py-2 text-sm font-medium hover:bg-surface-50"
+      (click)="refresh()"
+    >
+      Retry
+    </button>
+  </div>
   } @else if (isLoading()) {
   <p class="p-4 text-surface-500" role="status">Loading analytics…</p>
-  } @else if (pipelines.value().length === 0) {
-  <section class="rounded-xl border border-dashed p-8 text-center">
-    <h2 class="font-semibold">No pipelines yet</h2>
+  } @else { @switch (activeTab) { @case ('pipeline') {
+  <div class="flex flex-wrap items-start justify-between gap-3">
+    <div>
+      <h2 class="text-xl font-semibold">Pipeline</h2>
+      <p class="mt-1 text-sm text-surface-500">
+        Current lead count and value at each stage.
+      </p>
+    </div>
+    <button
+      type="button"
+      class="rounded-lg border border-[var(--p-content-border-color)] px-3 py-2 text-sm font-medium hover:bg-surface-50"
+      (click)="refresh()"
+    >
+      Refresh
+    </button>
+  </div>
+
+  @if (pipelines.value().length === 0) {
+  <section class="mt-5 rounded-xl border border-dashed p-8 text-center">
+    <h3 class="font-semibold">No pipelines yet</h3>
     <p class="mt-1 text-surface-500">
       Create a pipeline to see lead totals by stage.
     </p>
   </section>
   } @else {
   <section
-    class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--p-content-border-color)] bg-[var(--p-content-background)] p-4"
+    class="mt-5 flex flex-wrap items-end justify-between gap-4 rounded-xl border border-[var(--p-content-border-color)] p-4"
   >
     <div class="flex flex-col gap-1">
       <label for="analytics-pipeline" class="text-sm font-medium"
@@ -37,28 +61,32 @@
     <div class="flex gap-8">
       <div>
         <div class="text-sm text-surface-500">Leads</div>
-        <div class="text-xl font-semibold">{{ totals().leadCount }}</div>
+        <div class="text-xl font-semibold">
+          {{ pipelineTotals().leadCount }}
+        </div>
       </div>
       <div>
         <div class="text-sm text-surface-500">Total value</div>
-        <div class="text-xl font-semibold">{{ totals().totalPriceLabel }}</div>
+        <div class="text-xl font-semibold">
+          {{ pipelineTotals().totalPriceLabel }}
+        </div>
       </div>
     </div>
   </section>
 
   @if (stages().length === 0) {
-  <section class="rounded-xl border border-dashed p-8 text-center">
-    <h2 class="font-semibold">No stages in this pipeline</h2>
+  <section class="mt-4 rounded-xl border border-dashed p-8 text-center">
+    <h3 class="font-semibold">No stages in this pipeline</h3>
     <p class="mt-1 text-surface-500">
       Add stages to track leads in this pipeline.
     </p>
   </section>
   } @else { @if (!hasLeads()) {
   <section
-    class="rounded-xl border border-dashed p-6 text-center"
+    class="mt-4 rounded-xl border border-dashed p-6 text-center"
     role="status"
   >
-    <h2 class="font-semibold">No leads in this pipeline yet</h2>
+    <h3 class="font-semibold">No leads in this pipeline yet</h3>
     <p class="mt-1 text-surface-500">
       Stage totals will appear here when leads are added.
     </p>
@@ -66,7 +94,7 @@
   }
 
   <section
-    class="overflow-hidden rounded-xl border border-[var(--p-content-border-color)] bg-[var(--p-content-background)]"
+    class="mt-4 overflow-hidden rounded-xl border border-[var(--p-content-border-color)]"
     aria-label="Pipeline totals by stage"
   >
     <table class="w-full text-left">
@@ -94,5 +122,321 @@
       </tbody>
     </table>
   </section>
-  } }
-</main>
+  } } } @case ('team') {
+  <div class="flex flex-wrap items-start justify-between gap-3">
+    <div>
+      <h2 class="text-xl font-semibold">New leads by owner</h2>
+      <p class="mt-1 text-sm text-surface-500">
+        Lead intake and budget based on creation date.
+      </p>
+    </div>
+    <div class="flex items-end gap-2">
+      <div class="flex flex-col gap-1">
+        <label for="analytics-team-period" class="text-sm font-medium"
+          >Created in</label
+        >
+        <select
+          id="analytics-team-period"
+          class="rounded-lg border border-[var(--p-content-border-color)] bg-[var(--p-content-background)] px-3 py-2"
+          [value]="selectedTeamPeriod()"
+          (change)="selectTeamPeriod($event)"
+        >
+          <option value="7">Last 7 days</option>
+          <option value="30">Last 30 days</option>
+          <option value="90">Last 90 days</option>
+          <option value="all">All time</option>
+        </select>
+      </div>
+      <button
+        type="button"
+        class="rounded-lg border border-[var(--p-content-border-color)] px-3 py-2 text-sm font-medium hover:bg-surface-50"
+        (click)="refresh()"
+      >
+        Refresh
+      </button>
+    </div>
+  </div>
+
+  <div class="mt-5 grid gap-3 sm:grid-cols-3">
+    <article
+      class="rounded-xl border border-[var(--p-content-border-color)] p-4"
+    >
+      <div class="text-sm text-surface-500">New leads</div>
+      <div class="mt-1 text-2xl font-semibold">
+        {{ formatNumber(teamTotals().leadCount) }}
+      </div>
+    </article>
+    <article
+      class="rounded-xl border border-[var(--p-content-border-color)] p-4"
+    >
+      <div class="text-sm text-surface-500">Lead budget</div>
+      <div class="mt-1 text-2xl font-semibold">
+        {{ formatPrice(teamTotals().totalPrice) }}
+      </div>
+    </article>
+    <article
+      class="rounded-xl border border-[var(--p-content-border-color)] p-4"
+    >
+      <div class="text-sm text-surface-500">Unassigned leads</div>
+      <div class="mt-1 text-2xl font-semibold">
+        {{ formatNumber(teamTotals().unassignedCount) }}
+      </div>
+    </article>
+  </div>
+
+  @if (teamRows().length === 0) {
+  <section class="mt-4 rounded-xl border border-dashed p-8 text-center">
+    <h3 class="font-semibold">No leads in this period</h3>
+    <p class="mt-1 text-surface-500">
+      Try a longer period to see lead intake by owner.
+    </p>
+  </section>
+  } @else {
+  <section
+    class="mt-4 overflow-hidden rounded-xl border border-[var(--p-content-border-color)]"
+    aria-label="New leads by owner"
+  >
+    <table class="w-full text-left">
+      <thead class="bg-surface-50 text-sm text-surface-500">
+        <tr>
+          <th class="px-4 py-3 font-medium">Owner</th>
+          <th class="px-4 py-3 text-right font-medium">New leads</th>
+          <th class="hidden px-4 py-3 font-medium sm:table-cell">Share</th>
+          <th class="px-4 py-3 text-right font-medium">Lead budget</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of teamRows(); track row.ownerId ?? 'unassigned') {
+        <tr class="border-t border-[var(--p-content-border-color)]">
+          <th class="px-4 py-3 font-medium" scope="row">
+            {{ row.ownerLabel }}
+          </th>
+          <td class="px-4 py-3 text-right">
+            {{ formatNumber(row.leadCount) }}
+          </td>
+          <td class="hidden px-4 py-3 sm:table-cell">
+            <div class="flex items-center gap-3">
+              <div
+                class="h-2 flex-1 overflow-hidden rounded-full bg-surface-100"
+              >
+                <div
+                  class="h-full rounded-full bg-primary"
+                  [style.width.%]="row.sharePercent"
+                ></div>
+              </div>
+              <span class="w-10 text-right text-sm text-surface-500">
+                {{ row.sharePercent }}%
+              </span>
+            </div>
+          </td>
+          <td class="px-4 py-3 text-right">{{ row.totalPriceLabel }}</td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </section>
+  } } @case ('tasks') {
+  <div class="flex flex-wrap items-start justify-between gap-3">
+    <div>
+      <h2 class="text-xl font-semibold">Tasks</h2>
+      <p class="mt-1 text-sm text-surface-500">
+        Current task status, ownership, and due dates.
+      </p>
+    </div>
+    <button
+      type="button"
+      class="rounded-lg border border-[var(--p-content-border-color)] px-3 py-2 text-sm font-medium hover:bg-surface-50"
+      (click)="refresh()"
+    >
+      Refresh
+    </button>
+  </div>
+
+  <div class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <article
+      class="rounded-xl border border-[var(--p-content-border-color)] p-4"
+    >
+      <div class="text-sm text-surface-500">All tasks</div>
+      <div class="mt-1 text-2xl font-semibold">
+        {{ formatNumber(taskReport.value().summary.totalCount) }}
+      </div>
+    </article>
+    <article
+      class="rounded-xl border border-[var(--p-content-border-color)] p-4"
+    >
+      <div class="text-sm text-surface-500">Open</div>
+      <div class="mt-1 text-2xl font-semibold">
+        {{ formatNumber(taskReport.value().summary.openCount) }}
+      </div>
+    </article>
+    <article
+      class="rounded-xl border border-[var(--p-content-border-color)] p-4"
+    >
+      <div class="text-sm text-surface-500">Overdue</div>
+      <div class="mt-1 text-2xl font-semibold text-red-600">
+        {{ formatNumber(taskReport.value().summary.overdueCount) }}
+      </div>
+    </article>
+    <article
+      class="rounded-xl border border-[var(--p-content-border-color)] p-4"
+    >
+      <div class="text-sm text-surface-500">Due in next 7 days</div>
+      <div class="mt-1 text-2xl font-semibold">
+        {{ formatNumber(taskReport.value().summary.dueNextWeekCount) }}
+      </div>
+    </article>
+  </div>
+
+  @if (taskReport.value().summary.totalCount === 0) {
+  <section class="mt-4 rounded-xl border border-dashed p-8 text-center">
+    <h3 class="font-semibold">No tasks yet</h3>
+    <p class="mt-1 text-surface-500">
+      Task totals will appear here when tasks are added.
+    </p>
+  </section>
+  } @else {
+  <div class="mt-4 grid gap-4 xl:grid-cols-2">
+    <section
+      class="overflow-hidden rounded-xl border border-[var(--p-content-border-color)]"
+    >
+      <h3
+        class="border-b border-[var(--p-content-border-color)] px-4 py-3 font-semibold"
+      >
+        By responsible
+      </h3>
+      <table class="w-full text-left">
+        <thead class="bg-surface-50 text-sm text-surface-500">
+          <tr>
+            <th class="px-4 py-3 font-medium">Owner</th>
+            <th class="px-3 py-3 text-right font-medium">Open</th>
+            <th class="px-3 py-3 text-right font-medium">Overdue</th>
+            <th class="px-3 py-3 text-right font-medium">Done</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of taskReport.value().byAssignee; track row.assigneeId ??
+          'unassigned') {
+          <tr class="border-t border-[var(--p-content-border-color)]">
+            <th class="px-4 py-3 font-medium" scope="row">
+              {{ row.assigneeName ?? 'Unassigned' }}
+            </th>
+            <td class="px-3 py-3 text-right">{{ row.openCount }}</td>
+            <td class="px-3 py-3 text-right">{{ row.overdueCount }}</td>
+            <td class="px-3 py-3 text-right">{{ row.completedCount }}</td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </section>
+
+    <section
+      class="overflow-hidden rounded-xl border border-[var(--p-content-border-color)]"
+    >
+      <h3
+        class="border-b border-[var(--p-content-border-color)] px-4 py-3 font-semibold"
+      >
+        By task type
+      </h3>
+      <table class="w-full text-left">
+        <thead class="bg-surface-50 text-sm text-surface-500">
+          <tr>
+            <th class="px-4 py-3 font-medium">Type</th>
+            <th class="px-3 py-3 text-right font-medium">Open</th>
+            <th class="px-3 py-3 text-right font-medium">Done</th>
+            <th class="px-3 py-3 text-right font-medium">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of taskReport.value().byType; track row.type) {
+          <tr class="border-t border-[var(--p-content-border-color)]">
+            <th class="px-4 py-3 font-medium" scope="row">
+              {{ taskTypes[row.type] }}
+            </th>
+            <td class="px-3 py-3 text-right">{{ row.openCount }}</td>
+            <td class="px-3 py-3 text-right">{{ row.completedCount }}</td>
+            <td class="px-3 py-3 text-right">{{ row.totalCount }}</td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </section>
+  </div>
+
+  <div class="mt-4 grid gap-4 xl:grid-cols-2">
+    <section
+      class="overflow-hidden rounded-xl border border-[var(--p-content-border-color)]"
+    >
+      <div class="border-b border-[var(--p-content-border-color)] px-4 py-3">
+        <h3 class="font-semibold">Overdue tasks</h3>
+        <p class="mt-1 text-sm text-surface-500">
+          Showing up to 10 oldest open tasks.
+        </p>
+      </div>
+      @if (taskReport.value().overdueTasks.length === 0) {
+      <p class="p-4 text-sm text-surface-500">No overdue tasks.</p>
+      } @else {
+      <ul class="divide-y divide-[var(--p-content-border-color)]">
+        @for (task of taskReport.value().overdueTasks; track task.id) {
+        <li class="px-4 py-3">
+          <div class="flex items-start justify-between gap-3">
+            <a
+              [routerLink]="['/leads', task.leadId]"
+              class="min-w-0 font-medium text-primary hover:underline"
+            >
+              {{ task.leadName }}
+            </a>
+            <time class="shrink-0 text-sm text-red-600" [dateTime]="task.dueAt">
+              {{ task.dueAt | date: 'medium' }}
+            </time>
+          </div>
+          <p class="mt-1 truncate text-sm text-surface-600">{{ task.text }}</p>
+          <p class="mt-1 text-xs text-surface-500">
+            {{ taskTypes[task.type] }} · {{ task.assigneeName ?? 'Unassigned' }}
+          </p>
+        </li>
+        }
+      </ul>
+      }
+    </section>
+
+    <section
+      class="overflow-hidden rounded-xl border border-[var(--p-content-border-color)]"
+    >
+      <div class="border-b border-[var(--p-content-border-color)] px-4 py-3">
+        <h3 class="font-semibold">Due in next 7 days</h3>
+        <p class="mt-1 text-sm text-surface-500">
+          Showing up to 10 upcoming open tasks.
+        </p>
+      </div>
+      @if (taskReport.value().upcomingTasks.length === 0) {
+      <p class="p-4 text-sm text-surface-500">No upcoming tasks.</p>
+      } @else {
+      <ul class="divide-y divide-[var(--p-content-border-color)]">
+        @for (task of taskReport.value().upcomingTasks; track task.id) {
+        <li class="px-4 py-3">
+          <div class="flex items-start justify-between gap-3">
+            <a
+              [routerLink]="['/leads', task.leadId]"
+              class="min-w-0 font-medium text-primary hover:underline"
+            >
+              {{ task.leadName }}
+            </a>
+            <time
+              class="shrink-0 text-sm text-surface-500"
+              [dateTime]="task.dueAt"
+            >
+              {{ task.dueAt | date: 'medium' }}
+            </time>
+          </div>
+          <p class="mt-1 truncate text-sm text-surface-600">{{ task.text }}</p>
+          <p class="mt-1 text-xs text-surface-500">
+            {{ taskTypes[task.type] }} · {{ task.assigneeName ?? 'Unassigned' }}
+          </p>
+        </li>
+        }
+      </ul>
+      }
+    </section>
+  </div>
+  } } } }
+</div>

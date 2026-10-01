@@ -13,4 +13,65 @@ button:not(:disabled),
   font-family: 'Inter Variable', system-ui, sans-serif;
   font-feature-settings: 'cv11', 'ss01';
   font-optical-sizing: auto;
+  --app-canvas: #f1f4f1;
+  --app-sidebar-background: #17382d;
+  --app-sidebar-border: #294b3d;
+  --app-sidebar-foreground: #d9e5dc;
+  --app-sidebar-muted: #d2e2d7;
+  --app-sidebar-hover: #2b5b42;
+  --app-sidebar-active: #397653;
+  --app-sidebar-active-mark: #a4d66e;
+}
+
+html,
+body {
+  min-height: 100%;
+  background: var(--app-canvas);
+}
+
+body {
+  margin: 0;
+  color: #26372d;
+}
+
+.app-sidebar-panel {
+  color: var(--app-sidebar-foreground);
+  background: var(--app-sidebar-background);
+  border: 1px solid var(--app-sidebar-border);
+  box-shadow: 0 12px 28px rgb(24 44 32 / 0.14);
+}
+
+.app-sidebar-panel .p-sidebar-menu-button {
+  color: var(--app-sidebar-muted);
+  border-radius: 0.7rem;
+  transition:
+    color 140ms ease,
+    background-color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.app-sidebar-panel .p-sidebar-menu-button:hover {
+  color: #ffffff;
+  background: var(--app-sidebar-hover);
+}
+
+.app-sidebar-panel .p-sidebar-menu-button:focus-visible {
+  color: #ffffff;
+  background: var(--app-sidebar-hover);
+  outline: 2px solid var(--app-sidebar-active-mark);
+  outline-offset: 2px;
+}
+
+.app-sidebar-panel .p-sidebar-menu-button.app-nav-active {
+  color: #ffffff;
+  background: var(--app-sidebar-active);
+  box-shadow:
+    inset 3px 0 0 var(--app-sidebar-active-mark),
+    inset 0 0 0 1px rgb(255 255 255 / 0.12);
+}
+
+.app-sidebar-panel p-sidebar-menu-badge,
+.app-sidebar-panel .p-sidebar-menu-badge {
+  color: #f0f7f1;
+  background: #397653;
 }

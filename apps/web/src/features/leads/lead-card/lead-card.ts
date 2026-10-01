@@ -27,7 +27,7 @@ export interface LeadCardVm {
   templateUrl: './lead-card.html',
   host: {
     class:
-      'group relative block shrink-0 rounded-lg border border-surface-200 bg-[var(--p-content-background)] p-3 transition-colors hover:border-surface-300',
+      'group relative block shrink-0 rounded-lg border border-surface-200 bg-white p-3 shadow-sm transition-[border-color,box-shadow] hover:border-surface-300 hover:shadow-md',
   },
   imports: [ButtonModule, PIcon, RouterLink, DatePipe, UserChip],
 })

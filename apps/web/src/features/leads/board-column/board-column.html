@@ -1,12 +1,18 @@
 @let column = this.column();
 
-<div class="flex gap-2 items-center px-1">
+<div class="flex items-center gap-2 border-b border-surface-200 px-1 pb-2">
   <span
-    class="size-2 shrink-0 rounded-full"
+    class="size-2.5 shrink-0 rounded-full ring-4 ring-white"
     [style.background-color]="column.color"
   ></span>
-  <span class="text-sm font-semibold">{{ column.name }}</span>
-  <span class="text-sm text-surface-400"> {{ column.leads.length }} </span>
+  <span class="min-w-0 truncate text-sm font-semibold text-surface-800">
+    {{ column.name }}
+  </span>
+  <span
+    class="rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold tabular-nums text-surface-600"
+  >
+    {{ column.leads.length }}
+  </span>
   <button
     pButton
     severity="secondary"
@@ -22,14 +28,27 @@
   </button>
 </div>
 
-<span class="px-1 text-xs text-surface-500">{{ column.totalLabel }}</span>
+<div class="flex items-center justify-between gap-2 px-1 pt-2">
+  <span
+    class="text-[10px] font-semibold uppercase tracking-wider text-surface-400"
+  >
+    Pipeline value
+  </span>
+  <span class="truncate text-xs font-semibold tabular-nums text-surface-700">
+    {{ column.totalLabel }}
+  </span>
+</div>
 
-<ul class="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto mt-2">
+<ul class="mt-3 flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto pr-0.5">
   @for (lead of column.leads; track lead.id) {
   <li class="contents">
     <app-lead-card [lead]="lead" />
   </li>
   } @empty {
-  <li class="px-1 py-3 text-xs text-surface-400">No leads</li>
+  <li
+    class="rounded-lg border border-dashed border-surface-300 bg-white px-3 py-5 text-center text-xs text-surface-500"
+  >
+    No leads in this stage
+  </li>
   }
 </ul>

@@ -1,9 +1,15 @@
 @let lead = this.lead();
 
-<div class="flex items-center gap-1.5 text-xs text-surface-500">
-  <span class="shrink-0 text-surface-400">{{ lead.code }}</span>
-  <span aria-hidden="true">·</span>
-  <span class="truncate">{{ lead.clientName }}</span>
+<div class="flex min-w-0 items-center gap-1.5 text-xs text-surface-500">
+  <span
+    class="shrink-0 font-mono text-[11px] font-medium tracking-wide text-surface-400"
+  >
+    {{ lead.code }}
+  </span>
+  <span aria-hidden="true" class="text-surface-300">·</span>
+  <span class="truncate font-medium text-surface-600">
+    {{ lead.clientName }}
+  </span>
 
   <button
     pButton
@@ -18,7 +24,7 @@
   </button>
 </div>
 
-<h3 class="mt-1 text-sm font-semibold leading-snug text-surface-900">
+<h3 class="mt-2 text-sm font-semibold leading-snug text-surface-900">
   <a
     [routerLink]="['/leads', lead.id]"
     class="line-clamp-2 after:absolute after:inset-0"
@@ -26,34 +32,67 @@
     {{ lead.name }}
   </a>
 </h3>
-<div class="mt-0.5 text-sm font-medium text-surface-600">
-  {{ lead.priceLabel }}
+<div class="mt-2 flex items-baseline justify-between gap-2">
+  <span
+    class="text-[10px] font-semibold uppercase tracking-wider text-surface-400"
+  >
+    Value
+  </span>
+  <span class="text-sm font-semibold tabular-nums text-surface-800">
+    {{ lead.priceLabel }}
+  </span>
 </div>
 
 @if (lead.task; as task) {
-<div class="mt-2 flex items-center gap-1.5 text-xs text-surface-600">
-  <svg [pIcon]="task.icon" class="size-3.5 shrink-0"></svg>
-  <span class="truncate">{{ task.text }}</span>
-  <span aria-hidden="true">·</span>
-  <span class="shrink-0">{{ task.dueAt | date: 'MMM d, HH:mm' }}</span>
+<div
+  class="mt-3 rounded-md border px-2.5 py-2"
+  [class.border-red-200]="task.isOverdue"
+  [class.bg-red-50]="task.isOverdue"
+  [class.border-surface-200]="!task.isOverdue"
+  [class.bg-surface-50]="!task.isOverdue"
+>
+  <div
+    class="flex min-w-0 items-center gap-1.5 text-xs"
+    [class.text-red-700]="task.isOverdue"
+    [class.text-surface-700]="!task.isOverdue"
+  >
+    <svg
+      [pIcon]="task.isOverdue ? 'exclamation-circle' : task.icon"
+      class="size-3.5 shrink-0"
+    ></svg>
+    <span class="truncate font-medium">{{ task.text }}</span>
+  </div>
+  <div
+    class="mt-1 flex items-center justify-between gap-2 pl-5 text-[11px]"
+    [class.text-red-600]="task.isOverdue"
+    [class.text-surface-500]="!task.isOverdue"
+  >
+    <span class="truncate"
+      >{{ task.isOverdue ? task.overdueLabel : 'Due' }}</span
+    >
+    <time
+      class="shrink-0 font-medium tabular-nums"
+      [attr.datetime]="task.dueAt"
+    >
+      {{ task.dueAt | date: 'MMM d, HH:mm' }}
+    </time>
+  </div>
 </div>
-
-@if (task.isOverdue) {
-<div class="mt-1 flex items-center gap-1.5 text-xs text-red-600">
+} @else {
+<div
+  class="mt-3 flex items-center gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-2 text-xs text-amber-700"
+>
   <svg [pIcon]="'exclamation-circle'" class="size-3.5 shrink-0"></svg>
-  {{ task.overdueLabel }}
-</div>
-} } @else {
-<div class="mt-2 flex items-center gap-1.5 text-xs text-amber-600">
-  <svg [pIcon]="'exclamation-circle'" class="size-3.5 shrink-0"></svg>
-  No next task
+  <span class="font-medium">No next action</span>
 </div>
 }
 
 <div
-  class="mt-3 flex items-center justify-between gap-2 text-xs text-surface-500"
+  class="mt-3 flex items-center justify-between gap-2 border-t border-surface-100 pt-2 text-xs text-surface-500"
 >
   <app-user-chip [name]="lead.ownerName" [small]="true" />
 
-  <span class="shrink-0">Updated {{ lead.updatedAt | date: 'MMM d' }}</span>
+  <span class="shrink-0 text-[11px]"
+    >Updated {{ lead.updatedAt | date: 'MMM d' }}</span
+  >
 </div>

@@ -1,6 +1,12 @@
 :host {
   display: block;
   height: 100dvh;
+  background: var(--app-canvas);
+}
+
+.app-shell,
+.app-main {
+  background: var(--app-canvas);
 }
 
 .p-sidebar-menu-button > svg {

@@ -98,9 +98,39 @@ export const appRoutes: Route[] = [
         path: 'analytics',
         title: 'Analytics',
         loadComponent: () =>
-          import('../features/analytics/analytics-page/analytics-page').then(
-            (m) => m.AnalyticsPage,
+          import('../features/analytics/analytics-layout-page/analytics-layout-page').then(
+            (m) => m.AnalyticsLayoutPage,
           ),
+        children: [
+          { path: '', pathMatch: 'full', redirectTo: 'pipeline' },
+          {
+            path: 'pipeline',
+            title: 'Pipeline analytics',
+            data: { report: 'pipeline' },
+            loadComponent: () =>
+              import('../features/analytics/analytics-page/analytics-page').then(
+                (m) => m.AnalyticsPage,
+              ),
+          },
+          {
+            path: 'team',
+            title: 'New leads by owner',
+            data: { report: 'team' },
+            loadComponent: () =>
+              import('../features/analytics/analytics-page/analytics-page').then(
+                (m) => m.AnalyticsPage,
+              ),
+          },
+          {
+            path: 'tasks',
+            title: 'Task analytics',
+            data: { report: 'tasks' },
+            loadComponent: () =>
+              import('../features/analytics/analytics-page/analytics-page').then(
+                (m) => m.AnalyticsPage,
+              ),
+          },
+        ],
       },
       {
         path: 'settings',

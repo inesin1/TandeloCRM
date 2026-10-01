@@ -2,11 +2,9 @@ import { Component, inject } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { SidebarModule } from 'primeng/sidebar';
 import { ButtonModule } from 'primeng/button';
-import { AvatarModule } from 'primeng/avatar';
 import { Tooltip } from 'primeng/tooltip';
 import { PIcon } from '@primeicons/angular/p-icon';
 import { Logo } from '../shared/logo';
-import { CopilotPanel } from '../features/copilot/copilot-panel/copilot-panel';
 import { AuthApi } from '../features/auth/auth-api';
 
 interface NavItem {
@@ -17,16 +15,7 @@ interface NavItem {
 }
 
 @Component({
-  imports: [
-    RouterModule,
-    SidebarModule,
-    ButtonModule,
-    AvatarModule,
-    Tooltip,
-    PIcon,
-    Logo,
-    CopilotPanel,
-  ],
+  imports: [RouterModule, SidebarModule, ButtonModule, Tooltip, PIcon, Logo],
   selector: 'app-root',
   templateUrl: './app.html',
   styleUrl: './app.css',

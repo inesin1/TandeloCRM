@@ -18,6 +18,24 @@ const preset = definePreset(Aura, {
       hoverColor: '{emerald.900}',
       activeColor: '{emerald.900}',
     },
+    colorScheme: {
+      light: {
+        surface: {
+          0: '#ffffff',
+          50: '#f7f9f7',
+          100: '#eef3ef',
+          200: '#e0e8e2',
+          300: '#ced9d1',
+          400: '#9aa99d',
+          500: '#718075',
+          600: '#536457',
+          700: '#3c4c40',
+          800: '#26372b',
+          900: '#19291f',
+          950: '#101a14',
+        },
+      },
+    },
   },
   components: {
     datatable: {
@@ -36,7 +54,11 @@ const preset = definePreset(Aura, {
         height: '2.25rem',
         fontSize: '0.875rem',
         fontWeight: '500',
-        icon: { size: '1.5rem' },
+        icon: {
+          color: '#edf8f0',
+          focusColor: '#ffffff',
+          size: '1.5rem',
+        },
       },
     },
   },

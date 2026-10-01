@@ -1,5 +1,5 @@
 @if(authApi.isAuthenticated()) {
-<p-sidebar-layout class="h-dvh overflow-x-clip">
+<p-sidebar-layout class="app-shell h-dvh overflow-x-clip">
   <p-sidebar
     id="app-sidebar"
     variant="floating"
@@ -10,7 +10,7 @@
   >
     <p-sidebar-spacer />
     <p-sidebar-aside>
-      <p-sidebar-panel>
+      <p-sidebar-panel class="app-sidebar-panel">
         <p-sidebar-header>
           <p-sidebar-menu>
             <p-sidebar-menu-item>
@@ -37,6 +37,7 @@
                   routerLinkActive
                   #rla="routerLinkActive"
                   [isActive]="rla.isActive"
+                  [class.app-nav-active]="rla.isActive"
                   [pTooltip]="item.label"
                   tooltipPosition="right"
                 >
@@ -57,11 +58,14 @@
               <button
                 type="button"
                 pSidebarMenuButton
-                pTooltip="John Doe"
+                [pTooltip]="
+                  authApi.session.hasValue() ? authApi.session.value().user.name : ''
+                "
                 tooltipPosition="right"
                 (click)="logout()"
               >
-                <span>Logout</span>
+                <svg [pIcon]="'sign-out'"></svg>
+                <span>Sign out</span>
               </button>
             </p-sidebar-menu-item>
           </p-sidebar-menu>
@@ -70,13 +74,11 @@
     </p-sidebar-aside>
   </p-sidebar>
 
-  <p-sidebar-main class="min-w-0">
-    <main class="min-w-0 flex-1 overflow-y-auto py-4 pr-4">
+  <p-sidebar-main class="app-main min-w-0">
+    <main class="min-w-0 flex-1 overflow-y-auto p-2">
       <router-outlet />
     </main>
   </p-sidebar-main>
-
-  <app-copilot-panel />
 </p-sidebar-layout>
 } @else {
 <router-outlet />
