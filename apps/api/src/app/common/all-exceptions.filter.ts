@@ -28,7 +28,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
           ? exception.message
           : 'Internal error';
 
-    this.logger.error({ path: request.url, status, message, exception });
+    const logContext = { path: request.url, status, message };
+    if (status >= HttpStatus.INTERNAL_SERVER_ERROR) {
+      this.logger.error({ ...logContext, exception });
+    } else {
+      this.logger.warn(logContext);
+    }
 
     response.status(status).json({
       statusCode: status,
