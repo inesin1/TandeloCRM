@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RequirePermissions } from '../access-control/require-permissions.decorator';
 import { ContactsService } from './contacts.service';
 import { CreateContactDto } from './dto/create-contact.dto';
 import { FindContactsDto } from './dto/find-contacts.dto';
@@ -28,31 +29,37 @@ export class ContactsController {
   constructor(private readonly contactsService: ContactsService) {}
 
   @Post()
+  @RequirePermissions('contacts:write')
   create(@Body() dto: CreateContactDto) {
     return this.contactsService.create(dto);
   }
 
   @Get()
+  @RequirePermissions('contacts:read')
   findAll(@Query() filters: FindContactsDto) {
     return this.contactsService.findAll(filters);
   }
 
   @Get(':id')
+  @RequirePermissions('contacts:read')
   findOne(@Param('id') id: string) {
     return this.contactsService.findOne(id);
   }
 
   @Get(':id/leads')
+  @RequirePermissions('contacts:read')
   findLeads(@Param('id') id: string) {
     return this.contactsService.findLeads(id);
   }
 
   @Get(':id/activity')
+  @RequirePermissions('contacts:read')
   findActivity(@Param('id') id: string) {
     return this.contactsService.findActivity(id);
   }
 
   @Post(':id/notes')
+  @RequirePermissions('contacts:write')
   addNote(
     @Param('id') id: string,
     @Body() dto: CreateRecordNoteDto,
@@ -62,11 +69,13 @@ export class ContactsController {
   }
 
   @Put(':id')
+  @RequirePermissions('contacts:write')
   update(@Param('id') id: string, @Body() dto: UpdateContactDto) {
     return this.contactsService.update(id, dto);
   }
 
   @Delete(':id')
+  @RequirePermissions('contacts:write')
   remove(@Param('id') id: string) {
     return this.contactsService.remove(id);
   }

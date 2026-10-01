@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RequirePermissions } from '../access-control/require-permissions.decorator';
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { FindTasksDto } from './dto/find-tasks.dto';
@@ -24,26 +25,31 @@ export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
   @Post()
+  @RequirePermissions('tasks:write')
   create(@Body() dto: CreateTaskDto) {
     return this.tasksService.create(dto);
   }
 
   @Get()
+  @RequirePermissions('tasks:read')
   findAll(@Query() filters: FindTasksDto) {
     return this.tasksService.findAll(filters);
   }
 
   @Get(':id')
+  @RequirePermissions('tasks:read')
   findOne(@Param('id') id: string) {
     return this.tasksService.findOne(id);
   }
 
   @Put(':id')
+  @RequirePermissions('tasks:write')
   update(@Param('id') id: string, @Body() dto: UpdateTaskDto) {
     return this.tasksService.update(id, dto);
   }
 
   @Delete(':id')
+  @RequirePermissions('tasks:write')
   remove(@Param('id') id: string) {
     return this.tasksService.remove(id);
   }

@@ -17,6 +17,7 @@ export interface User {
   id: number;
   name: string;
   email: string;
+  isActive: boolean;
   roles: Role[];
   groups: Group[];
 }
@@ -26,6 +27,10 @@ export interface UserChanges {
   email: string;
   roleIds: number[];
   groupIds: number[];
+}
+
+export interface CreateUserChanges extends UserChanges {
+  password: string;
 }
 
 @Service()
@@ -39,7 +44,8 @@ export class UsersApi {
   );
 
   readonly roles = httpResource<Role[]>(
-    () => (this.authApi.isAuthenticated() ? '/api/roles' : undefined),
+    () =>
+      this.authApi.hasPermission('users:write') ? '/api/roles' : undefined,
     { defaultValue: [] },
   );
 
@@ -48,7 +54,26 @@ export class UsersApi {
     { defaultValue: [] },
   );
 
-  update(id: number, changes: UserChanges) {
+  create(changes: CreateUserChanges) {
+    return firstValueFrom(this.http.post('/api/users', changes));
+  }
+
+  update(
+    id: number,
+    changes: Partial<UserChanges> & { password?: string; isActive?: boolean },
+  ) {
     return firstValueFrom(this.http.put(`/api/users/${id}`, changes));
+  }
+
+  createGroup(name: string) {
+    return firstValueFrom(this.http.post<Group>('/api/groups', { name }));
+  }
+
+  updateGroup(id: number, name: string) {
+    return firstValueFrom(this.http.put<Group>(`/api/groups/${id}`, { name }));
+  }
+
+  removeGroup(id: number) {
+    return firstValueFrom(this.http.delete(`/api/groups/${id}`));
   }
 }

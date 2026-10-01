@@ -4,6 +4,7 @@ import * as argon2 from 'argon2';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { PublicUser, users } from '../users/user.entity';
 import { UsersService } from '../users/users.service';
+import { PermissionsService } from '../access-control/permissions.service';
 import { AuthService } from './auth.service';
 
 const password = 'correct-test-password';
@@ -22,14 +23,20 @@ async function setup(user: typeof users.$inferSelect | null) {
     .fn<(email: string) => Promise<typeof users.$inferSelect | null>>()
     .mockResolvedValue(user);
   const jwtService = new JwtService({ secret: 'unit-test-signing-secret' });
+  const permissionsService = {
+    getEffectivePermissions: vi.fn().mockResolvedValue(['leads:read']),
+  };
   const module = await Test.createTestingModule({
     providers: [
       { provide: UsersService, useValue: { findByEmail } },
+      { provide: PermissionsService, useValue: permissionsService },
       {
         provide: AuthService,
-        useFactory: (usersService: UsersService) =>
-          new AuthService(usersService, jwtService),
-        inject: [UsersService],
+        useFactory: (
+          usersService: UsersService,
+          accessControl: PermissionsService,
+        ) => new AuthService(usersService, jwtService, accessControl),
+        inject: [UsersService, PermissionsService],
       },
     ],
   }).compile();
@@ -75,6 +82,18 @@ describe('AuthService', () => {
 
       expect(result).toBeNull();
       expect(findByEmail).toHaveBeenCalledExactlyOnceWith(publicUser.email);
+    });
+
+    it('rejects an inactive user even when the password matches', async () => {
+      const { service } = await setup({
+        ...publicUser,
+        isActive: false,
+        passwordHash,
+      });
+
+      await expect(
+        service.validateUser(publicUser.email, password),
+      ).resolves.toBeNull();
     });
 
     it('returns the public user without the password hash when the password matches', async () => {

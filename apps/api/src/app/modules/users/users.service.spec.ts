@@ -1,4 +1,8 @@
-import { NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import * as argon2 from 'argon2';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Client, Pool } from 'pg';
@@ -95,11 +99,12 @@ describe('UsersService', () => {
         email: user.email,
         name: user.name,
         password: 'test-password',
-        roleIds: [2, 3],
+        roleIds: [2],
         groupIds: [4],
       };
       const { service, query, connect, release } = setup(
         result(),
+        result([[2, 'Member']]),
         result([publicRow()]),
         result(),
         result(),
@@ -107,7 +112,7 @@ describe('UsersService', () => {
       );
 
       expect(await service.create(dto)).toEqual(publicUser);
-      const insertedPasswordHash = query.mock.calls[1][1][2] as string;
+      const insertedPasswordHash = query.mock.calls[2][1][2] as string;
       expect(await argon2.verify(insertedPasswordHash, dto.password)).toBe(
         true,
       );
@@ -116,12 +121,16 @@ describe('UsersService', () => {
       expect(query.mock.calls).toEqual([
         sqlCall('begin'),
         sqlCall(
+          'select "id", "name" from "roles" where "roles"."id" in ($1)',
+          [2],
+        ),
+        sqlCall(
           `insert into "users" ("id", "email", "name", "passwordHash", "isActive", "createdAt", "updatedAt") values (default, $1, $2, $3, default, default, default) returning ${publicColumns}`,
           [user.email, user.name, expect.any(String)],
         ),
         sqlCall(
-          'insert into "user_roles" ("userId", "roleId") values ($1, $2), ($3, $4)',
-          [7, 2, 7, 3],
+          'insert into "user_roles" ("userId", "roleId") values ($1, $2)',
+          [7, 2],
         ),
         sqlCall(
           'insert into "user_groups" ("userId", "groupId") values ($1, $2)',
@@ -227,6 +236,10 @@ describe('UsersService', () => {
       };
       const { service, query, release } = setup(
         result(),
+        result(),
+        result([publicRow()]),
+        result([['Member']]),
+        result([[3, 'Member']]),
         result([publicRow(updated)]),
         result(),
         result(),
@@ -239,12 +252,22 @@ describe('UsersService', () => {
         name: 'Alex Updated',
         isActive: false,
       });
-      const updatedPasswordHash = query.mock.calls[1][1].find(
+      const updatedPasswordHash = query.mock.calls[5][1].find(
         (value) => typeof value === 'string' && value.startsWith('$argon2'),
       ) as string;
       expect(await argon2.verify(updatedPasswordHash, password)).toBe(true);
       expect(query.mock.calls).toEqual([
         sqlCall('begin'),
+        sqlCall('select pg_advisory_xact_lock(740921)'),
+        sqlCall(`${publicSelect} where "users"."id" = $1`, [7]),
+        sqlCall(
+          'select "roles"."name" from "user_roles" inner join "roles" on "user_roles"."roleId" = "roles"."id" where "user_roles"."userId" = $1',
+          [7],
+        ),
+        sqlCall(
+          'select "id", "name" from "roles" where "roles"."id" in ($1)',
+          [3],
+        ),
         [
           expect.objectContaining({
             text: expect.stringContaining(
@@ -278,14 +301,21 @@ describe('UsersService', () => {
     it('only reads an existing user for an empty DTO', async () => {
       const { service, query } = setup(
         result(),
+        result(),
         result([publicRow()]),
+        result(),
         result(),
       );
 
       expect(await service.update('7', {})).toEqual(publicUser);
       expect(query.mock.calls).toEqual([
         sqlCall('begin'),
+        sqlCall('select pg_advisory_xact_lock(740921)'),
         sqlCall(`${publicSelect} where "users"."id" = $1`, [7]),
+        sqlCall(
+          'select "roles"."name" from "user_roles" inner join "roles" on "user_roles"."roleId" = "roles"."id" where "user_roles"."userId" = $1',
+          [7],
+        ),
         sqlCall('commit'),
       ]);
     });
@@ -293,7 +323,7 @@ describe('UsersService', () => {
     it.each<UpdateUserDto>([{}, { name: 'Missing' }])(
       'throws for a missing user with DTO %j',
       async (dto) => {
-        const { service } = setup(result(), result(), result());
+        const { service } = setup(result(), result(), result(), result());
         await expect(service.update('404', dto)).rejects.toThrow(
           NotFoundException,
         );
@@ -303,17 +333,60 @@ describe('UsersService', () => {
 
   describe('remove', () => {
     it('deletes a user and reports success', async () => {
-      const { service, query } = setup(result([], 1));
+      const { service, query } = setup(
+        result(),
+        result(),
+        result([publicRow()]),
+        result(),
+        result([], 1),
+        result(),
+      );
 
       expect(await service.remove('7')).toEqual({ deleted: true });
-      expect(query).toHaveBeenCalledExactlyOnceWith(
-        ...sqlCall('delete from "users" where "users"."id" = $1', [7]),
-      );
+      expect(query.mock.calls).toEqual([
+        sqlCall('begin'),
+        sqlCall('select pg_advisory_xact_lock(740921)'),
+        sqlCall(`${publicSelect} where "users"."id" = $1`, [7]),
+        sqlCall(
+          'select "user_roles"."userId" from "user_roles" inner join "roles" on "user_roles"."roleId" = "roles"."id" where ("user_roles"."userId" = $1 and "roles"."name" = $2)',
+          [7, 'Admin'],
+        ),
+        sqlCall('delete from "users" where "users"."id" = $1', [7]),
+        sqlCall('commit'),
+      ]);
     });
 
     it('throws when no user was deleted', async () => {
-      const { service } = setup(result());
+      const { service } = setup(result(), result(), result(), result());
       await expect(service.remove('404')).rejects.toThrow(NotFoundException);
     });
+  });
+
+  it('rejects assigning multiple roles', async () => {
+    const { service } = setup(result(), result());
+
+    await expect(
+      service.create({
+        email: user.email,
+        name: user.name,
+        password: 'test-password',
+        roleIds: [2, 3],
+      }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it('prevents disabling the last active Admin', async () => {
+    const { service } = setup(
+      result(),
+      result(),
+      result([publicRow()]),
+      result([['Admin']]),
+      result([[7]]),
+      result(),
+    );
+
+    await expect(service.update('7', { isActive: false })).rejects.toThrow(
+      new ConflictException('The last active Admin cannot be removed'),
+    );
   });
 });

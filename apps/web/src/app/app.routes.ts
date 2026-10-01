@@ -144,6 +144,14 @@ export const appRoutes: Route[] = [
               ),
           },
           {
+            path: 'groups',
+            title: 'Groups',
+            loadComponent: () =>
+              import('../features/settings/tabs/groups-tab/groups-tab').then(
+                (m) => m.GroupsTab,
+              ),
+          },
+          {
             path: 'integrations',
             title: 'Integrations',
             loadComponent: () =>

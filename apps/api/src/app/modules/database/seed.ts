@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
-import { permissions } from '../access-control/access-control.entity';
+import { seedAccessControl } from './seed-access-control';
 import { PERMISSION_KEYS } from '../access-control/permissions.catalog';
 import { companies } from '../companies/company.entity';
 import { contacts } from '../contacts/contact.entity';
@@ -32,10 +32,7 @@ async function seed() {
   const db = drizzle(pool);
 
   try {
-    await db
-      .insert(permissions)
-      .values(PERMISSION_KEYS.map((key) => ({ key })))
-      .onConflictDoNothing();
+    await seedAccessControl(db);
 
     const result = await db.transaction(async (tx) => {
       const [existingLead] = await tx

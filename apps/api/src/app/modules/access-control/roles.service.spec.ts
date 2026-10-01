@@ -60,27 +60,33 @@ describe('RolesService', () => {
 
   describe('findAll', () => {
     it('returns all roles', async () => {
-      const records = [role, { ...role, id: 8, name: 'Admin' }];
+      const records = [
+        { ...role, name: 'Admin' },
+        { ...role, id: 8, name: 'Member' },
+      ];
       const { service, query } = setup(records);
 
       expect(await service.findAll()).toEqual(records);
       expect(query).toHaveBeenCalledExactlyOnceWith(
-        expect.objectContaining({ text: selectSql }),
-        [],
+        expect.objectContaining({
+          text: `${selectSql} where "roles"."name" in ($1, $2)`,
+        }),
+        ['Admin', 'Member'],
       );
     });
   });
 
   describe('findOne', () => {
     it('returns the role selected by numeric id', async () => {
-      const { service, query } = setup([role]);
+      const adminRole = { ...role, name: 'Admin' };
+      const { service, query } = setup([adminRole]);
 
-      expect(await service.findOne('7')).toEqual(role);
+      expect(await service.findOne('7')).toEqual(adminRole);
       expect(query).toHaveBeenCalledExactlyOnceWith(
         expect.objectContaining({
-          text: `${selectSql} where "roles"."id" = $1`,
+          text: `${selectSql} where ("roles"."id" = $1 and "roles"."name" in ($2, $3))`,
         }),
-        [7],
+        [7, 'Admin', 'Member'],
       );
     });
 

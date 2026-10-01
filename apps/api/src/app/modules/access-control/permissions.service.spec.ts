@@ -34,4 +34,27 @@ describe('PermissionsService', () => {
       [],
     );
   });
+
+  it('returns unique effective permissions for a user', async () => {
+    const pool = new Pool();
+    const query = vi.spyOn(pool, 'query').mockResolvedValue({
+      command: '',
+      oid: 0,
+      fields: [],
+      rows: [['leads:read'], ['leads:read'], ['tasks:write']],
+      rowCount: 3,
+    });
+    const service = new PermissionsService(drizzle(pool));
+
+    expect(await service.getEffectivePermissions(7)).toEqual([
+      'leads:read',
+      'tasks:write',
+    ]);
+    expect(query).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({
+        text: 'select "permissions"."key" from "user_roles" inner join "role_permissions" on "user_roles"."roleId" = "role_permissions"."roleId" inner join "permissions" on "role_permissions"."permissionId" = "permissions"."id" where "user_roles"."userId" = $1',
+      }),
+      [7],
+    );
+  });
 });

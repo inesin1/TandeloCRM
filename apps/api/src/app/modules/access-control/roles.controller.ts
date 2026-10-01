@@ -1,45 +1,22 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Post,
-  Put,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import { RolesService } from './roles.service';
-import { CreateRoleDto } from './dto/create-role.dto';
-import { UpdateRoleDto } from './dto/update-role.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RequirePermissions } from './require-permissions.decorator';
 
 @UseGuards(JwtAuthGuard)
 @Controller('roles')
 export class RolesController {
   constructor(private readonly rolesService: RolesService) {}
 
-  @Post()
-  create(@Body() dto: CreateRoleDto) {
-    return this.rolesService.create(dto);
-  }
-
   @Get()
+  @RequirePermissions('roles:read')
   findAll() {
     return this.rolesService.findAll();
   }
 
   @Get(':id')
+  @RequirePermissions('roles:read')
   findOne(@Param('id') id: string) {
     return this.rolesService.findOne(id);
-  }
-
-  @Put(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateRoleDto) {
-    return this.rolesService.update(id, dto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.rolesService.remove(id);
   }
 }

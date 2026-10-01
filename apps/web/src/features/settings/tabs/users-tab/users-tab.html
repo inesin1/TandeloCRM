@@ -17,10 +17,12 @@
     />
   </p-iconfield>
 
-  <button pButton>
+  @if (canManageUsers()) {
+  <button pButton type="button" (click)="openCreateUser()">
     <svg data-p-icon="plus"></svg>
     <span>User</span>
   </button>
+  }
 </div>
 
 <div class="mt-4">
@@ -30,7 +32,7 @@
     dataKey="id"
     removableSort
     showGridlines
-    [tableStyle]="{ 'min-width': '40rem' }"
+    [tableStyle]="{ 'min-width': '48rem' }"
   >
     <ng-template #header>
       <tr>
@@ -42,13 +44,14 @@
           </div>
         </th>
         <th>Email</th>
-        <th>Roles</th>
+        <th>Role</th>
         <th pSortableColumn="groupNames">
           <div class="flex items-center gap-2">
             Groups
             <p-sort-icon field="groupNames" />
           </div>
         </th>
+        <th>Status</th>
       </tr>
     </ng-template>
 
@@ -76,22 +79,27 @@
         </td>
 
         <td>
-          <div class="flex flex-wrap gap-1">
-            @for (role of user.roles; track role.id) {
-            <p-tag [value]="role.name" severity="secondary" />
-            }
-          </div>
+          @for (role of user.roles; track role.id) {
+          <p-tag [value]="role.name" severity="secondary" />
+          }
         </td>
 
         <td>
           <span class="text-sm text-surface-700">{{ user.groupNames }}</span>
+        </td>
+
+        <td>
+          <p-tag
+            [value]="user.isActive ? 'Active' : 'Disabled'"
+            [severity]="user.isActive ? 'success' : 'secondary'"
+          />
         </td>
       </tr>
     </ng-template>
 
     <ng-template #emptymessage>
       <tr>
-        <td colspan="5" class="py-6 text-center text-sm text-surface-500">
+        <td colspan="6" class="py-6 text-center text-sm text-surface-500">
           No users found
         </td>
       </tr>
@@ -114,9 +122,13 @@
         <div class="truncate text-base font-semibold text-surface-900">
           {{ userForm.name().value() || user.name }}
         </div>
-        <div class="truncate text-xs text-surface-500">{{ user.email }}</div>
+        <div class="truncate text-xs text-surface-500">
+          {{ userForm.email().value() || user.email }}
+        </div>
       </div>
     </div>
+    } @else {
+    <span class="text-base font-semibold text-surface-900">Create user</span>
     }
   </ng-template>
 
@@ -128,18 +140,18 @@
   >
     <div class="flex flex-col gap-1.5">
       <label for="userName" class="text-xs font-medium text-surface-700">
-        Имя
+        Name
       </label>
       <input
         id="userName"
         pInputText
         type="text"
         class="w-full"
-        placeholder="Введите имя"
+        placeholder="Enter name"
         [formField]="userForm.name"
       />
-      @if (userForm.name().touched() && userForm.name().invalid()) { @for
-      (error of userForm.name().errors(); track error.kind) {
+      @if (userForm.name().touched() && userForm.name().invalid()) { @for (error
+      of userForm.name().errors(); track error.kind) {
       <p-message severity="error" size="small" variant="simple">
         {{ error.message }}
       </p-message>
@@ -166,27 +178,53 @@
       } }
     </div>
 
+    @if (!selectedUser()) {
     <div class="flex flex-col gap-1.5">
-      <label for="userRoles" class="text-xs font-medium text-surface-700">
-        Роли
+      <label for="initialPassword" class="text-xs font-medium text-surface-700">
+        Initial password
+      </label>
+      <input
+        id="initialPassword"
+        pInputText
+        type="password"
+        autocomplete="new-password"
+        class="w-full"
+        [formField]="userForm.password"
+      />
+      @if (userForm.password().touched() && userForm.password().invalid()) {
+      @for (error of userForm.password().errors(); track error.kind) {
+      <p-message severity="error" size="small" variant="simple">
+        {{ error.message }}
+      </p-message>
+      } }
+    </div>
+    }
+
+    <div class="flex flex-col gap-1.5">
+      <label for="userRole" class="text-xs font-medium text-surface-700">
+        Role
       </label>
       <p-select
-        multiple
-        checkmark
-        inputId="userRoles"
+        inputId="userRole"
         [options]="roles.value()"
         optionLabel="name"
         optionValue="id"
-        placeholder="Выберите роли"
+        placeholder="Select a role"
         appendTo="body"
         class="w-full"
-        [formField]="userForm.roleIds"
+        [formField]="userForm.roleId"
       />
+      @if (userForm.roleId().touched() && userForm.roleId().invalid()) { @for
+      (error of userForm.roleId().errors(); track error.kind) {
+      <p-message severity="error" size="small" variant="simple">
+        {{ error.message }}
+      </p-message>
+      } }
     </div>
 
     <div class="flex flex-col gap-1.5">
       <label for="userGroups" class="text-xs font-medium text-surface-700">
-        Группы
+        Groups
       </label>
       <p-select
         multiple
@@ -195,14 +233,76 @@
         [options]="groups.value()"
         optionLabel="name"
         optionValue="id"
-        placeholder="Выберите группы"
+        placeholder="Select groups"
         appendTo="body"
         class="w-full"
         [formField]="userForm.groupIds"
       />
     </div>
 
-    @if (saveError()) {
+    @if (selectedUser(); as user) {
+    <div class="flex flex-col gap-3 border-t border-surface-200 pt-4">
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <div class="text-sm font-medium text-surface-800">Account status</div>
+          <div class="text-xs text-surface-500">
+            {{ user.isActive ? 'This user can sign in' : 'This user cannot sign
+            in' }}
+          </div>
+        </div>
+        @if (canManageUsers()) {
+        <button
+          pButton
+          type="button"
+          severity="secondary"
+          outlined
+          (click)="toggleUserStatus()"
+        >
+          {{ user.isActive ? 'Disable user' : 'Enable user' }}
+        </button>
+        }
+      </div>
+
+      @if (canManageUsers()) {
+      <div class="flex flex-col gap-1.5">
+        <label for="resetPassword" class="text-xs font-medium text-surface-700">
+          Set a new password
+        </label>
+        <div class="flex gap-2">
+          <input
+            id="resetPassword"
+            pInputText
+            type="password"
+            autocomplete="new-password"
+            class="min-w-0 flex-1"
+            [ngModel]="resetPasswordValue()"
+            (ngModelChange)="resetPasswordValue.set($event); passwordMessage.set('')"
+            [ngModelOptions]="{ standalone: true }"
+          />
+          <button
+            pButton
+            type="button"
+            severity="secondary"
+            outlined
+            [disabled]="resetPasswordValue().length < 8"
+            (click)="resetPassword()"
+          >
+            Reset password
+          </button>
+        </div>
+        @if (passwordMessage()) {
+        <p-message
+          [severity]="passwordMessage() === 'Password reset' ? 'success' : 'error'"
+          size="small"
+          variant="simple"
+        >
+          {{ passwordMessage() }}
+        </p-message>
+        }
+      </div>
+      }
+    </div>
+    } @if (saveError()) {
     <p-message severity="error" size="small">{{ saveError() }}</p-message>
     }
   </form>
@@ -218,17 +318,19 @@
         outlined
         (click)="closeDrawer()"
       >
-        Закрыть
+        Close
       </button>
 
+      @if (canManageUsers()) {
       <button
         pButton
         type="submit"
         form="userForm"
         [disabled]="!userForm().dirty() || userForm().submitting()"
       >
-        Сохранить
+        {{ selectedUser() ? 'Save' : 'Create user' }}
       </button>
+      }
     </div>
   </ng-template>
 </p-drawer>

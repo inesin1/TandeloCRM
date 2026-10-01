@@ -1,5 +1,7 @@
 import {
   IsArray,
+  ArrayMaxSize,
+  ArrayMinSize,
   IsEmail,
   IsInt,
   IsOptional,
@@ -18,10 +20,11 @@ export class CreateUserDto {
   @MinLength(8)
   password!: string;
 
-  @IsOptional()
   @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(1)
   @IsInt({ each: true })
-  roleIds?: number[];
+  roleIds!: number[];
 
   @IsOptional()
   @IsArray()
