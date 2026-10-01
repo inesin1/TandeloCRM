@@ -5,75 +5,50 @@
 
 <div align="center">
   <img alt="Self-hosted CRM" src="https://img.shields.io/badge/Self--hosted-CRM-1f9d55?style=flat-square&logo=server&logoColor=white" />
-  <img alt="Modular by design" src="https://img.shields.io/badge/Modular-by%20design-0ea5e9?style=flat-square&logo=package&logoColor=white" />
-  <img alt="Integrations first" src="https://img.shields.io/badge/Integrations-first-8b5cf6?style=flat-square&logo=plugged-in&logoColor=white" />
+  <img alt="Modular codebase" src="https://img.shields.io/badge/Modular-codebase-0ea5e9?style=flat-square&logo=package&logoColor=white" />
+  <img alt="MVP in development" src="https://img.shields.io/badge/MVP-in%20development-f59e0b?style=flat-square" />
 </div>
 
-The self-hosted CRM built for modular growth.
+The self-hosted CRM for sales workflows.
 
-Tandelo gives sales teams a clean system for leads, companies, contacts, tasks, and pipeline visibility without locking them into a rigid platform or a brittle custom stack.
+Tandelo brings leads, companies, contacts, pipelines, and lead-linked tasks into one app. The frontend uses Angular, the API uses NestJS, and PostgreSQL stores the data.
 
-The idea is simple: connect external services, internal tools, and custom business logic without patching the app itself.
-
----
-
-## Why you should choose Tandelo
-
-| Feature                     | Why it matters                                                                         |
-| --------------------------- | -------------------------------------------------------------------------------------- |
-| 🧭 Pipeline clarity         | Keep deals moving with a visible, structured workflow.                                 |
-| 📦 Modular architecture     | Add features and integrations without turning the core into a fragile monolith.        |
-| 🔌 Integration-first design | Connect CRMs, APIs, and internal tools without editing source code.                    |
-| 🤖 AI support               | Get setup help and day-to-day guidance without adding overhead.                        |
-| 🏠 Self-hosted              | Keep the system on your own infrastructure with full control over deployment and data. |
-
-## Built for integrations
-
-Tandelo is built for real-world business systems, not just a fixed CRM feature set.
-
-- connect third-party services without modifying the core product
-- build integrations in the JavaScript stack that fits your team
-- keep your own backend logic separate when the workflow needs it
-- add adapters and automations without forking the platform
-- evolve the system as your stack grows and changes
-
-The plugin SDK and module boundaries are the foundation here. They let teams extend the product without creating hidden dependencies or fragile patches in the core.
+The code is organized into domain modules. A public plugin SDK and external integrations are planned, but are not available yet.
 
 ---
 
-## Core workflow
+## Current features
 
-- pipeline management with kanban and list views
-- lead, company, and contact records in one system
-- tasks connected to deals and people
-- analytics and reporting across the pipeline
-- user and team management inside the app
+- Leads can be viewed in board and list layouts across pipelines.
+- Lead records can be linked to companies and contacts.
+- Tasks are attached to leads, can have an optional assignee, and can be created and completed from the task list.
+- Users have one of two fixed roles, Admin or Member. Admins manage users and groups.
+- Pipeline analytics show lead counts and total value by stage.
+- The API and web app can run on infrastructure you control.
 
 ---
 
-## Modular architecture
+## Architecture
 
 ```text
-+----------------------+      +----------------------+
-| External Services    |      | Internal Workflows   |
-| Slack, email, ERP   | ---> | custom automation    |
-| marketing tools     |      | scripts / APIs       |
-+----------------------+      +----------------------+
-             \                     /
-              \                   /
-               v                 v
-            +-------------------------------+
-            |      Tandelo integration      |
-            |      layer / plugin SDK       |
-            +-------------------------------+
-                           v
-            +-------------------------------+
-            |        Core CRM module        |
-            | leads, contacts, pipeline     |
-            +-------------------------------+
+Browser
+  |
+  v
+Angular web app
+  |
+  v
+NestJS API
+  ├── Authentication and access control
+  ├── Leads and pipelines
+  ├── Companies and contacts
+  ├── Tasks, custom fields, and analytics
+  ├── Users and groups
+  |
+  v
+PostgreSQL
 ```
 
-This architecture keeps the platform stable while making integrations an explicit extension point instead of a source-code surgery project.
+The API separates CRM features into NestJS modules. Integration adapters and extension hooks are future work.
 
 ---
 
@@ -102,26 +77,38 @@ This architecture keeps the platform stable while making integrations an explici
 
 ## Quick start
 
+This setup runs the web app and API locally and uses Docker Compose for PostgreSQL. It is intended for development.
+
 ```bash
-# install dependencies
+cp .env.example .env
+openssl rand -hex 32
+```
+
+Copy the generated value into `JWT_SECRET` in `.env`; it must be at least 32 characters long. Set `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and optionally `ADMIN_NAME` before creating the first user.
+
+```bash
 pnpm install
+docker compose up -d postgres
+pnpm db:migrate
+pnpm db:seed # optional demo data
+pnpm db:seed-admin
+```
 
-# start the web app
+Start the API and web app in separate terminals:
+
+```bash
 pnpm nx run web:serve
+```
 
-# start the API
+```bash
 pnpm nx run api:serve
+```
 
-# build the project
+```bash
 pnpm nx run-many -t build
-
-# run lint and tests
 pnpm nx run-many -t lint test
-
-# run e2e tests
 pnpm nx run web-e2e:e2e
-
-# inspect the Nx graph
+pnpm nx run api-e2e:e2e
 pnpm nx graph
 ```
 
@@ -146,23 +133,24 @@ pnpm nx graph
 
 ## Status
 
-Tandelo is in active development. The project is already structured around a modular foundation, with integrations and custom workflows as a first-class concern.
+Tandelo is in active development. The MVP covers leads, companies, contacts, pipelines, lead-linked tasks, fixed-role access control, user and group administration, and pipeline analytics. Integrations, the plugin SDK, and AI are not part of the current MVP.
 
 ---
 
 ## Roadmap
 
-- richer workflow and reporting features
-- stronger integration adapters for external services
-- better automation around tasks and lifecycle events
-- more extension hooks for custom business logic
-- support for more flexible deployment patterns and backend choices
+- Integration SDK, adapters, and connections to external services
+- AI assistant
+- Historical analytics, conversion reports, and data export
+- Task and lifecycle automation
+- Custom roles and team-based access rules
+- Production deployment options beyond the local PostgreSQL setup
 
 ---
 
 ## Contributing
 
-Contributions are welcome. If you want to improve the product, extend the SDK, or build a custom integration flow, open an issue or propose a change in the repository.
+Contributions are welcome. Open an issue or propose a change to the CRM workflow, API, or documentation. The integration SDK is planned and is not available yet.
 
 ---
 
