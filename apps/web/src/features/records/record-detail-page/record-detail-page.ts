@@ -36,6 +36,7 @@ import {
   LinkedLead,
   RecordActivity,
   RecordDraft,
+  RECORD_API_RESOURCES,
   RecordKind,
 } from '../record-types';
 
@@ -85,6 +86,7 @@ export class RecordDetailPage {
   protected readonly kind = this.route.snapshot.data[
     'recordKind'
   ] as RecordKind;
+  protected readonly apiResource = RECORD_API_RESOURCES[this.kind];
   protected readonly label = this.kind === 'contact' ? 'Contact' : 'Company';
   protected readonly basePath =
     this.kind === 'contact' ? '/contacts' : '/companies';
@@ -98,19 +100,21 @@ export class RecordDetailPage {
   );
   protected readonly record = httpResource<Contact | Company>(() => {
     const id = this.id();
-    return id === null ? undefined : `/api/${this.kind}s/${id}`;
+    return id === null ? undefined : `/api/${this.apiResource}/${id}`;
   });
   protected readonly links = httpResource<LinkedLead[]>(
     () => {
       const id = this.id();
-      return id === null ? undefined : `/api/${this.kind}s/${id}/leads`;
+      return id === null ? undefined : `/api/${this.apiResource}/${id}/leads`;
     },
     { defaultValue: [] },
   );
   protected readonly activity = httpResource<RecordActivity[]>(
     () => {
       const id = this.id();
-      return id === null ? undefined : `/api/${this.kind}s/${id}/activity`;
+      return id === null
+        ? undefined
+        : `/api/${this.apiResource}/${id}/activity`;
     },
     { defaultValue: [] },
   );

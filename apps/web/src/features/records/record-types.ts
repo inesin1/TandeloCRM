@@ -1,5 +1,10 @@
 export type RecordKind = 'contact' | 'company';
 
+export const RECORD_API_RESOURCES: Record<RecordKind, string> = {
+  contact: 'contacts',
+  company: 'companies',
+};
+
 export interface RecordDraft {
   name: string;
   position: string | null;
