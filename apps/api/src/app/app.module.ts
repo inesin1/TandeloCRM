@@ -11,6 +11,7 @@ import { CompaniesModule } from './modules/companies/companies.module';
 import { ContactsModule } from './modules/contacts/contacts.module';
 import { CustomFieldsModule } from './modules/custom-fields/custom-fields.module';
 import { TasksModule } from './modules/tasks/tasks.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { AppController } from './app.controller';
 
 @Module({
@@ -30,6 +31,7 @@ import { AppController } from './app.controller';
     ContactsModule,
     LeadsModule,
     TasksModule,
+    AnalyticsModule,
   ],
 })
 export class AppModule {}

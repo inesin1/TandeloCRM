@@ -1,5 +1,98 @@
-<div class="container">
-  <div class="flex p-2 justify-between">
-    <h1>Analytics</h1>
-  </div>
-</div>
+<main class="container mx-auto flex flex-col gap-4 p-4">
+  <app-page-header title="Analytics" />
+
+  @if (loadError()) {
+  <p class="rounded-lg bg-red-50 p-4 text-red-700" role="alert">
+    Analytics could not be loaded. Please try again.
+  </p>
+  } @else if (isLoading()) {
+  <p class="p-4 text-surface-500" role="status">Loading analytics…</p>
+  } @else if (pipelines.value().length === 0) {
+  <section class="rounded-xl border border-dashed p-8 text-center">
+    <h2 class="font-semibold">No pipelines yet</h2>
+    <p class="mt-1 text-surface-500">
+      Create a pipeline to see lead totals by stage.
+    </p>
+  </section>
+  } @else {
+  <section
+    class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--p-content-border-color)] bg-[var(--p-content-background)] p-4"
+  >
+    <div class="flex flex-col gap-1">
+      <label for="analytics-pipeline" class="text-sm font-medium"
+        >Pipeline</label
+      >
+      <select
+        id="analytics-pipeline"
+        class="min-w-56 rounded-lg border border-[var(--p-content-border-color)] bg-[var(--p-content-background)] px-3 py-2"
+        [value]="selectedPipelineId()"
+        (change)="selectPipeline($event)"
+      >
+        @for (item of pipelines.value(); track item.id) {
+        <option value="{{ item.id }}">{{ item.name }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="flex gap-8">
+      <div>
+        <div class="text-sm text-surface-500">Leads</div>
+        <div class="text-xl font-semibold">{{ totals().leadCount }}</div>
+      </div>
+      <div>
+        <div class="text-sm text-surface-500">Total value</div>
+        <div class="text-xl font-semibold">{{ totals().totalPriceLabel }}</div>
+      </div>
+    </div>
+  </section>
+
+  @if (stages().length === 0) {
+  <section class="rounded-xl border border-dashed p-8 text-center">
+    <h2 class="font-semibold">No stages in this pipeline</h2>
+    <p class="mt-1 text-surface-500">
+      Add stages to track leads in this pipeline.
+    </p>
+  </section>
+  } @else { @if (!hasLeads()) {
+  <section
+    class="rounded-xl border border-dashed p-6 text-center"
+    role="status"
+  >
+    <h2 class="font-semibold">No leads in this pipeline yet</h2>
+    <p class="mt-1 text-surface-500">
+      Stage totals will appear here when leads are added.
+    </p>
+  </section>
+  }
+
+  <section
+    class="overflow-hidden rounded-xl border border-[var(--p-content-border-color)] bg-[var(--p-content-background)]"
+    aria-label="Pipeline totals by stage"
+  >
+    <table class="w-full text-left">
+      <thead class="bg-surface-50 text-sm text-surface-500">
+        <tr>
+          <th class="px-4 py-3 font-medium">Stage</th>
+          <th class="px-4 py-3 text-right font-medium">Leads</th>
+          <th class="px-4 py-3 text-right font-medium">Total value</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (stage of stages(); track stage.statusId) {
+        <tr class="border-t border-[var(--p-content-border-color)]">
+          <th class="px-4 py-3 font-medium" scope="row">
+            <span
+              class="mr-2 inline-block size-2 rounded-full"
+              [style.backgroundColor]="stage.statusColor"
+            ></span>
+            {{ stage.statusName }}
+          </th>
+          <td class="px-4 py-3 text-right">{{ stage.leadCount }}</td>
+          <td class="px-4 py-3 text-right">{{ stage.totalPriceLabel }}</td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </section>
+  } }
+</main>
