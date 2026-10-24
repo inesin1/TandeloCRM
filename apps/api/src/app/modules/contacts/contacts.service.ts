@@ -1,7 +1,7 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { and, eq, ilike } from 'drizzle-orm';
+import { and, desc, eq, ilike, lt } from 'drizzle-orm';
 import { CustomFieldsService } from '../custom-fields/custom-fields.service';
-import { DATABASE_CONNECTION, Database } from '../database/database.module';
+import { DATABASE_CONNECTION, Database, DatabaseExecutor } from '../database/database.module';
 import { leadActivities } from '../leads/lead-activity.entity';
 import { leadContacts, leads } from '../leads/lead.entity';
 import { statuses } from '../pipelines/pipeline.entity';
@@ -19,12 +19,55 @@ export class ContactsService {
     private readonly customFieldsService: CustomFieldsService,
   ) {}
 
-  async create(dto: CreateContactDto) {
+  findCopilotPage(search: string, ownerId: number | null, cursorId: number | null, limit: number) {
+    return this.db
+      .select({ id: contacts.id, name: contacts.name, position: contacts.position, companyId: contacts.companyId })
+      .from(contacts)
+      .where(and(ilike(contacts.name, `%${search}%`), ownerId ? eq(contacts.ownerId, ownerId) : undefined, cursorId ? lt(contacts.id, cursorId) : undefined))
+      .orderBy(desc(contacts.id))
+      .limit(limit);
+  }
+
+  findCopilotRecord(id: number) {
+    return this.db
+      .select({ id: contacts.id, name: contacts.name, position: contacts.position, companyId: contacts.companyId, email: contacts.email, phone: contacts.phone, ownerId: contacts.ownerId, customFields: contacts.customFields, createdAt: contacts.createdAt, updatedAt: contacts.updatedAt })
+      .from(contacts)
+      .where(eq(contacts.id, id))
+      .limit(1);
+  }
+
+  findCopilotMutationRecord(id: number, executor: DatabaseExecutor = this.db, forUpdate = false) {
+    const query = executor
+      .select({ id: contacts.id, name: contacts.name, position: contacts.position, companyId: contacts.companyId, email: contacts.email, phone: contacts.phone, ownerId: contacts.ownerId, customFields: contacts.customFields, createdAt: contacts.createdAt, updatedAt: contacts.updatedAt })
+      .from(contacts)
+      .where(eq(contacts.id, id));
+    return (forUpdate ? query.for('update') : query).limit(1);
+  }
+
+  findCopilotLink(id: number, executor: DatabaseExecutor = this.db) {
+    return executor
+      .select({ id: contacts.id, name: contacts.name })
+      .from(contacts)
+      .where(eq(contacts.id, id))
+      .limit(1);
+  }
+
+  findCopilotActivity(id: number, cursorId: number | null, limit: number) {
+    return this.db
+      .select({ id: recordNotes.id, body: recordNotes.body, createdAt: recordNotes.createdAt, authorId: recordNotes.authorId })
+      .from(recordNotes)
+      .where(and(eq(recordNotes.contactId, id), cursorId ? lt(recordNotes.id, cursorId) : undefined))
+      .orderBy(desc(recordNotes.id))
+      .limit(limit);
+  }
+
+  async create(dto: CreateContactDto, executor: DatabaseExecutor = this.db) {
     await this.customFieldsService.validate(
       'contact',
       dto.customFields === undefined ? {} : dto.customFields,
+      executor,
     );
-    const [contact] = await this.db.insert(contacts).values(dto).returning();
+    const [contact] = await executor.insert(contacts).values(dto).returning();
     return contact;
   }
 
@@ -47,8 +90,8 @@ export class ContactsService {
       );
   }
 
-  async findOne(id: string) {
-    const [contact] = await this.db
+  async findOne(id: string, executor: DatabaseExecutor = this.db) {
+    const [contact] = await executor
       .select()
       .from(contacts)
       .where(eq(contacts.id, Number(id)));
@@ -156,27 +199,27 @@ export class ContactsService {
     ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
 
-  async addNote(id: string, body: string, authorId: number) {
-    const contact = await this.findOne(id);
-    const [note] = await this.db
+  async addNote(id: string, body: string, authorId: number, executor: DatabaseExecutor = this.db) {
+    const contact = await this.findOne(id, executor);
+    const [note] = await executor
       .insert(recordNotes)
       .values({ contactId: contact.id, body: body.trim(), authorId })
       .returning();
     return note;
   }
 
-  async update(id: string, dto: UpdateContactDto) {
+  async update(id: string, dto: UpdateContactDto, executor: DatabaseExecutor = this.db) {
     if (dto.customFields !== undefined) {
-      await this.customFieldsService.validate('contact', dto.customFields);
+      await this.customFieldsService.validate('contact', dto.customFields, executor);
     }
     const contactId = Number(id);
     const [contact] = Object.keys(dto).length
-      ? await this.db
+      ? await executor
           .update(contacts)
           .set(dto)
           .where(eq(contacts.id, contactId))
           .returning()
-      : await this.db.select().from(contacts).where(eq(contacts.id, contactId));
+      : await executor.select().from(contacts).where(eq(contacts.id, contactId));
 
     if (!contact) {
       throw new NotFoundException(`Contact ${id} not found`);

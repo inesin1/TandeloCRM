@@ -13,6 +13,7 @@ import { CustomFieldsModule } from './modules/custom-fields/custom-fields.module
 import { TasksModule } from './modules/tasks/tasks.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { AppController } from './app.controller';
+import { CopilotModule } from './modules/copilot/copilot.module';
 
 @Module({
   controllers: [AppController],
@@ -32,6 +33,7 @@ import { AppController } from './app.controller';
     LeadsModule,
     TasksModule,
     AnalyticsModule,
+    CopilotModule,
   ],
 })
 export class AppModule {}

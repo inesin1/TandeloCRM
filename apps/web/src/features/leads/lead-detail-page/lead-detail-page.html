@@ -70,6 +70,20 @@
           class="flex items-center gap-2.5 text-xs font-medium tracking-wide text-white/60"
         >
           <span>{{ isNew() ? 'NEW LEAD' : '#' + id() }}</span>
+          @if (!isNew() && lead.hasValue() && lead.value().id === id()) {
+          <button
+            pButton
+            type="button"
+            severity="secondary"
+            outlined
+            size="small"
+            class="ml-auto"
+            (mousedown)="$event.preventDefault()"
+            (click)="discussInCopilot($event)"
+          >
+            Discuss in Copilot
+          </button>
+          }
         </div>
 
         <details #statusMenu class="relative">
@@ -274,6 +288,8 @@
         >
         } @if (saved()) {
         <p-message severity="success" class="mt-3">Changes saved.</p-message> }
+        @if (copilotRefreshNotice()) {
+        <p-message severity="info" class="mt-3">{{ copilotRefreshNotice() }}</p-message> }
         @if (saveError()) {
         <p-message severity="error" class="mt-3">{{ saveError() }}</p-message> }
       </div>

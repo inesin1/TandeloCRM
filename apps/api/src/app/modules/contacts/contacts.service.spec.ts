@@ -57,7 +57,7 @@ function setup(
     .spyOn(customFieldsService, 'validate')
     .mockResolvedValue();
   const service = new ContactsService(db, customFieldsService);
-  return { service, query, validate };
+  return { service, db, query, validate };
 }
 
 afterEach(() => {
@@ -148,7 +148,7 @@ describe('ContactsService', () => {
         ownerId: contact.ownerId,
         customFields: contact.customFields,
       };
-      const { service, query, validate } = setup([contact]);
+      const { service, db, query, validate } = setup([contact]);
       validate.mockImplementation(async () => {
         expect(query).not.toHaveBeenCalled();
       });
@@ -157,6 +157,7 @@ describe('ContactsService', () => {
       expect(validate).toHaveBeenCalledExactlyOnceWith(
         'contact',
         dto.customFields,
+        db,
       );
       expect(query).toHaveBeenCalledExactlyOnceWith(
         expect.objectContaining({
@@ -184,10 +185,10 @@ describe('ContactsService', () => {
         ownerId: null,
         customFields: {},
       };
-      const { service, query, validate } = setup([record]);
+      const { service, db, query, validate } = setup([record]);
 
       expect(await service.create({ name: 'Sales' })).toEqual(record);
-      expect(validate).toHaveBeenCalledExactlyOnceWith('contact', {});
+      expect(validate).toHaveBeenCalledExactlyOnceWith('contact', {}, db);
       expect(query).toHaveBeenCalledExactlyOnceWith(
         expect.objectContaining({
           text: `insert into "contacts" (${columns}) values (default, $1, default, default, default, default, default, default, default, default) returning ${columns}`,
@@ -252,7 +253,7 @@ describe('ContactsService', () => {
         const now = new Date('2026-09-17T12:00:00.000Z');
         vi.setSystemTime(now);
         const updated = { ...contact, customFields, updatedAt: now };
-        const { service, query, validate } = setup([updated]);
+        const { service, db, query, validate } = setup([updated]);
         validate.mockImplementation(async () => {
           expect(query).not.toHaveBeenCalled();
         });
@@ -261,6 +262,7 @@ describe('ContactsService', () => {
         expect(validate).toHaveBeenCalledExactlyOnceWith(
           'contact',
           customFields,
+          db,
         );
         expect(query).toHaveBeenCalledExactlyOnceWith(
           expect.objectContaining({

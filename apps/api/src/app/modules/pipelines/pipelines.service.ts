@@ -1,13 +1,32 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { asc, eq } from 'drizzle-orm';
-import { DATABASE_CONNECTION, Database } from '../database/database.module';
-import { pipelines } from './pipeline.entity';
+import { and, asc, desc, eq, lt } from 'drizzle-orm';
+import { DATABASE_CONNECTION, Database, DatabaseExecutor } from '../database/database.module';
+import { pipelines, statuses } from './pipeline.entity';
 import { CreatePipelineDto } from './dto/create-pipeline.dto';
 import { UpdatePipelineDto } from './dto/update-pipeline.dto';
 
 @Injectable()
 export class PipelinesService {
   constructor(@Inject(DATABASE_CONNECTION) private readonly db: Database) {}
+
+  findCopilotStatus(pipelineId: number, statusId: number, executor: DatabaseExecutor = this.db) {
+    return executor
+      .select({ pipelineId: pipelines.id, pipelineName: pipelines.name, statusId: statuses.id, statusName: statuses.name, color: statuses.color })
+      .from(pipelines)
+      .innerJoin(statuses, eq(statuses.pipelineId, pipelines.id))
+      .where(and(eq(pipelines.id, pipelineId), eq(statuses.id, statusId)))
+      .limit(1);
+  }
+
+  findCopilotReferencePage(cursorId: number | null, limit: number) {
+    return this.db
+      .select({ id: statuses.id, name: statuses.name, color: statuses.color, pipelineId: pipelines.id, pipelineName: pipelines.name })
+      .from(statuses)
+      .innerJoin(pipelines, eq(statuses.pipelineId, pipelines.id))
+      .where(cursorId ? lt(statuses.id, cursorId) : undefined)
+      .orderBy(desc(statuses.id))
+      .limit(limit);
+  }
 
   async create(dto: CreatePipelineDto) {
     const [pipeline] = await this.db.insert(pipelines).values(dto).returning();

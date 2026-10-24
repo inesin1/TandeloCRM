@@ -7,6 +7,8 @@ import { Env } from '../../env.schema';
 export const DATABASE_CONNECTION = Symbol('DATABASE_CONNECTION');
 
 export type Database = NodePgDatabase;
+export type DatabaseTransaction = Parameters<Parameters<Database['transaction']>[0]>[0];
+export type DatabaseExecutor = Database | DatabaseTransaction;
 
 @Global()
 @Module({

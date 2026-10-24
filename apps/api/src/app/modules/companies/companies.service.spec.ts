@@ -57,7 +57,7 @@ function setup(
     .spyOn(customFieldsService, 'validate')
     .mockResolvedValue();
   const service = new CompaniesService(db, customFieldsService);
-  return { service, query, validate };
+  return { service, db, query, validate };
 }
 
 afterEach(() => {
@@ -142,7 +142,7 @@ describe('CompaniesService', () => {
         ownerId: company.ownerId,
         customFields: company.customFields,
       };
-      const { service, query, validate } = setup([company]);
+      const { service, db, query, validate } = setup([company]);
       validate.mockImplementation(async () => {
         expect(query).not.toHaveBeenCalled();
       });
@@ -151,6 +151,7 @@ describe('CompaniesService', () => {
       expect(validate).toHaveBeenCalledExactlyOnceWith(
         'company',
         dto.customFields,
+        db,
       );
       expect(query).toHaveBeenCalledExactlyOnceWith(
         expect.objectContaining({
@@ -178,10 +179,10 @@ describe('CompaniesService', () => {
         ownerId: null,
         customFields: {},
       };
-      const { service, query, validate } = setup([record]);
+      const { service, db, query, validate } = setup([record]);
 
       expect(await service.create({ name: 'Sales' })).toEqual(record);
-      expect(validate).toHaveBeenCalledExactlyOnceWith('company', {});
+      expect(validate).toHaveBeenCalledExactlyOnceWith('company', {}, db);
       expect(query).toHaveBeenCalledExactlyOnceWith(
         expect.objectContaining({
           text: `insert into "companies" (${columns}) values (default, $1, default, default, default, default, default, default, default, default) returning ${columns}`,
@@ -242,7 +243,7 @@ describe('CompaniesService', () => {
         const now = new Date('2026-09-17T12:00:00.000Z');
         vi.setSystemTime(now);
         const updated = { ...company, customFields, updatedAt: now };
-        const { service, query, validate } = setup([updated]);
+        const { service, db, query, validate } = setup([updated]);
         validate.mockImplementation(async () => {
           expect(query).not.toHaveBeenCalled();
         });
@@ -251,6 +252,7 @@ describe('CompaniesService', () => {
         expect(validate).toHaveBeenCalledExactlyOnceWith(
           'company',
           customFields,
+          db,
         );
         expect(query).toHaveBeenCalledExactlyOnceWith(
           expect.objectContaining({

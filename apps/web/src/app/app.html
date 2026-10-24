@@ -75,11 +75,35 @@
   </p-sidebar>
 
   <p-sidebar-main class="app-main min-w-0">
+    <div class="flex justify-end px-2 pt-2">
+      @if (!isCopilotRoute()) {
+        <button #copilotButton type="button" aria-label="Open Copilot panel" class="rounded-lg border border-surface-200 bg-white px-3 py-2 text-sm font-medium text-surface-700 shadow-sm hover:bg-surface-50" (click)="openCopilot($event)">
+          Copilot
+        </button>
+      }
+    </div>
     <main class="min-w-0 flex-1 overflow-y-auto p-2">
       <router-outlet />
     </main>
   </p-sidebar-main>
 </p-sidebar-layout>
+<p-drawer
+  [visible]="copilot.panelOpen() && !isCopilotRoute()"
+  (visibleChange)="panelVisibilityChanged($event)"
+  position="right"
+  header="Copilot"
+  ariaCloseLabel="Close Copilot"
+  [modal]="true"
+  [blockScroll]="true"
+  [dismissible]="true"
+  [closeOnEscape]="true"
+  [style]="{ width: 'min(42rem, 100vw)', height: '100dvh' }"
+>
+  <app-copilot-chat
+    [context]="copilot.panelContext()"
+    (contextChange)="copilot.clearPanelContext()"
+  />
+</p-drawer>
 } @else {
 <router-outlet />
 }

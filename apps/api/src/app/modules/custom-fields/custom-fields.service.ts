@@ -5,8 +5,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { isISO8601 } from 'class-validator';
-import { asc, eq } from 'drizzle-orm';
-import { DATABASE_CONNECTION, Database } from '../database/database.module';
+import { and, asc, desc, eq, lt } from 'drizzle-orm';
+import { DATABASE_CONNECTION, Database, DatabaseExecutor } from '../database/database.module';
 import {
   customFieldDefinitions,
   CustomFieldEntityType,
@@ -19,6 +19,15 @@ import { UpdateCustomFieldDto } from './dto/update-custom-field.dto';
 export class CustomFieldsService {
   constructor(@Inject(DATABASE_CONNECTION) private readonly db: Database) {}
 
+  findCopilotReferencePage(entityType: CustomFieldEntityType | null, cursorId: number | null, limit: number) {
+    return this.db
+      .select({ id: customFieldDefinitions.id, entityType: customFieldDefinitions.entityType, key: customFieldDefinitions.key, label: customFieldDefinitions.label, type: customFieldDefinitions.type, options: customFieldDefinitions.options, isRequired: customFieldDefinitions.isRequired })
+      .from(customFieldDefinitions)
+      .where(and(entityType ? eq(customFieldDefinitions.entityType, entityType) : undefined, cursorId ? lt(customFieldDefinitions.id, cursorId) : undefined))
+      .orderBy(desc(customFieldDefinitions.id))
+      .limit(limit);
+  }
+
   async create(dto: CreateCustomFieldDto) {
     const options = dto.options ?? null;
     this.validateOptions(dto.key, dto.type, options);
@@ -29,8 +38,8 @@ export class CustomFieldsService {
     return definition;
   }
 
-  findAll(entityType?: CustomFieldEntityType) {
-    return this.db
+  findAll(entityType?: CustomFieldEntityType, executor: DatabaseExecutor = this.db) {
+    return executor
       .select()
       .from(customFieldDefinitions)
       .where(
@@ -94,6 +103,7 @@ export class CustomFieldsService {
   async validate(
     entityType: CustomFieldEntityType,
     payload: unknown,
+    executor: DatabaseExecutor = this.db,
   ): Promise<void> {
     if (
       typeof payload !== 'object' ||
@@ -105,7 +115,7 @@ export class CustomFieldsService {
       throw new BadRequestException('customFields must be an object');
     }
 
-    const definitions = await this.findAll(entityType);
+    const definitions = await this.findAll(entityType, executor);
     const byKey = new Map(
       definitions.map((definition) => [definition.key, definition]),
     );

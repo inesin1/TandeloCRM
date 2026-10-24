@@ -33,6 +33,7 @@ import { ContactsApi } from '../../contacts/contacts-api';
 import { CompaniesApi } from '../../companies/companies-api';
 import { UsersApi } from '../../settings/tabs/users-tab/users-api';
 import { Task, TaskInput, TaskType, TasksApi } from '../../tasks/tasks-api';
+import { CopilotState } from '../../copilot/copilot-state';
 
 function toDraft(lead: Lead): LeadDraft {
   return {
@@ -68,6 +69,7 @@ export class LeadDetailPage {
   private readonly destroyRef = inject(DestroyRef);
   private readonly leadsApi = inject(LeadsApi);
   private readonly tasksApi = inject(TasksApi);
+  private readonly copilot = inject(CopilotState);
   private readonly titleInput =
     viewChild<ElementRef<HTMLInputElement>>('titleInput');
   private readonly routeParams = toSignal(this.route.paramMap, {
@@ -296,6 +298,8 @@ export class LeadDetailPage {
     dueAt: '',
     assigneeId: null as number | null,
   });
+  protected readonly copilotRefreshNotice = signal('');
+  private handledCopilotMutation = 0;
 
   constructor() {
     effect(() => {
@@ -331,6 +335,32 @@ export class LeadDetailPage {
       if (status)
         this.draft.update((value) => ({ ...value, statusId: status.id }));
     });
+    effect(() => {
+      const mutation = this.copilot.confirmedMutation();
+      if (!mutation || mutation.sequence <= this.handledCopilotMutation) return;
+      const lead = this.lead.hasValue() && this.lead.value().id === this.id() ? this.lead.value() : null;
+      const affectsLead = (mutation.kind === 'lead' && mutation.recordId === this.id()) ||
+        (mutation.kind === 'company' && lead?.company?.id === mutation.recordId) ||
+        (mutation.kind === 'contact' && !!lead?.contacts.some((contact) => contact.id === mutation.recordId));
+      if (!affectsLead && mutation.kind !== 'task') {
+        this.handledCopilotMutation = mutation.sequence;
+        return;
+      }
+      this.handledCopilotMutation = mutation.sequence;
+      const hasUnsavedEdits = this.hasChanges() || (this.isNew() && this.isDirty()) ||
+        !!this.noteText().trim() || !!this.taskDraft().text.trim() || !!this.taskDraft().dueAt;
+      if (hasUnsavedEdits) {
+        this.copilotRefreshNotice.set('Copilot changed this record. Your unsaved edits are still here.');
+        return;
+      }
+      if (mutation.kind === 'task') this.tasks.reload();
+      if (affectsLead) {
+        this.lead.reload();
+        this.activity.reload();
+        this.companies.reload();
+        this.contacts.reload();
+      }
+    });
   }
 
   canLeave() {
@@ -357,6 +387,12 @@ export class LeadDetailPage {
     this.isDirty.set(true);
     this.saved.set(false);
     this.saveError.set('');
+    if (this.copilotRefreshNotice()) {
+      this.copilotRefreshNotice.set('');
+      this.lead.reload();
+      this.activity.reload();
+      this.tasks.reload();
+    }
   }
 
   protected onPipelineChange(pipelineId: number) {
@@ -427,6 +463,12 @@ export class LeadDetailPage {
     this.customFields.reload();
   }
 
+  protected discussInCopilot(event: MouseEvent) {
+    const id = this.id();
+    if (this.isNew() || id === null || !this.lead.hasValue() || this.lead.value().id !== id) return;
+    this.copilot.openPanel({ context: { kind: 'lead', id }, label: this.lead.value().name }, event.currentTarget instanceof HTMLElement ? event.currentTarget : null);
+  }
+
   protected async cancel() {
     if (this.isNew()) {
       this.isDirty.set(false);
@@ -474,6 +516,12 @@ export class LeadDetailPage {
         this.lead.set(lead);
         this.activity.reload();
         this.saved.set(true);
+        if (this.copilotRefreshNotice()) {
+          this.copilotRefreshNotice.set('');
+          this.lead.reload();
+          this.activity.reload();
+          this.tasks.reload();
+        }
       }
     } catch {
       if (!this.destroyRef.destroyed)

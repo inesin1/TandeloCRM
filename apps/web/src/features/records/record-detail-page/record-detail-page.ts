@@ -5,6 +5,7 @@ import {
   computed,
   DestroyRef,
   ElementRef,
+  effect,
   inject,
   linkedSignal,
   signal,
@@ -31,6 +32,7 @@ import {
 } from '../../contacts/contacts-api';
 import { LeadCustomField } from '../../leads/lead-types';
 import { LeadsApi } from '../../leads/leads-api';
+import { CopilotState } from '../../copilot/copilot-state';
 import { UsersApi } from '../../settings/tabs/users-tab/users-api';
 import {
   LinkedLead,
@@ -77,6 +79,7 @@ export class RecordDetailPage {
   private readonly contactsApi = inject(ContactsApi);
   private readonly companiesApi = inject(CompaniesApi);
   private readonly leadsApi = inject(LeadsApi);
+  private readonly copilot = inject(CopilotState);
   private readonly titleInput =
     viewChild<ElementRef<HTMLInputElement>>('titleInput');
   private readonly params = toSignal(this.route.paramMap, {
@@ -238,6 +241,27 @@ export class RecordDetailPage {
   protected readonly busyLeadId = signal<number | null>(null);
   protected readonly contactLinkError = signal('');
   protected readonly busyContactId = signal<number | null>(null);
+  protected readonly copilotRefreshNotice = signal('');
+  private handledCopilotMutation = 0;
+
+  constructor() {
+    effect(() => {
+      const mutation = this.copilot.confirmedMutation();
+      if (!mutation || mutation.sequence <= this.handledCopilotMutation) return;
+      if (mutation.kind !== this.kind || mutation.recordId !== this.id()) {
+        this.handledCopilotMutation = mutation.sequence;
+        return;
+      }
+      this.handledCopilotMutation = mutation.sequence;
+      if (this.hasChanges() || (this.isNew() && this.isNewDirty()) || !!this.noteText().trim()) {
+        this.copilotRefreshNotice.set(`Copilot changed this ${this.kind}. Your unsaved edits are still here.`);
+        return;
+      }
+      this.record.reload();
+      this.activity.reload();
+      this.links.reload();
+    });
+  }
 
   canLeave() {
     return (
@@ -254,6 +278,12 @@ export class RecordDetailPage {
     this.companies.reload();
     this.contacts.reload();
     this.users.reload();
+  }
+
+  protected discussInCopilot(event: MouseEvent) {
+    const id = this.id();
+    if (this.isNew() || id === null || !this.record.hasValue() || this.record.value().id !== id) return;
+    this.copilot.openPanel({ context: { kind: this.kind, id }, label: this.record.value().name }, event.currentTarget instanceof HTMLElement ? event.currentTarget : null);
   }
 
   protected editName() {
@@ -313,6 +343,12 @@ export class RecordDetailPage {
     this.draft.set(toDraft(this.record.value()));
     this.isEditingName.set(false);
     this.saveError.set('');
+    if (this.copilotRefreshNotice()) {
+      this.copilotRefreshNotice.set('');
+      this.record.reload();
+      this.activity.reload();
+      this.links.reload();
+    }
   }
 
   protected async save() {
@@ -381,6 +417,12 @@ export class RecordDetailPage {
       } else {
         this.record.set(result);
         this.activity.reload();
+        if (this.copilotRefreshNotice()) {
+          this.copilotRefreshNotice.set('');
+          this.record.reload();
+          this.activity.reload();
+          this.links.reload();
+        }
       }
     } catch {
       if (!this.destroyRef.destroyed)

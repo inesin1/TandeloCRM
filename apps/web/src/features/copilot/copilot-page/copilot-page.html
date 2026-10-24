@@ -1,0 +1,73 @@
+<section class="copilot-page">
+  <aside class="conversation-sidebar" aria-label="Copilot chats">
+    <div class="sidebar-top">
+      <div>
+        <span class="eyebrow">Workspace</span>
+        <h1>Copilot</h1>
+      </div>
+      <button class="new-chat" type="button" (click)="state.createConversation()" [disabled]="!!state.pendingRequest()" aria-label="Start a new chat">＋</button>
+    </div>
+    <button class="new-chat-wide" type="button" (click)="state.createConversation()" [disabled]="!!state.pendingRequest()">New chat</button>
+    <nav class="conversation-list" aria-label="Chat history">
+      @for (conversation of state.conversations(); track conversation.id) {
+        <div class="conversation-row" [class.selected]="conversation.id === state.currentConversationId()">
+          @if (editingId() === conversation.id) {
+            <input
+              [ngModel]="titleDraft()"
+              (ngModelChange)="titleDraft.set($event)"
+              (keydown.enter)="saveRename(conversation.id)"
+              (keydown.escape)="editingId.set(null)"
+              (blur)="saveRename(conversation.id)"
+              [attr.aria-label]="'Rename ' + conversation.title"
+              maxlength="120"
+            />
+          } @else {
+            <button class="conversation-select" type="button" (click)="state.selectConversation(conversation.id)" [disabled]="!!state.pendingRequest() && state.pendingRequest()?.conversationId !== conversation.id" [attr.aria-current]="conversation.id === state.currentConversationId() ? 'page' : null">
+              <span>{{ conversation.title }}</span>
+            </button>
+            <div class="conversation-tools">
+              <button type="button" (click)="startRename(conversation.id, conversation.title)" [attr.aria-label]="'Rename ' + conversation.title">Edit</button>
+              <button type="button" (click)="deleteConversation(conversation.id, conversation.title)" [attr.aria-label]="'Delete ' + conversation.title">×</button>
+            </div>
+          }
+        </div>
+      }
+    </nav>
+    @if (state.hasMoreConversations()) {
+      <button class="load-more" type="button" (click)="state.loadMoreConversations()">Load older chats</button>
+    }
+    <div class="sidebar-note">Confirmed CRM updates stay in the CRM when you delete a chat.</div>
+  </aside>
+
+  <main class="copilot-main">
+    @if (!state.status() && !state.error()) {
+      <div class="status-loading" role="status">Loading Copilot…</div>
+    } @else {
+      @if (!state.enabled()) {
+        <section class="disabled-notice" role="status">
+          <strong>Copilot is turned off.</strong> Your chats remain available. An administrator can enable messaging in the server configuration.
+        </section>
+      }
+      @if (state.currentConversationId()) {
+      <header class="chat-header">
+        <div>
+          <span class="eyebrow">Private conversation</span>
+          <h2>{{ currentConversation()?.title || 'Copilot chat' }}</h2>
+        </div>
+        @if (state.activeRunStatus() === 'running') { <span class="working-badge" role="status">Working</span> }
+      </header>
+      <app-copilot-chat />
+      } @else if (state.enabled()) {
+      <section class="disabled-card welcome-card">
+        <span class="eyebrow">Your CRM, in conversation</span>
+        <h2>Start a private chat</h2>
+        <p>Search records, review sources, and draft changes before you confirm them.</p>
+        <button class="primary-button" type="button" (click)="state.createConversation()">Start a chat</button>
+      </section>
+      }
+    }
+    @if (state.error()) {
+      <div class="page-error" role="alert">{{ state.error() }}</div>
+    }
+  </main>
+</section>

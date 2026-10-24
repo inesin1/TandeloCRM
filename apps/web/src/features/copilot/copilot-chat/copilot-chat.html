@@ -1,0 +1,140 @@
+<section class="chat-shell" aria-label="Copilot conversation">
+  <div class="chat-transcript" aria-live="polite" aria-relevant="additions text">
+    @if (state.hasOlderMessages()) {
+      <button class="quiet-button mx-auto" type="button" (click)="state.loadOlderMessages()" [disabled]="state.loadingMessages()">
+        Load older messages
+      </button>
+    }
+    @if (!state.messages().length && !state.activeRunId() && state.currentConversationId()) {
+      <div class="empty-chat">
+        <span class="eyebrow">CRM assistant</span>
+        <h2>What would you like to find?</h2>
+        <p>Ask about your CRM. Copilot will show sources and ask before making changes.</p>
+        <div class="suggestions" aria-label="Suggested questions">
+          @for (suggestion of suggestions; track suggestion) {
+            <button type="button" (click)="askSuggestion(suggestion)" [disabled]="!state.canSend()">{{ suggestion }}</button>
+          }
+        </div>
+      </div>
+    }
+    @if (!state.currentConversationId() && state.status()) {
+      <div class="empty-chat">
+        @if (state.enabled()) {
+          <h2>Start a private chat</h2>
+          <button class="primary-button" type="button" (click)="state.createConversation()">Start a chat</button>
+        } @else {
+          <h2>Copilot is turned off</h2>
+          <p>Your saved chats will remain available when Copilot is enabled.</p>
+        }
+      </div>
+    }
+    @for (message of state.messages(); track message.id) {
+      <article class="message" [class.message-user]="message.role === 'user'" [class.message-assistant]="message.role === 'assistant'">
+        <div class="message-meta">
+          <strong>{{ message.role === 'user' ? 'You' : 'Copilot' }}</strong>
+          <time [attr.datetime]="message.createdAt">{{ message.createdAt | date:'short' }}</time>
+          @if (message.role === 'assistant' && !message.redacted) {
+            <button class="copy-button" type="button" (click)="copy(message.id, message.text)" [attr.aria-label]="'Copy ' + (message.role === 'assistant' ? 'Copilot answer' : 'message')">
+              {{ copiedId() === message.id ? 'Copied' : 'Copy' }}
+            </button>
+          }
+        </div>
+        <p class="message-text" [class.redacted]="message.redacted">{{ message.text }}</p>
+        @if (message.role === 'user' && messageContextLabel(message.runId)) {
+          <small class="context-history">Context: {{ messageContextLabel(message.runId) }}</small>
+        }
+        @if (message.sources.length && !message.redacted) {
+          <nav class="source-list" aria-label="Sources">
+            @for (source of message.sources; track source.sourceId) {
+              @if (sourceLink(source); as route) {
+                <a [routerLink]="route" class="source-link">{{ source.label }}</a>
+              } @else {
+                <span class="source-link source-static">{{ source.label }}</span>
+              }
+            }
+          </nav>
+        }
+      </article>
+    }
+    @if (state.activeRunStatus() === 'running') {
+      <div class="run-progress" role="status"><span class="pulse-dot"></span> {{ progressLabel() }}</div>
+    }
+    @if (state.streamedAnswer()) {
+      <article class="message message-assistant" aria-live="polite">
+        <div class="message-meta"><strong>Copilot</strong></div>
+        <p class="message-text">{{ state.streamedAnswer() }}</p>
+      </article>
+    }
+    @for (action of state.actions(); track action.id) {
+      <article class="proposal-card" [id]="'proposal-' + action.id" tabindex="-1">
+        <div class="proposal-heading">
+          <span class="eyebrow">Change proposal</span>
+          <span class="proposal-status" [class.status-done]="action.status === 'executed'">{{ action.status }}</span>
+        </div>
+        <h3>{{ previewLabel(action.preview['recordLabel'] ?? action.preview['operation'] ?? action.toolName) }}</h3>
+        @if (action.preview['changes']; as changes) {
+          <dl class="change-list">
+            @for (change of changes; track change['field']) {
+              <div class="change-row">
+                <dt>{{ change['label'] }}</dt>
+                <dd><span class="change-before">{{ previewLabel(change['before']) }}</span><span aria-hidden="true">→</span><span class="change-after">{{ previewLabel(change['after']) }}</span></dd>
+              </div>
+            }
+          </dl>
+        }
+        @if (action.preview['note']) { <p class="proposal-note">{{ previewLabel(action.preview['note']) }}</p> }
+        @if (!action.preview['changes'] && !action.preview['note']) {
+          <details><summary>Review details</summary><pre>{{ action.preview | json }}</pre></details>
+        }
+        @if (action.status === 'proposed') {
+          <div class="proposal-actions">
+            <button class="primary-button" type="button" (click)="confirm(action.id)" [disabled]="!!busyActionId()">{{ busyActionId() === action.id ? 'Saving…' : 'Confirm' }}</button>
+            <button class="quiet-button" type="button" (click)="reject(action.id)" [disabled]="!!busyActionId()">Reject</button>
+          </div>
+          <small>Expires {{ action.expiresAt | date:'full' }}</small>
+        }
+      </article>
+    }
+  </div>
+
+  @if (state.error()) {
+    <div class="chat-error" role="alert">
+      <span>{{ state.error() }}</span>
+    </div>
+  }
+
+  <form class="composer" (ngSubmit)="submit()">
+    @if (composerContext(); as selectedContext) {
+      <div class="context-chip" aria-label="Attached CRM record">
+        <span>Discussing {{ selectedContext.label }}</span>
+        <button type="button" aria-label="Remove CRM context" [disabled]="!!state.pendingRequest()" (click)="removeContext()">Remove</button>
+      </div>
+    }
+    <label class="sr-only" for="copilot-message">Message Copilot</label>
+    <textarea
+      id="copilot-message"
+      name="message"
+      rows="2"
+      [ngModel]="draft()"
+      (ngModelChange)="draft.set($event)"
+      (keydown)="onComposerKeydown($event)"
+      (compositionstart)="composing.set(true)"
+      (compositionend)="composing.set(false)"
+      [disabled]="!state.enabled() || !state.currentConversationId() || state.busy()"
+      [readOnly]="!!state.pendingRequest()"
+      [placeholder]="state.pendingRequest() ? 'Retry this message to continue…' : 'Ask about your CRM…'"
+      maxlength="8000"
+      aria-describedby="copilot-composer-help"
+    ></textarea>
+    <div class="composer-footer">
+      <span id="copilot-composer-help">Enter to send · Shift+Enter for a new line</span>
+      @if (state.activeRunId()) {
+        <button class="quiet-button" type="button" (click)="state.stop()">Stop</button>
+      } @else if (state.pendingRequest()) {
+        <button class="primary-button" type="button" (click)="retry()" [disabled]="state.busy()">Retry same message</button>
+      } @else {
+        <button class="primary-button" type="submit" [disabled]="!draft().trim() || !state.canSend()">Send</button>
+      }
+    </div>
+  </form>
+</section>

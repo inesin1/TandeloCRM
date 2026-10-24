@@ -20,6 +20,12 @@ afterEach(() => {
 });
 
 describe('AnalyticsService', () => {
+  it('uses a unique team ordering before applying Copilot pagination', async () => {
+    const { service, query } = setup();
+    await service.getCopilotReport('team', 30, new Date(), 20, 20, true);
+    expect(query.mock.calls[0][0].text).toContain('order by count("leads"."id") desc, "users"."name" asc, "users"."id" asc limit');
+  });
+
   it('aggregates lead count and price by pipeline and status, including empty statuses', async () => {
     const rows = [
       [7, 'Sales', 11, 'New', '#111111', 2, 1250],

@@ -134,6 +134,7 @@ function setup(...responses: (ReturnType<typeof result> | Error)[]) {
     .mockResolvedValue();
   return {
     service: new LeadsService(db, customFieldsService),
+    db,
     query,
     validate,
     connect,
@@ -150,6 +151,14 @@ afterEach(() => {
 });
 
 describe('LeadsService', () => {
+  it('reads only the selected lead contacts with a stable SQL limit and safe columns', async () => {
+    const { service, query } = setup(result([[11, 'Alex', 'Manager', 'alex@example.test', null]]));
+    expect(await service.findCopilotContacts(7, 21)).toEqual([{ id: 11, name: 'Alex', position: 'Manager', email: 'alex@example.test', phone: null }]);
+    expect(query.mock.calls[0][0].text).toContain('where "lead_contacts"."leadId" = $1 order by "contacts"."id" asc limit $2');
+    expect(query.mock.calls[0][1]).toEqual([7, 21]);
+    expect(query.mock.calls[0][0].text).not.toContain('"customFields"');
+  });
+
   describe('findAll', () => {
     it('joins related records and groups contacts in one query for the entire list', async () => {
       const second = { ...lead, id: 8 };
@@ -257,7 +266,7 @@ describe('LeadsService', () => {
 
   describe('create', () => {
     it('validates custom fields and inserts the lead and all links in one transaction', async () => {
-      const { service, query, validate, connect, release } = setup(
+      const { service, db, query, validate, connect, release } = setup(
         result(),
         result([leadRow()]),
         result(),
@@ -273,6 +282,7 @@ describe('LeadsService', () => {
       expect(validate).toHaveBeenCalledExactlyOnceWith(
         'lead',
         lead.customFields,
+        db,
       );
       expect(validate.mock.invocationCallOrder[0]).toBeLessThan(
         query.mock.invocationCallOrder[0],
@@ -307,7 +317,7 @@ describe('LeadsService', () => {
           ownerId: null,
           customFields: {},
         };
-        const { service, query, validate } = setup(
+        const { service, db, query, validate } = setup(
           result(),
           result([leadRow(record)]),
           result(),
@@ -329,7 +339,7 @@ describe('LeadsService', () => {
           owner: null,
           contacts: [],
         });
-        expect(validate).toHaveBeenCalledExactlyOnceWith('lead', {});
+        expect(validate).toHaveBeenCalledExactlyOnceWith('lead', {}, db);
         expect(query).toHaveBeenNthCalledWith(
           2,
           ...sqlCall(
@@ -389,7 +399,7 @@ describe('LeadsService', () => {
         ownerId: null,
         customFields: {},
       };
-      const { service, query, validate, release } = setup(
+      const { service, db, query, validate, release } = setup(
         result(),
         result([joinedRow()]),
         result([contactRow()]),
@@ -413,7 +423,7 @@ describe('LeadsService', () => {
         contactIds: [11, 12],
       };
       await service.update('7', payload);
-      expect(validate).toHaveBeenCalledExactlyOnceWith('lead', {});
+      expect(validate).toHaveBeenCalledExactlyOnceWith('lead', {}, db);
       expect(query.mock.calls).toEqual([
         sqlCall('begin'),
         sqlCall(idSql, [7]),

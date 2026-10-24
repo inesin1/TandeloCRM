@@ -1,7 +1,7 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { and, eq, ilike } from 'drizzle-orm';
+import { and, desc, eq, ilike, lt } from 'drizzle-orm';
 import { CustomFieldsService } from '../custom-fields/custom-fields.service';
-import { DATABASE_CONNECTION, Database } from '../database/database.module';
+import { DATABASE_CONNECTION, Database, DatabaseExecutor } from '../database/database.module';
 import { leadActivities } from '../leads/lead-activity.entity';
 import { leads } from '../leads/lead.entity';
 import { statuses } from '../pipelines/pipeline.entity';
@@ -19,12 +19,63 @@ export class CompaniesService {
     private readonly customFieldsService: CustomFieldsService,
   ) {}
 
-  async create(dto: CreateCompanyDto) {
+  findCopilotPage(search: string, ownerId: number | null, cursorId: number | null, limit: number) {
+    return this.db
+      .select({ id: companies.id, name: companies.name, industry: companies.industry })
+      .from(companies)
+      .where(and(ilike(companies.name, `%${search}%`), ownerId ? eq(companies.ownerId, ownerId) : undefined, cursorId ? lt(companies.id, cursorId) : undefined))
+      .orderBy(desc(companies.id))
+      .limit(limit);
+  }
+
+  findCopilotRecord(id: number) {
+    return this.db
+      .select({ id: companies.id, name: companies.name, industry: companies.industry, address: companies.address, email: companies.email, phone: companies.phone, ownerId: companies.ownerId, customFields: companies.customFields, createdAt: companies.createdAt, updatedAt: companies.updatedAt })
+      .from(companies)
+      .where(eq(companies.id, id))
+      .limit(1);
+  }
+
+  findCopilotMutationRecord(id: number, executor: DatabaseExecutor = this.db, forUpdate = false) {
+    const query = executor
+      .select({ id: companies.id, name: companies.name, industry: companies.industry, address: companies.address, email: companies.email, phone: companies.phone, ownerId: companies.ownerId, customFields: companies.customFields, createdAt: companies.createdAt, updatedAt: companies.updatedAt })
+      .from(companies)
+      .where(eq(companies.id, id));
+    return (forUpdate ? query.for('update') : query).limit(1);
+  }
+
+  findCopilotActivity(id: number, cursorId: number | null, limit: number) {
+    return this.db
+      .select({ id: recordNotes.id, body: recordNotes.body, createdAt: recordNotes.createdAt, authorId: recordNotes.authorId })
+      .from(recordNotes)
+      .where(and(eq(recordNotes.companyId, id), cursorId ? lt(recordNotes.id, cursorId) : undefined))
+      .orderBy(desc(recordNotes.id))
+      .limit(limit);
+  }
+
+  findCopilotLinkedRecord(id: number, executor: DatabaseExecutor = this.db) {
+    return executor
+      .select({ id: companies.id, name: companies.name, industry: companies.industry })
+      .from(companies)
+      .where(eq(companies.id, id))
+      .limit(1);
+  }
+
+  findCopilotLink(id: number, executor: DatabaseExecutor = this.db) {
+    return executor
+      .select({ id: companies.id, name: companies.name })
+      .from(companies)
+      .where(eq(companies.id, id))
+      .limit(1);
+  }
+
+  async create(dto: CreateCompanyDto, executor: DatabaseExecutor = this.db) {
     await this.customFieldsService.validate(
       'company',
       dto.customFields === undefined ? {} : dto.customFields,
+      executor,
     );
-    const [company] = await this.db.insert(companies).values(dto).returning();
+    const [company] = await executor.insert(companies).values(dto).returning();
     return company;
   }
 
@@ -44,8 +95,8 @@ export class CompaniesService {
       );
   }
 
-  async findOne(id: string) {
-    const [company] = await this.db
+  async findOne(id: string, executor: DatabaseExecutor = this.db) {
+    const [company] = await executor
       .select()
       .from(companies)
       .where(eq(companies.id, Number(id)));
@@ -150,27 +201,27 @@ export class CompaniesService {
     ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
 
-  async addNote(id: string, body: string, authorId: number) {
-    const company = await this.findOne(id);
-    const [note] = await this.db
+  async addNote(id: string, body: string, authorId: number, executor: DatabaseExecutor = this.db) {
+    const company = await this.findOne(id, executor);
+    const [note] = await executor
       .insert(recordNotes)
       .values({ companyId: company.id, body: body.trim(), authorId })
       .returning();
     return note;
   }
 
-  async update(id: string, dto: UpdateCompanyDto) {
+  async update(id: string, dto: UpdateCompanyDto, executor: DatabaseExecutor = this.db) {
     if (dto.customFields !== undefined) {
-      await this.customFieldsService.validate('company', dto.customFields);
+      await this.customFieldsService.validate('company', dto.customFields, executor);
     }
     const companyId = Number(id);
     const [company] = Object.keys(dto).length
-      ? await this.db
+      ? await executor
           .update(companies)
           .set(dto)
           .where(eq(companies.id, companyId))
           .returning()
-      : await this.db
+      : await executor
           .select()
           .from(companies)
           .where(eq(companies.id, companyId));

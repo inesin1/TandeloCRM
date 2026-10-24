@@ -10,6 +10,100 @@ import { pipelines, statuses } from '../pipelines/pipeline.entity';
 export class AnalyticsService {
   constructor(@Inject(DATABASE_CONNECTION) private readonly db: Database) {}
 
+  async getCopilotReport(
+    report: 'pipeline' | 'team' | 'tasks',
+    days: number | undefined,
+    now: Date,
+    offset: number,
+    limit: number,
+    includeUsers: boolean,
+  ) {
+    if (report === 'pipeline') {
+      const rows = await this.db
+        .select({
+          id: statuses.id,
+          label: sql<string>`concat(${pipelines.name}, ' / ', ${statuses.name})`,
+          pipelineId: pipelines.id,
+          statusId: statuses.id,
+          leadCount: count(leads.id).mapWith(Number),
+          totalPrice: sql<number>`coalesce(sum(${leads.price}), 0)`.mapWith(Number),
+          pipelineOrder: pipelines.sortOrder,
+          statusOrder: statuses.sortOrder,
+        })
+        .from(pipelines)
+        .innerJoin(statuses, eq(statuses.pipelineId, pipelines.id))
+        .leftJoin(
+          leads,
+          and(
+            eq(leads.statusId, statuses.id),
+            eq(leads.pipelineId, statuses.pipelineId),
+          ),
+        )
+        .groupBy(pipelines.id, statuses.id)
+        .orderBy(asc(pipelines.sortOrder), asc(statuses.sortOrder), asc(statuses.id))
+        .limit(limit + 1)
+        .offset(offset);
+      return { records: rows.map(({ pipelineOrder: _p, statusOrder: _s, ...row }) => row), hasMore: rows.length > limit };
+    }
+    if (report === 'team') {
+      const createdAfter = days ? new Date(now.getTime() - days * 86_400_000) : undefined;
+      if (!includeUsers) {
+        const [row] = await this.db
+          .select({
+            id: sql<string>`'team-summary'`,
+            label: sql<string>`'Team summary'`,
+            leadCount: count(leads.id).mapWith(Number),
+            totalPrice: sql<number>`coalesce(sum(${leads.price}), 0)`.mapWith(Number),
+          })
+          .from(leads)
+          .where(createdAfter ? gte(leads.createdAt, createdAfter) : undefined);
+        return { records: offset === 0 ? [row] : [], hasMore: false };
+      }
+      const base = this.db
+        .select({
+          id: users.id,
+          ownerId: users.id,
+          leadCount: count(leads.id).mapWith(Number),
+          totalPrice: sql<number>`coalesce(sum(${leads.price}), 0)`.mapWith(Number),
+          ownerName: users.name,
+        })
+        .from(leads)
+        .leftJoin(users, eq(users.id, leads.ownerId))
+        .where(createdAfter ? gte(leads.createdAt, createdAfter) : undefined)
+        .groupBy(users.id, users.name)
+        .orderBy(desc(count(leads.id)), asc(users.name), asc(users.id))
+        .limit(limit + 1)
+        .offset(offset);
+      const rows = await base;
+      return {
+        records: rows.map(({ ownerName, ...row }) => ({ ...row, ownerName })),
+        hasMore: rows.length > limit,
+      };
+    }
+    const [summary] = await this.db
+      .select({
+        id: sql<string>`'task-summary'`,
+        label: sql<string>`'Task summary'`,
+        totalCount: count(tasks.id).mapWith(Number),
+        openCount: sql<number>`count(*) filter (where not ${tasks.isCompleted})`.mapWith(Number),
+        completedCount: sql<number>`count(*) filter (where ${tasks.isCompleted})`.mapWith(Number),
+        overdueCount: sql<number>`count(*) filter (where not ${tasks.isCompleted} and ${tasks.dueAt} < ${now})`.mapWith(Number),
+      })
+      .from(tasks);
+    const types = await this.db
+      .select({ id: tasks.type, label: tasks.type, totalCount: count(tasks.id).mapWith(Number) })
+      .from(tasks)
+      .groupBy(tasks.type)
+      .orderBy(asc(tasks.type))
+      .limit(limit + 1)
+      .offset(offset);
+    return {
+      summary,
+      records: types,
+      hasMore: types.length > limit,
+    };
+  }
+
   getPipeline() {
     return this.db
       .select({

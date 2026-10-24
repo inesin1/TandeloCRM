@@ -133,6 +133,14 @@ export const appRoutes: Route[] = [
         ],
       },
       {
+        path: 'copilot',
+        title: 'Copilot',
+        loadComponent: () =>
+          import('../features/copilot/copilot-page/copilot-page').then(
+            (m) => m.CopilotPage,
+          ),
+      },
+      {
         path: 'settings',
         title: 'Settings',
         loadComponent: () =>

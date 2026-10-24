@@ -24,6 +24,7 @@ This is an active MVP project. There is no hosted demo, and the seed command doe
 - Enforce permissions in the API and authenticate users with JWT.
 - Review lead counts and total value by pipeline stage.
 - Define custom fields for CRM records.
+- Use Copilot for private CRM chat, permission-aware record search and summaries, and confirmed proposals for supported changes.
 
 ## Architecture
 
@@ -38,6 +39,7 @@ NestJS API (/api)
   ├── Authentication and access control
   ├── Leads and pipelines
   ├── Companies, contacts, and tasks
+  ├── Copilot (optional, server-side OpenAI Responses API)
   ├── Custom fields and analytics
   └── Users and groups
   |
@@ -67,7 +69,7 @@ The API is divided into NestJS modules. Drizzle ORM manages the PostgreSQL schem
 
 ## Quick start
 
-You need Node.js 22, pnpm 10, and Docker with Compose. This setup runs the web app and API locally with PostgreSQL in Docker; it is intended for development.
+You need Node.js 26, pnpm 12, and Docker with Compose. This setup runs the web app and API locally with PostgreSQL in Docker; it is intended for development.
 
 Create your local environment file and generate a JWT secret:
 
@@ -101,6 +103,18 @@ pnpm nx run api:serve
 
 Open the web app at `http://localhost:4200`. The API runs at `http://localhost:3000`; its Swagger UI is at `http://localhost:3000/api/docs`.
 
+## Copilot
+
+Copilot is disabled by default. In the API environment, set `COPILOT_ENABLED=true`, `OPENAI_API_KEY`, and an explicit `COPILOT_MODEL`, then restart the API. The model must support the Responses API features used by this app: function calling and strict structured output. There is no default model. Test the selected model in a development environment with synthetic CRM data before enabling it for users. Normal tests use deterministic fakes and do not contact OpenAI.
+
+Copilot can search leads, companies, contacts, and tasks; summarize supported CRM data and analytics; and prepare drafts. It can propose creating or updating leads, companies, contacts, or tasks, and adding a note. Each proposal shows the exact change and requires its own confirmation. Confirmation records the change through the existing CRM service. Copilot cannot delete records, make bulk changes, send email, change users or permissions, or run background actions. Reads and proposals follow the signed-in user's current CRM permissions.
+
+Conversations, messages, saved record references, run status, proposals, and confirmation results are stored in the app's PostgreSQL database. Deleting a conversation deletes its Copilot history and proposals, but does not undo CRM changes already confirmed. The provider request sets `store: false`; this controls Responses API storage, but does not replace OpenAI's own data-handling terms. The API key stays on the server and is never returned to the browser.
+
+Limits are enforced by the API: 8,000 characters per message, 120 characters per chat title, one active run per chat, two per user, and 20 new runs per user in ten minutes. Each run allows up to six provider calls, 12 tool calls, 90 seconds, 20 history messages, and 60,000 serialized context characters. Searches return up to 20 records per page and three pages per selection. A proposal expires after 15 minutes. The API also limits each user to two live event streams per process; polling remains the fallback when streaming is unavailable.
+
+The browser can reconnect to an accepted run after a refresh without sending the message again. Stopping a response cancels that run. A graceful API shutdown marks its locally running requests as failed so they can be retried as a new message. Provider, network, access, conflict, rate-limit, and disabled states are reported in the chat; a CRM write is complete only when its proposal status is `executed`.
+
 ## Development checks
 
 ```bash
@@ -108,6 +122,10 @@ pnpm nx run-many -t lint test build
 pnpm nx run web-e2e:e2e
 pnpm nx run api-e2e:e2e
 ```
+
+If a local Angular build aborts inside the native LMDB cache without compiler diagnostics, run `CI=true pnpm nx run web:build:production` to disable Angular's persistent cache. This keeps compilation and bundle budget checks enabled.
+
+Copilot browser tests mock API responses. API E2E uses the local API and database, so only run it with the intended development database and configured test records.
 
 ## Project structure
 
@@ -126,7 +144,7 @@ pnpm nx run api-e2e:e2e
 
 ## Status and roadmap
 
-The MVP covers leads, companies, contacts, pipelines, lead-linked tasks, access control, user and group administration, and pipeline analytics. Integrations, a plugin SDK, AI assistance, historical analytics, automation, and production deployment options are future work.
+The MVP covers leads, companies, contacts, pipelines, lead-linked tasks, access control, user and group administration, pipeline analytics, and optional Copilot assistance. Integrations, a plugin SDK, historical analytics, automation, and production deployment options are future work.
 
 ## Contributing
 

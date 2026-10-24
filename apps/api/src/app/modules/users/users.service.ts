@@ -5,9 +5,9 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { and, asc, eq, inArray, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, lt, sql } from 'drizzle-orm';
 import * as argon2 from 'argon2';
-import { DATABASE_CONNECTION, Database } from '../database/database.module';
+import { DATABASE_CONNECTION, Database, DatabaseExecutor, DatabaseTransaction } from '../database/database.module';
 import { roles, userRoles } from '../access-control/access-control.entity';
 import { SYSTEM_ROLE_NAMES } from '../access-control/permissions.constants';
 import { groups, publicUserColumns, users, userGroups } from './user.entity';
@@ -15,13 +15,34 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
 const ADMIN_ROLE = 'Admin';
-type DatabaseTransaction = Parameters<
-  Parameters<Database['transaction']>[0]
->[0];
-
 @Injectable()
 export class UsersService {
   constructor(@Inject(DATABASE_CONNECTION) private readonly db: Database) {}
+
+  findCopilotRecord(id: number) {
+    return this.db
+      .select({ id: users.id, name: users.name })
+      .from(users)
+      .where(eq(users.id, id))
+      .limit(1);
+  }
+
+  findCopilotLink(id: number, executor: DatabaseExecutor = this.db) {
+    return executor
+      .select({ id: users.id, name: users.name, isActive: users.isActive })
+      .from(users)
+      .where(eq(users.id, id))
+      .limit(1);
+  }
+
+  findCopilotReferencePage(cursorId: number | null, limit: number) {
+    return this.db
+      .select({ id: users.id, name: users.name })
+      .from(users)
+      .where(and(eq(users.isActive, true), cursorId ? lt(users.id, cursorId) : undefined))
+      .orderBy(desc(users.id))
+      .limit(limit);
+  }
 
   async create(dto: CreateUserDto) {
     const { password, roleIds, groupIds, ...rest } = dto;
