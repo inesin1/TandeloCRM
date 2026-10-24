@@ -15,6 +15,8 @@ Tandelo brings leads, companies, contacts, pipelines, and lead-linked tasks into
 
 This is an active MVP project. There is no hosted demo, and the seed command does not create sample CRM records.
 
+[Releases](https://github.com/inesin1/TandeloCRM/releases) · [Changelog](CHANGELOG.md)
+
 ## Features
 
 - View leads in board and list layouts across pipelines.
@@ -130,6 +132,31 @@ pnpm nx run api-e2e:e2e
 If a local Angular build aborts inside the native LMDB cache without compiler diagnostics, run `CI=true pnpm nx run web:build:production` to disable Angular's persistent cache. This keeps compilation and bundle budget checks enabled.
 
 Copilot browser tests mock API responses. API E2E uses the local API and database, so only run it with the intended development database and configured test records.
+
+## Versions and releases
+
+Tandelo uses one version for the API and web app. `package.json` is the source of truth, and Swagger reads that version too. The existing tag is `v0.1.0-beta.1`; `main` contains newer, unreleased work, including Copilot. Version and changelog updates are managed by [Release Please](https://github.com/googleapis/release-please-action) in the CI workflow.
+
+1. Use Conventional Commits: `feat:` for features, `fix:` for fixes, and `!` for breaking changes.
+2. After successful CI on `main`, the release job creates or updates a release PR containing the next version and `CHANGELOG.md` entry. While the beta policy is active, releases use a `-beta.N` suffix; the next release from the current baseline is `0.1.0-beta.2`.
+3. Review the release notes, upgrade requirements, and checks. If GitHub holds a bot-created PR's workflow runs for approval, select **Approve workflows to run**. CI can also be run manually from **Actions → CI → Run workflow**, selecting the release PR branch.
+4. Merge the release PR when ready. After CI passes on `main`, the release job creates its `v…` tag and GitHub prerelease. Ordinary feature pushes do not publish a new release on their own.
+
+The workflow uses the repository's `GITHUB_TOKEN`, with write permissions limited to the release job. GitHub's **Settings → Actions → General → Workflow permissions → Allow GitHub Actions to create and approve pull requests** must be enabled. The job creates PRs; it does not approve or merge them. Stable releases require a deliberate change to the prerelease policy in `release-please-config.json` and review of the proposed version. This workflow does not publish npm packages, Docker images, or deploy an application.
+
+## Updating an existing installation
+
+Read the target release notes before updating. Back up PostgreSQL and `.env`, including the existing `JWT_SECRET`; saved Copilot keys depend on that secret. Stop the app, then run:
+
+```bash
+git fetch --tags origin
+git checkout vX.Y.Z
+pnpm install --frozen-lockfile
+pnpm db:migrate
+pnpm nx run-many -t build -p api web
+```
+
+Replace `vX.Y.Z` with the actual target tag, then restart the API and web server using your installation's startup process. Current development code requires Node.js 26 and pnpm 12; upgrading from the initial beta also requires the Copilot migrations through `0006`. Run migrations once for the installation. Do not rerun user/access-control seed commands as an upgrade step: they can reset role assignments. Rolling code back does not roll the database back; restore a compatible backup if the release requires it.
 
 ## Project structure
 

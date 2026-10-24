@@ -12,7 +12,9 @@
       "!{projectRoot}/jest.config.[jt]s",
       "!{projectRoot}/test-setup.[jt]s"
     ],
-    "sharedGlobals": []
+    "sharedGlobals": [
+      { "json": "{workspaceRoot}/package.json", "fields": ["version"] }
+    ]
   },
   "targetDefaults": {
     "@angular/build:application": {
@@ -35,13 +37,6 @@
       "cache": true,
       "dependsOn": ["^build"],
       "inputs": ["production", "^production"]
-    }
-  },
-  "release": {
-    "projects": ["api"],
-    "projectsRelationship": "independent",
-    "docker": {
-      "skipVersionActions": true
     }
   },
   "plugins": [

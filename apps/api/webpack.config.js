@@ -1,5 +1,10 @@
 const { NxAppWebpackPlugin } = require('@nx/webpack/app-plugin');
 const { join } = require('path');
+const { readFileSync } = require('fs');
+const { DefinePlugin } = require('webpack');
+const { version } = JSON.parse(
+  readFileSync(join(__dirname, '../../package.json'), 'utf8'),
+);
 
 module.exports = {
   output: {
@@ -10,6 +15,7 @@ module.exports = {
     }),
   },
   plugins: [
+    new DefinePlugin({ 'process.env.TANDELO_VERSION': JSON.stringify(version) }),
     new NxAppWebpackPlugin({
       target: 'node',
       compiler: 'tsc',

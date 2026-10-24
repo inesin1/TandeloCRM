@@ -27,7 +27,7 @@ async function bootstrap() {
   const config = new DocumentBuilder()
     .setTitle('TandeloCRM API')
     .setDescription('API docs')
-    .setVersion('1.0')
+    .setVersion(process.env['TANDELO_VERSION'] ?? 'development')
     .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, config);
