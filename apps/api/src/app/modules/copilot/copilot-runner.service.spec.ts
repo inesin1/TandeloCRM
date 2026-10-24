@@ -9,7 +9,7 @@ const result = {
 };
 
 function createRunner(
-  provider: { generate: ReturnType<typeof vi.fn> },
+  provider: { generate: ReturnType<typeof vi.fn>; getConfiguration?: ReturnType<typeof vi.fn> },
   toolOverrides: Record<string, unknown> = {},
 ) {
   const config = { get: () => 'test-model' };
@@ -24,12 +24,25 @@ function createRunner(
     definitions: vi.fn().mockResolvedValue([]),
     execute: vi.fn().mockResolvedValue({ output: {}, requiredPermissions: [] }),
   };
-  return new CopilotRunnerService(provider as never, config as never, tools as never, actions as never);
+  return new CopilotRunnerService({ getConfiguration: vi.fn().mockResolvedValue({ enabled: true, model: 'test-model', baseUrl: 'https://api.openai.com/v1', apiFormat: 'responses' }), ...provider } as never, config as never, tools as never, actions as never);
 }
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 describe('CopilotRunnerService', () => {
+  it('uses one provider configuration throughout a multi-step run', async () => {
+    const configuration = { enabled: true, model: 'first-model', baseUrl: 'https://first.example/v1', apiFormat: 'responses' };
+    const getConfiguration = vi.fn().mockResolvedValueOnce(configuration).mockResolvedValue({ ...configuration, model: 'second-model' });
+    const generate = vi.fn().mockResolvedValueOnce({ ...result, functionCalls: [{ id: 'fc', callId: 'call', name: 'search_records', arguments: '{}' }] }).mockResolvedValue(result);
+    const runner = createRunner({ getConfiguration, generate });
+    const complete = vi.fn().mockResolvedValue(true);
+    runner.launch('snapshot', 7, [], 'prompt', new Date(Date.now() + 60_000), { serverNow: new Date(), canStart: async () => true, complete, fail: vi.fn() });
+    await vi.waitFor(() => expect(complete).toHaveBeenCalledOnce());
+    expect(getConfiguration).toHaveBeenCalledOnce();
+    expect(generate).toHaveBeenCalledTimes(2);
+    for (const [options] of generate.mock.calls) expect(options.configuration).toBe(configuration);
+  });
+
   it.each([true, false])('inherits history permissions when the model answers without tools (access=%s)', async (granted) => {
     const provider = { generate: vi.fn().mockResolvedValue(result) };
     const permissionsStillGranted = vi.fn().mockResolvedValue(granted);

@@ -14,12 +14,10 @@ const response = {
   usage: { input_tokens: 12, output_tokens: 4 },
 };
 
-function createProvider() {
-  const config = {
-    get: (name: string) =>
-      name === 'COPILOT_MODEL' ? 'test-model' : 'test-api-key',
-  };
-  return new CopilotProvider(config as never);
+function createProvider(overrides: Record<string, unknown> = {}) {
+  return new CopilotProvider({ getEffective: async () => ({
+    enabled: true, model: 'test-model', apiKey: 'test-api-key', apiFormat: 'responses', baseUrl: 'https://api.openai.com/v1', ...overrides,
+  }) } as never);
 }
 
 const options = () => ({
@@ -33,6 +31,60 @@ const options = () => ({
 afterEach(() => vi.restoreAllMocks());
 
 describe('CopilotProvider', () => {
+  it('uses a custom Responses URL and never follows redirects with credentials', async () => {
+    const post = vi.spyOn(axios, 'post').mockResolvedValue({ data: response } as never);
+    await createProvider({ baseUrl: 'https://provider.example/api/v1' }).generate(options());
+    expect(post.mock.calls[0][0]).toBe('https://provider.example/api/v1/responses');
+    expect(post.mock.calls[0][2]).toMatchObject({ maxRedirects: 0, headers: { Authorization: 'Bearer test-api-key' } });
+  });
+
+  it('round-trips Chat Completions tool calls, outputs and structured answers without a key', async () => {
+    const call = { id: 'chat-call-1', type: 'function', function: { name: 'search_records', arguments: '{"kind":"lead"}' } };
+    const post = vi.spyOn(axios, 'post')
+      .mockResolvedValueOnce({ data: { choices: [{ finish_reason: 'tool_calls', message: { role: 'assistant', content: null, tool_calls: [call] } }] } } as never)
+      .mockResolvedValueOnce({ data: { choices: [{ finish_reason: 'stop', message: { role: 'assistant', content: '{"text":"Found","sourceIds":[]}' } }], usage: { prompt_tokens: 10, completion_tokens: 5 } } } as never);
+    const provider = createProvider({ apiFormat: 'chat-completions', baseUrl: 'http://localhost:11434/v1', apiKey: undefined });
+    const tool = { type: 'function', name: 'search_records', description: 'Search', strict: true, parameters: { type: 'object' } };
+    const first = await provider.generate({ ...options(), tools: [tool] });
+    expect(first.functionCalls).toEqual([{ id: call.id, callId: call.id, name: 'search_records', arguments: call.function.arguments }]);
+    const second = await provider.generate({ ...options(), tools: [tool], input: [
+      ...options().input, ...first.responseItems, { type: 'function_call_output', call_id: call.id, output: '{"records":[]}' },
+    ] });
+    expect(second).toMatchObject({ text: '{"text":"Found","sourceIds":[]}', functionCalls: [], usage: { prompt_tokens: 10 } });
+    expect(post.mock.calls[1][0]).toBe('http://localhost:11434/v1/chat/completions');
+    expect(post.mock.calls[1][1]).toMatchObject({
+      tools: [{ type: 'function', function: { name: 'search_records', strict: true } }],
+      response_format: { type: 'json_schema', json_schema: { name: 'answer', strict: true, schema: {} } },
+      messages: [
+        { role: 'system', content: 'system' }, { role: 'user', content: 'hello' },
+        { role: 'assistant', content: null, tool_calls: [call] },
+        { role: 'tool', tool_call_id: call.id, content: '{"records":[]}' },
+      ],
+    });
+    expect(post.mock.calls[1][2]?.headers).not.toHaveProperty('Authorization');
+    expect(post.mock.calls[1][1]).not.toHaveProperty('input');
+  });
+
+  it.each([
+    [{ choices: [{ finish_reason: 'length', message: { content: '{' } }] }, 'provider_incomplete_response'],
+    [{ choices: [{ finish_reason: 'content_filter', message: {} }] }, 'model_refusal'],
+    [{ choices: [{ finish_reason: 'stop', message: { refusal: 'refused' } }] }, 'model_refusal'],
+    [{ choices: [{ finish_reason: 'stop', message: { content: '' } }] }, 'provider_empty_response'],
+    [{ choices: [{ finish_reason: 'tool_calls', message: { tool_calls: [{ id: 'x', type: 'function', function: { name: 'x' } }] } }] }, 'provider_invalid_tool_call'],
+    [{ choices: [] }, 'provider_invalid_response'],
+  ])('rejects malformed Chat Completions results with stable codes', async (data, errorCode) => {
+    vi.spyOn(axios, 'post').mockResolvedValue({ data } as never);
+    await expect(createProvider({ apiFormat: 'chat-completions' }).generate(options())).rejects.toMatchObject({ errorCode });
+  });
+
+  it('tests saved disabled settings with synthetic input and returns only a safe result', async () => {
+    const post = vi.spyOn(axios, 'post').mockResolvedValue({ data: { status: 'completed', output_text: '{"text":"OK","sourceIds":[]}', output: [] } } as never);
+    await expect(createProvider({ enabled: false }).testConnection()).resolves.toEqual({ ok: true });
+    expect(post.mock.calls[0][1]).toHaveProperty('tools');
+    post.mockRejectedValueOnce(Object.assign(new Error('private key details'), { isAxiosError: true, response: { status: 401 } }));
+    await expect(createProvider().testConnection()).resolves.toEqual({ ok: false, errorCode: 'provider_auth_error' });
+  });
+
   it('normalizes a Responses API answer and sends privacy and tool-call controls', async () => {
     const post = vi
       .spyOn(axios, 'post')

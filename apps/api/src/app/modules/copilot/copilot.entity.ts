@@ -1,5 +1,7 @@
 import {
   index,
+  boolean,
+  check,
   integer,
   jsonb,
   pgTable,
@@ -10,6 +12,16 @@ import {
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { users } from '../users/user.entity';
+
+export const copilotSettings = pgTable('copilot_settings', {
+  id: integer().primaryKey().default(1),
+  enabled: boolean().notNull().default(false),
+  apiFormat: text({ enum: ['responses', 'chat-completions'] }).notNull(),
+  baseUrl: text().notNull(),
+  model: text().notNull(),
+  apiKeyEncrypted: text(),
+  updatedAt: timestamp().notNull().defaultNow().$onUpdate(() => new Date()),
+}, (table) => [check('copilot_settings_singleton', sql`${table.id} = 1`)]);
 
 export const copilotConversations = pgTable(
   'copilot_conversations',

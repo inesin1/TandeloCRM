@@ -10,6 +10,7 @@ import {
   ParseIntPipe,
   ParseUUIDPipe,
   Patch,
+  Put,
   Post,
   Query,
   Req,
@@ -18,10 +19,8 @@ import {
   Sse,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
 import { Observable } from 'rxjs';
-import { Env } from '../../env.schema';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { JwtPayload } from '../auth/jwt.strategy';
 import { CopilotService } from './copilot.service';
@@ -31,6 +30,10 @@ import { CreateConversationDto } from './dto/create-conversation.dto';
 import { UpdateConversationDto } from './dto/update-conversation.dto';
 import { SendMessageDto } from './dto/send-message.dto';
 import { EmptyActionBodyDto } from './dto/empty-action-body.dto';
+import { RequirePermissions } from '../access-control/require-permissions.decorator';
+import { CopilotSettingsService } from './copilot-settings.service';
+import { UpdateCopilotSettingsDto } from './dto/update-copilot-settings.dto';
+import { CopilotProvider } from './copilot-provider';
 
 @ApiTags('copilot')
 @ApiBearerAuth()
@@ -39,14 +42,33 @@ import { EmptyActionBodyDto } from './dto/empty-action-body.dto';
 export class CopilotController {
   constructor(
     private readonly copilotService: CopilotService,
-    private readonly config: ConfigService<Env, true>,
+    private readonly settings: CopilotSettingsService,
+    private readonly provider: CopilotProvider,
   ) {}
 
   @Get('status')
-  getStatus() {
-    return this.copilotService.getStatus(
-      this.config.get('COPILOT_ENABLED', { infer: true }),
-    );
+  async getStatus() {
+    const { enabled } = await this.settings.getPublic();
+    return this.copilotService.getStatus(enabled);
+  }
+
+  @Get('settings')
+  @RequirePermissions('users:write')
+  getSettings() {
+    return this.settings.getPublic();
+  }
+
+  @Put('settings')
+  @RequirePermissions('users:write')
+  saveSettings(@Body() dto: UpdateCopilotSettingsDto) {
+    return this.settings.save(dto);
+  }
+
+  @Post('settings/test')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions('users:write')
+  testSettings(@Body() _body: EmptyActionBodyDto) {
+    return this.provider.testConnection();
   }
 
   @Get('conversations')
@@ -97,12 +119,12 @@ export class CopilotController {
 
   @Post('conversations/:id/messages')
   @HttpCode(HttpStatus.ACCEPTED)
-  startMessage(
+  async startMessage(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: SendMessageDto,
     @Req() request: Request & { user: JwtPayload },
   ) {
-    if (!this.config.get('COPILOT_ENABLED', { infer: true })) {
+    if (!(await this.settings.getPublic()).enabled) {
       throw new ServiceUnavailableException('Copilot is disabled');
     }
     return this.copilotService.startMessage(request.user.sub, id, dto);

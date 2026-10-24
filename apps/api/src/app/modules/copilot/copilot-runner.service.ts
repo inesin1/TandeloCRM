@@ -137,7 +137,11 @@ export class CopilotRunnerService {
     const toolState = createCopilotToolState();
     for (const key of callbacks.requiredPermissions ?? []) toolState.requiredPermissions.add(key);
     const usage: Record<string, number> = {};
+    let model = this.config.get('COPILOT_MODEL', { infer: true });
     try {
+      const configuration = await this.provider.getConfiguration();
+      model = configuration.model;
+      if (!configuration.enabled) throw new CopilotProviderError('copilot_disabled');
       while (providerCalls < COPILOT_LIMITS.maxProviderCalls) {
         if (!(await callbacks.canStart())) return;
         const remainingMs = Math.min(
@@ -154,6 +158,7 @@ export class CopilotRunnerService {
         ];
         providerCalls += 1;
         const result = await this.provider.generate({
+          configuration,
           instructions,
           input,
           signal: controller.signal,
@@ -226,7 +231,7 @@ export class CopilotRunnerService {
         this.logger.log(JSON.stringify({
           runId,
           userId,
-          model: this.config.get('COPILOT_MODEL', { infer: true }),
+          model,
           durationMs: Date.now() - startedAt,
           providerCalls,
           toolCalls,
@@ -249,7 +254,7 @@ export class CopilotRunnerService {
       this.logger.warn(JSON.stringify({
         runId,
         userId,
-        model: this.config.get('COPILOT_MODEL', { infer: true }),
+        model,
         durationMs: Date.now() - startedAt,
         providerCalls,
         toolCalls,

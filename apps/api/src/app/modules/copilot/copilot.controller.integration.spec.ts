@@ -1,4 +1,5 @@
-import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import { ExecutionContext, ForbiddenException, UnauthorizedException } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { JwtModule, JwtService } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
@@ -9,6 +10,9 @@ import { UsersService } from '../users/users.service';
 import { CopilotActionsService } from './copilot-actions.service';
 import { CopilotController } from './copilot.controller';
 import { CopilotProvider } from './copilot-provider';
+import { CopilotSettingsService } from './copilot-settings.service';
+import { PermissionsService } from '../access-control/permissions.service';
+import { PermissionsGuard } from '../access-control/permissions.guard';
 import { CopilotRunnerService } from './copilot-runner.service';
 import { CopilotService } from './copilot.service';
 import { CopilotToolsService } from './copilot-tools.service';
@@ -25,6 +29,7 @@ describe('Copilot authenticated Nest flow', () => {
     findActiveById: vi.fn(async (id: number) => id === 7 ? { id, email: 'e2e@example.test' } : null),
   };
   const provider = {
+    getConfiguration: vi.fn().mockResolvedValue({ enabled: true, model: 'test-model', baseUrl: 'https://api.openai.com/v1', apiFormat: 'responses' }),
     generate: vi.fn().mockResolvedValue({
       text: '{"text":"Deterministic answer","sourceIds":[]}',
       functionCalls: [],
@@ -48,6 +53,8 @@ describe('Copilot authenticated Nest flow', () => {
         CopilotRunnerService,
         { provide: CopilotService, useValue: copilotService },
         { provide: CopilotProvider, useValue: provider },
+        { provide: CopilotSettingsService, useValue: { getPublic: vi.fn().mockResolvedValue({ enabled: true }) } },
+        { provide: PermissionsService, useValue: { getEffectivePermissions: vi.fn().mockResolvedValue([]) } },
         { provide: CopilotToolsService, useValue: tools },
         { provide: CopilotActionsService, useValue: actions },
         { provide: ConfigService, useValue: { get: (key: string) => key === 'JWT_SECRET' ? secret : true } },
@@ -100,5 +107,20 @@ describe('Copilot authenticated Nest flow', () => {
 
     expect(provider.generate).toHaveBeenCalledOnce();
     expect(fail).not.toHaveBeenCalled();
+  });
+
+  it('protects all configuration and probe endpoints with the admin capability', async () => {
+    const permissions = module.get(PermissionsService);
+    const permissionGuard = new PermissionsGuard(module.get(Reflector), permissions);
+    for (const handler of [CopilotController.prototype.getSettings, CopilotController.prototype.saveSettings, CopilotController.prototype.testSettings]) {
+      const context = {
+        switchToHttp: () => ({ getRequest: () => ({ user: { sub: 7 } }) }),
+        getHandler: () => handler, getClass: () => CopilotController,
+      } as unknown as ExecutionContext;
+      vi.mocked(permissions.getEffectivePermissions).mockResolvedValueOnce([]);
+      await expect(permissionGuard.canActivate(context)).rejects.toBeInstanceOf(ForbiddenException);
+      vi.mocked(permissions.getEffectivePermissions).mockResolvedValueOnce(['users:write']);
+      await expect(permissionGuard.canActivate(context)).resolves.toBe(true);
+    }
   });
 });

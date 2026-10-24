@@ -39,7 +39,7 @@ NestJS API (/api)
   ├── Authentication and access control
   ├── Leads and pipelines
   ├── Companies, contacts, and tasks
-  ├── Copilot (optional, server-side OpenAI Responses API)
+  ├── Copilot (optional, configurable AI provider)
   ├── Custom fields and analytics
   └── Users and groups
   |
@@ -105,11 +105,15 @@ Open the web app at `http://localhost:4200`. The API runs at `http://localhost:3
 
 ## Copilot
 
-Copilot is disabled by default. In the API environment, set `COPILOT_ENABLED=true`, `OPENAI_API_KEY`, and an explicit `COPILOT_MODEL`, then restart the API. The model must support the Responses API features used by this app: function calling and strict structured output. There is no default model. Test the selected model in a development environment with synthetic CRM data before enabling it for users. Normal tests use deterministic fakes and do not contact OpenAI.
+Copilot is disabled by default. After applying migrations with `pnpm db:migrate`, administrators can configure it under **Settings → Integrations**. Management requires `users:write`, the existing permission for user administration. Choose Responses API or OpenAI-compatible Chat Completions, enter the API base URL (including `/v1` if required), model, and optional API key, then save. A saved workspace configuration takes precedence over environment defaults and applies to new messages without restarting the API. An active response keeps one configuration for its entire tool cycle. **Test saved connection** sends a synthetic request with no CRM data; it contacts the configured provider and may incur its normal usage charges. The selected model must support function calling and strict JSON-schema output. Normal automated tests use deterministic fakes and do not contact a provider.
+
+For environment-based setup, set `COPILOT_ENABLED=true`, `COPILOT_API_FORMAT=responses` or `chat-completions`, `COPILOT_BASE_URL`, `COPILOT_MODEL`, and `COPILOT_API_KEY` if required. Defaults are Responses API and `https://api.openai.com/v1`; there is no default model. The existing `OPENAI_API_KEY` remains supported only for that default URL. A local compatible server can use a URL such as `http://localhost:11434/v1` without a key; choose an installed model that supports the required features. The URL is reached from the API server, so `localhost` inside Docker refers to its own container. Native Anthropic and Gemini protocols are not supported; a gateway must expose one of the two supported API formats.
+
+API keys saved through the interface are encrypted with AES-256-GCM using a key derived from `JWT_SECRET`; they are never returned to the browser. Keep that secret stable and secure alongside database backups. After rotating `JWT_SECRET`, re-enter the provider key in Settings. Leave the key field blank to retain it, or explicitly remove/replace it. Changing the base URL clears the old key rather than sending it to a different provider. Use HTTPS for remote providers; HTTP is intended for trusted local servers. Redirects are not followed. Saved settings, including an explicitly disabled configuration, override environment settings.
 
 Copilot can search leads, companies, contacts, and tasks; summarize supported CRM data and analytics; and prepare drafts. It can propose creating or updating leads, companies, contacts, or tasks, and adding a note. Each proposal shows the exact change and requires its own confirmation. Confirmation records the change through the existing CRM service. Copilot cannot delete records, make bulk changes, send email, change users or permissions, or run background actions. Reads and proposals follow the signed-in user's current CRM permissions.
 
-Conversations, messages, saved record references, run status, proposals, and confirmation results are stored in the app's PostgreSQL database. Deleting a conversation deletes its Copilot history and proposals, but does not undo CRM changes already confirmed. The provider request sets `store: false`; this controls Responses API storage, but does not replace OpenAI's own data-handling terms. The API key stays on the server and is never returned to the browser.
+Conversations, messages, saved record references, run status, proposals, and confirmation results are stored in the app's PostgreSQL database. Deleting a conversation deletes its Copilot history and proposals, but does not undo CRM changes already confirmed. Provider requests set `store: false`; providers must support that parameter, but their own data-handling terms still apply. The configured provider receives the permitted history and tool results needed to answer the request. The API key stays on the server.
 
 Limits are enforced by the API: 8,000 characters per message, 120 characters per chat title, one active run per chat, two per user, and 20 new runs per user in ten minutes. Each run allows up to six provider calls, 12 tool calls, 90 seconds, 20 history messages, and 60,000 serialized context characters. Searches return up to 20 records per page and three pages per selection. A proposal expires after 15 minutes. The API also limits each user to two live event streams per process; polling remains the fallback when streaming is unavailable.
 

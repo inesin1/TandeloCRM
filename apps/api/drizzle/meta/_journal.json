@@ -43,6 +43,13 @@
       "when": 1792785943803,
       "tag": "0005_outgoing_sugar_man",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792825774610,
+      "tag": "0006_old_songbird",
+      "breakpoints": true
     }
   ]
 }

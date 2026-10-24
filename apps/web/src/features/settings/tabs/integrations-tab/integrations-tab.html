@@ -1,4 +1,156 @@
-<h2 class="text-lg font-semibold text-surface-800">Integrations</h2>
-<p class="mt-1 text-sm text-surface-500">
-  Plugins connected to this workspace.
-</p>
+@if (canManageCopilot()) {
+  <section class="mx-auto max-w-3xl space-y-6" aria-labelledby="integrations-title">
+    <header>
+      <h2 id="integrations-title" class="text-lg font-semibold text-surface-800">Integrations</h2>
+      <p class="mt-1 text-sm text-surface-500">Configure the AI provider used by Copilot.</p>
+    </header>
+
+    @if (loadError()) {
+      <div role="alert" class="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+        {{ loadError() }}
+        <button pButton type="button" severity="secondary" (click)="loadSettings()">Retry</button>
+      </div>
+    } @else if (loading() || !settings()) {
+      <p role="status" class="text-sm text-surface-500">Loading Copilot settings…</p>
+    } @else {
+      <p class="text-xs text-surface-500">
+        Configuration source: {{ settings()?.source === 'database' ? 'Saved workspace settings' : 'Environment defaults' }}.
+      </p>
+      <p class="text-sm text-surface-500">Saved settings apply to new Copilot messages.</p>
+      <form class="space-y-5" (submit)="onSubmit($event)">
+        <div class="flex items-start gap-3 rounded-lg border border-surface-200 p-4">
+          <p-checkbox
+            inputId="copilotEnabled"
+            [binary]="true"
+            [ngModel]="model().enabled"
+            [ngModelOptions]="{ standalone: true }"
+            (ngModelChange)="updateField('enabled', $event)"
+          />
+          <div>
+            <label for="copilotEnabled" class="block text-sm font-medium text-surface-800">Enable Copilot</label>
+            <p class="mt-1 text-sm text-surface-500">Allow signed-in users to use the configured model with their CRM permissions.</p>
+          </div>
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div class="space-y-1.5">
+            <label for="copilotApiFormat" class="text-sm font-medium text-surface-700">API format</label>
+            <p-select
+              inputId="copilotApiFormat"
+              ariaLabel="API format"
+              [options]="formats"
+              optionLabel="label"
+              optionValue="value"
+              [ngModel]="model().apiFormat"
+              [ngModelOptions]="{ standalone: true }"
+              (ngModelChange)="updateField('apiFormat', $event)"
+              class="w-full"
+            />
+          </div>
+          <div class="space-y-1.5">
+            <label for="copilotModel" class="text-sm font-medium text-surface-700">Model</label>
+            <input
+              pInputText
+              id="copilotModel"
+              type="text"
+              autocomplete="off"
+              [formField]="settingsForm.model"
+              (input)="fieldsChanged()"
+              class="w-full"
+              aria-describedby="copilotModelHint"
+            />
+            <p id="copilotModelHint" class="text-xs text-surface-500">Choose a model that supports tool calls and structured JSON output.</p>
+          </div>
+        </div>
+
+        <div class="space-y-1.5">
+          <label for="copilotBaseUrl" class="text-sm font-medium text-surface-700">Base URL</label>
+          <input
+            pInputText
+            id="copilotBaseUrl"
+            type="url"
+            autocomplete="url"
+            [formField]="settingsForm.baseUrl"
+            (input)="fieldsChanged()"
+            class="w-full"
+            aria-describedby="copilotBaseUrlHint"
+          />
+          <p id="copilotBaseUrlHint" class="text-xs text-surface-500">Use an endpoint compatible with the selected OpenAI API format.</p>
+        </div>
+
+        @if (baseUrlChanged() && settings()?.apiKeySet) {
+          <p role="status" class="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
+            Changing the base URL clears the saved API key. Enter a key for the new endpoint before saving if it requires one.
+          </p>
+        }
+
+        <div class="space-y-2">
+          <label for="copilotApiKey" class="text-sm font-medium text-surface-700">API key</label>
+          <input
+            pInputText
+            id="copilotApiKey"
+            type="password"
+            autocomplete="new-password"
+            [ngModel]="model().apiKey"
+            [ngModelOptions]="{ standalone: true }"
+            (ngModelChange)="updateApiKey($event)"
+            class="w-full"
+            placeholder="Leave blank to keep the saved key"
+          />
+          @if (settings()?.apiKeySet) {
+            <label for="copilotClearApiKey" class="flex items-center gap-2 text-sm text-surface-600">
+              <p-checkbox
+                inputId="copilotClearApiKey"
+                [binary]="true"
+                [ngModel]="model().clearApiKey"
+                [ngModelOptions]="{ standalone: true }"
+                (ngModelChange)="updateClearApiKey($event)"
+              />
+              Remove saved API key
+            </label>
+          }
+          <p class="text-xs text-surface-500">
+            @if (settings()?.apiKeySet) {
+              A key is saved. Secret values are never returned to this page.
+            } @else {
+              No API key is saved. Some endpoints may not require one.
+            }
+          </p>
+        </div>
+
+        @if (saveError()) {
+          <p role="alert" class="text-sm text-red-700">{{ saveError() }}</p>
+        }
+        @if (saveSuccess()) {
+          <p role="status" class="text-sm text-green-700">Settings saved.</p>
+        }
+        @if (testResult(); as result) {
+          <p [attr.role]="result.ok ? 'status' : 'alert'" [class.text-green-700]="result.ok" [class.text-red-700]="!result.ok" class="text-sm">
+            {{ result.message }}
+          </p>
+        }
+
+        <div class="flex flex-wrap items-center gap-3 border-t border-surface-200 pt-4">
+          <button pButton type="submit" [disabled]="saving() || loading()">
+            {{ saving() ? 'Saving…' : 'Save settings' }}
+          </button>
+          <button
+            pButton
+            type="button"
+            severity="secondary"
+            [disabled]="hasUnsavedChanges() || testing() || saving()"
+            (click)="testSavedConnection()"
+          >
+            {{ testing() ? 'Testing…' : 'Test saved connection' }}
+          </button>
+          <span class="text-xs text-surface-500">Testing uses only the saved configuration, even when Copilot is disabled. No CRM data is sent.</span>
+        </div>
+      </form>
+    }
+  </section>
+} @else {
+  <section aria-labelledby="integrations-title">
+    <h2 id="integrations-title" class="text-lg font-semibold text-surface-800">Integrations</h2>
+    <p class="mt-1 text-sm text-surface-500">You do not have permission to manage integrations.</p>
+  </section>
+}

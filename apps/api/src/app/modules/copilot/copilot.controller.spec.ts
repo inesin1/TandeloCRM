@@ -8,36 +8,38 @@ import { SendMessageDto } from './dto/send-message.dto';
 import { EmptyActionBodyDto } from './dto/empty-action-body.dto';
 
 describe('CopilotController', () => {
-  it('returns status without configuration secrets', () => {
+  it('returns status without configuration secrets', async () => {
     const service = {
       getStatus: vi.fn().mockReturnValue({ enabled: false, capabilities: {} }),
     };
     const controller = new CopilotController(
       service as never,
       {
-        get: () => false,
+        getPublic: async () => ({ enabled: false }),
       } as never,
+      {} as never,
     );
 
-    expect(controller.getStatus()).toEqual({
+    expect(await controller.getStatus()).toEqual({
       enabled: false,
       capabilities: {},
     });
-    expect(JSON.stringify(controller.getStatus())).not.toContain(
+    expect(JSON.stringify(await controller.getStatus())).not.toContain(
       'OPENAI_API_KEY',
     );
   });
 
-  it('returns 503 instead of starting a message when Copilot is disabled', () => {
+  it('returns 503 instead of starting a message when Copilot is disabled', async () => {
     const service = { startMessage: vi.fn() };
     const controller = new CopilotController(
       service as never,
       {
-        get: () => false,
+        getPublic: async () => ({ enabled: false }),
       } as never,
+      {} as never,
     );
 
-    expect(() =>
+    await expect(
       controller.startMessage(
         5,
         {
@@ -47,7 +49,7 @@ describe('CopilotController', () => {
         },
         { user: { sub: 42, email: 'user@example.test' } } as never,
       ),
-    ).toThrow(ServiceUnavailableException);
+    ).rejects.toThrow(ServiceUnavailableException);
     expect(service.startMessage).not.toHaveBeenCalled();
   });
 
@@ -57,7 +59,7 @@ describe('CopilotController', () => {
         .fn()
         .mockResolvedValue({ items: [], nextCursor: null }),
     };
-    const controller = new CopilotController(service as never, {} as never);
+    const controller = new CopilotController(service as never, {} as never, {} as never);
     const request = { user: { sub: 42, email: 'user@example.test' } };
 
     await controller.listConversations({ limit: 20 }, request as never);
@@ -67,7 +69,7 @@ describe('CopilotController', () => {
 
   it('confirms actions with an empty DTO and takes the actor from JWT', async () => {
     const service = { confirmAction: vi.fn().mockResolvedValue({ id: 'action-id', status: 'executed' }) };
-    const controller = new CopilotController(service as never, {} as never);
+    const controller = new CopilotController(service as never, {} as never, {} as never);
 
     await controller.confirmAction('action-id', {}, { user: { sub: 42, email: 'user@example.test' } } as never);
 

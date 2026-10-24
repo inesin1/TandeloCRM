@@ -13,6 +13,7 @@ import { CustomFieldsModule } from '../custom-fields/custom-fields.module';
 import { UsersModule } from '../users/users.module';
 import { AnalyticsModule } from '../analytics/analytics.module';
 import { CopilotActionsService } from './copilot-actions.service';
+import { CopilotSettingsService } from './copilot-settings.service';
 
 @Module({
   imports: [
@@ -26,6 +27,6 @@ import { CopilotActionsService } from './copilot-actions.service';
     AnalyticsModule,
   ],
   controllers: [CopilotController],
-  providers: [CopilotService, CopilotProvider, CopilotRunnerService, CopilotToolsService, CopilotActionsService],
+  providers: [CopilotService, CopilotProvider, CopilotRunnerService, CopilotToolsService, CopilotActionsService, CopilotSettingsService],
 })
 export class CopilotModule {}
