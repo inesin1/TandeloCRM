@@ -135,10 +135,10 @@ Copilot browser tests mock API responses. API E2E uses the local API and databas
 
 ## Versions and releases
 
-Tandelo uses one version for the API and web app. `package.json` is the source of truth, and Swagger reads that version too. The existing tag is `v0.1.0-beta.1`; `main` contains newer, unreleased work, including Copilot. Version and changelog updates are managed by [Release Please](https://github.com/googleapis/release-please-action) in the CI workflow.
+Tandelo uses one version for the API and web app. `package.json` is the source of truth, and Swagger reads that version too. Published versions are listed on the Releases page; commits on `main` after the latest release tag are unreleased. Version and changelog updates are managed by [Release Please](https://github.com/googleapis/release-please-action) in the CI workflow.
 
 1. Use Conventional Commits: `feat:` for features, `fix:` for fixes, and `!` for breaking changes.
-2. After successful CI on `main`, the release job creates or updates a release PR containing the next version and `CHANGELOG.md` entry. While the beta policy is active, releases use a `-beta.N` suffix; the next release from the current baseline is `0.1.0-beta.2`.
+2. After successful CI on `main`, the release job creates or updates a release PR containing the next version and `CHANGELOG.md` entry. While the beta policy is active, releases use a `-beta.N` suffix with an incrementing prerelease number.
 3. Review the release notes, upgrade requirements, and checks. If GitHub holds a bot-created PR's workflow runs for approval, select **Approve workflows to run**. CI can also be run manually from **Actions → CI → Run workflow**, selecting the release PR branch.
 4. Merge the release PR when ready. After CI passes on `main`, the release job creates its `v…` tag and GitHub prerelease. Ordinary feature pushes do not publish a new release on their own.
 
