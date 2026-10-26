@@ -3,6 +3,18 @@
 Release notes for Tandelo. The API and web app share one version from `package.json`.
 Release Please adds entries when preparing a release PR. Changes on `main` after the latest tag are not released yet.
 
+## [0.1.0-beta.3](https://github.com/inesin1/TandeloCRM/compare/v0.1.0-beta.2...v0.1.0-beta.3) (2026-10-26)
+
+
+### Features
+
+* **deploy:** add HomeLab deployment setup ([0e9851b](https://github.com/inesin1/TandeloCRM/commit/0e9851b274791c10fde9507f1d8e39e736832d03))
+
+
+### Bug Fixes
+
+* **deps:** patch vulnerable dependencies ([9d304b1](https://github.com/inesin1/TandeloCRM/commit/9d304b147d354ad871f1fafc3c6b682848b178eb))
+
 ## [0.1.0-beta.2](https://github.com/inesin1/TandeloCRM/compare/v0.1.0-beta.1...v0.1.0-beta.2) (2026-10-24)
 
 
