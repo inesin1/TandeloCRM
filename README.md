@@ -15,7 +15,7 @@ Tandelo brings leads, companies, contacts, pipelines, and lead-linked tasks into
 
 This is an active MVP project. There is no hosted demo, and the seed command does not create sample CRM records.
 
-[Releases](https://github.com/inesin1/TandeloCRM/releases) · [Changelog](CHANGELOG.md)
+[Releases](https://github.com/inesin1/TandeloCRM/releases) · [Changelog](CHANGELOG.md) · [HomeLab Deployment](HOMELAB_DEPLOY.md)
 
 ## Features
 
@@ -157,6 +157,8 @@ pnpm nx run-many -t build -p api web
 ```
 
 Replace `vX.Y.Z` with the actual target tag, then restart the API and web server using your installation's startup process. Current development code requires Node.js 26 and pnpm 12; upgrading from the initial beta also requires the Copilot migrations through `0006`. Run migrations once for the installation. Do not rerun user/access-control seed commands as an upgrade step: they can reset role assignments. Rolling code back does not roll the database back; restore a compatible backup if the release requires it.
+
+For containerized production deployments on Docker and HomeLab infrastructure, refer to the [HomeLab Deployment Guide](HOMELAB_DEPLOY.md).
 
 ## Project structure
 

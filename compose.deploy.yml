@@ -1,0 +1,62 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: api
+    container_name: tandelo-api
+    restart: unless-stopped
+    env_file:
+      - ${APP_ENV_FILE:?APP_ENV_FILE must point to the deployment env file}
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3000
+    networks:
+      - homelab
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: web
+    container_name: tandelo-web
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      # Private loopback binding only; host Caddy reverse proxies LAN traffic
+      - "127.0.0.1:${APP_HOST_PORT:-3103}:8080"
+    networks:
+      - homelab
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  tooling:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: tooling
+    container_name: tandelo-tooling
+    profiles:
+      - tools
+    restart: "no"
+    env_file:
+      - ${APP_ENV_FILE:?APP_ENV_FILE must point to the deployment env file}
+    networks:
+      - homelab
+
+networks:
+  homelab:
+    external: true
+    name: homelab

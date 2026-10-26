@@ -1,0 +1,72 @@
+name: Deploy HomeLab
+
+on:
+  push:
+    branches: [deploy-home]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: homelab-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on:
+      - self-hosted
+      - Linux
+      - X64
+      - homelab
+      # Unverified configuration input: add project-specific runner label if registered in Phase 2
+
+    timeout-minutes: 30
+
+    env:
+      APP_ENV_FILE: ${{ github.workspace }}/.home.env
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Remove stale env
+        run: rm -f "$APP_ENV_FILE"
+
+      - name: Verify configuration
+        env:
+          INFISICAL_ID: ${{ vars.HOMELAB_INFISICAL_IDENTITY_ID }}
+          INFISICAL_PROJECT: ${{ vars.HOMELAB_INFISICAL_PROJECT_SLUG }}
+        run: |
+          test -n "$INFISICAL_ID" || { echo 'Missing HOMELAB_INFISICAL_IDENTITY_ID'; exit 1; }
+          test -n "$INFISICAL_PROJECT" || { echo 'Missing HOMELAB_INFISICAL_PROJECT_SLUG'; exit 1; }
+          docker info >/dev/null
+          docker network inspect homelab >/dev/null
+
+      - name: Load secrets from Infisical
+        uses: Infisical/secrets-action@v1.0.17
+        with:
+          method: oidc
+          identity-id: ${{ vars.HOMELAB_INFISICAL_IDENTITY_ID }}
+          project-slug: ${{ vars.HOMELAB_INFISICAL_PROJECT_SLUG }}
+          env-slug: prod
+          domain: http://127.0.0.1:9099
+          oidc-audience: infisical-home
+          export-type: file
+          file-output-path: /.home.env
+
+      - name: Deploy
+        run: |
+          test -f "$APP_ENV_FILE" || { echo 'Infisical env file missing'; exit 1; }
+          PROJECT_NAME="${GITHUB_REPOSITORY#*/}"
+          docker compose -p "$PROJECT_NAME" -f compose.deploy.yml config -q
+          docker compose -p "$PROJECT_NAME" -f compose.deploy.yml \
+            up -d --build --remove-orphans --wait --wait-timeout 180
+          docker compose -p "$PROJECT_NAME" -f compose.deploy.yml ps
+
+      - name: Remove temporary secrets
+        if: always()
+        run: rm -f "$APP_ENV_FILE"
