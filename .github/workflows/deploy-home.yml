@@ -47,7 +47,7 @@ jobs:
           docker network inspect homelab >/dev/null
 
       - name: Load secrets from Infisical
-        uses: Infisical/secrets-action@v1.0.17
+        uses: Infisical/secrets-action@v1.0.18
         with:
           method: oidc
           identity-id: ${{ vars.HOMELAB_INFISICAL_IDENTITY_ID }}
