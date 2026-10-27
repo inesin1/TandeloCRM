@@ -46,4 +46,4 @@ jobs:
       group: release-please-main
       cancel-in-progress: false
     steps:
-      - uses: googleapis/release-please-action@v4
+      - uses: googleapis/release-please-action@v5
