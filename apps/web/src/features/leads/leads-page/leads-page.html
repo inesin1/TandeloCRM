@@ -58,7 +58,7 @@
   <div
     class="mt-4 flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-surface-200 bg-white shadow-sm"
   >
-    @if (isLoading()) {
+    @if (isLoading() || mineSessionLoading()) {
     <p-progressbar
       mode="indeterminate"
       [dt]="{ height: '0.25rem' }"
@@ -126,7 +126,14 @@
       />
     </div>
 
-    @if(viewMode() === 'board') {
+    @if (mineSessionError()) {
+    <p-message severity="error" class="m-4">
+      Could not load your assigned leads.
+      <button type="button" pButton text (click)="retryMineSession()">
+        Retry
+      </button>
+    </p-message>
+    } @else if (!mineSessionLoading() && viewMode() === 'board') {
     <div
       class="board flex min-h-0 flex-1 gap-3 overflow-x-auto bg-surface-100 p-3"
     >
@@ -140,7 +147,7 @@
     >
       Showing {{ filteredLeads().length }} of {{ stats().open }}
     </div>
-    } @else if(viewMode() === 'list') {
+    } @else if (!mineSessionLoading() && viewMode() === 'list') {
     <app-leads-table [rows]="rows()" />
     }
   </div>
