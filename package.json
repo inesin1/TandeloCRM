@@ -1,6 +1,6 @@
 {
   "name": "tandelo",
-  "version": "0.1.0-beta.2",
+  "version": "0.1.0-beta.3",
   "license": "MIT",
   "scripts": {
     "dev": "nx run-many -t serve -p api web",
