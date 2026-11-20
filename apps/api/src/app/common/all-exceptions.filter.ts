@@ -22,11 +22,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
         ? exception.getStatus()
         : HttpStatus.INTERNAL_SERVER_ERROR;
     const message =
-      exception instanceof HttpException
+      status < HttpStatus.INTERNAL_SERVER_ERROR && exception instanceof HttpException
         ? exception.getResponse()
-        : exception instanceof Error
-          ? exception.message
-          : 'Internal error';
+        : 'Internal server error';
 
     const logContext = { path: request.url, status, message };
     if (status >= HttpStatus.INTERNAL_SERVER_ERROR) {

@@ -12,7 +12,7 @@ overrides:
   shell-quote: ^1.11.0
   '@modelcontextprotocol/sdk': ^1.32.0
   hono: ^4.13.11
-  follow-redirects: ^1.16.1
+  follow-redirects: ^1.16.2
   launch-editor: ^2.14.2
   '@vitest/mocker': 4.1.12
   zod: ^4.6.6
@@ -20,7 +20,7 @@ overrides:
   vite: 8.1.6
   body-parser@^1: 1.20.9
   body-parser@^2: 2.4.0
-  qs: ^6.16.0
+  qs: ^6.16.1
   smol-toml: ^1.9.0
   axios@<1.20.0: 1.20.0
   '@angular/platform-server@>=22.0.0 <22.2.0': 22.2.0
@@ -7473,6 +7473,7 @@ packages:
 
   node-abort-controller@3.1.1:
     resolution: {integrity: sha512-AGK2yQKIjRuqnc6VkX2Xj5d+QW8xZ87pa1UK6yA6ouUyuxfHuMP6umE5QK7UmTeOAymo+Zx1Fxiuw9rVx8taHQ==}
+    deprecated: This package is no longer needed on supported Node.js versions. Node.js 16+ includes AbortController and AbortSignal as built-in globals. All Node.js versions requiring this polyfill are end-of-life. Use the built-in globals instead.
 
   node-addon-api@6.1.0:
     resolution: {integrity: sha512-+eawOlIgy680F0kBzPUNFhMZGtJ1YmqM6l4+Crf4IkImjYrO/mqPwRMh352g23uIaQKFItcQ64I7KMaJxHgAVA==}
