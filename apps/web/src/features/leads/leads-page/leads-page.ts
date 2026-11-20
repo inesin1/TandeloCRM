@@ -14,6 +14,7 @@ import { PIcon } from '@primeicons/angular/p-icon';
 import { LeadsApi } from '../leads-api';
 import { Lead } from '../lead-types';
 import { PipelinesApi } from '../pipelines-api';
+import { AuthApi } from '../../auth/auth-api';
 import { UsersApi } from '../../settings/tabs/users-tab/users-api';
 import { TasksApi } from '../../tasks/tasks-api';
 import { BoardColumn } from '../board-column/board-column';
@@ -44,6 +45,7 @@ import { PageHeader } from '../../../shared/page-header';
 export class LeadsPage {
   private readonly leadsApi = inject(LeadsApi);
   private readonly pipelinesApi = inject(PipelinesApi);
+  private readonly authApi = inject(AuthApi);
 
   protected readonly leads = this.leadsApi.leads;
   protected readonly pipelines = this.pipelinesApi.pipelines;
@@ -51,7 +53,17 @@ export class LeadsPage {
   protected readonly statuses = this.pipelinesApi.statuses;
   protected readonly users = inject(UsersApi).users;
   protected readonly tasks = inject(TasksApi).tasks;
-  protected readonly currentUserId = 1;
+  private readonly currentUserId = computed(() => {
+    const session = this.authApi.session;
+    return this.authApi.isAuthenticated() && session.hasValue()
+      ? session.value().user.id
+      : null;
+  });
+
+  private isMine(lead: Lead): boolean {
+    const userId = this.currentUserId();
+    return userId !== null && lead.ownerId === userId;
+  }
 
   // value() throws while a resource is in error state, so the template must not read it then.
   protected readonly loadError = computed(
@@ -72,6 +84,17 @@ export class LeadsPage {
   );
 
   protected readonly activeTab = signal('all');
+  protected readonly mineSessionLoading = computed(
+    () => this.activeTab() === 'mine' && this.authApi.session.isLoading(),
+  );
+  protected readonly mineSessionError = computed(
+    () => this.activeTab() === 'mine' && !!this.authApi.session.error(),
+  );
+
+  protected retryMineSession(): void {
+    this.authApi.session.reload();
+  }
+
   protected readonly search = signal('');
   protected readonly ownerFilter = signal<number | null>(null);
   protected readonly statusFilter = signal<number | null>(null);
@@ -117,9 +140,10 @@ export class LeadsPage {
       {
         value: 'mine',
         label: 'Mine',
-        count: leads.filter(
-          (lead) => lead.ownerId === this.currentUserId,
-        ).length,
+        count:
+          this.currentUserId() === null
+            ? null
+            : leads.filter((lead) => this.isMine(lead)).length,
       },
       {
         value: 'attention',
@@ -131,7 +155,10 @@ export class LeadsPage {
 
   protected readonly filteredLeads = computed(() => {
     const tab = this.activeTab();
-    const search = this.search().toLowerCase();
+    const search = this.search().trim().toLowerCase();
+    const searchId = /^#?\d+$/.test(search)
+      ? Number(search.replace(/^#/, ''))
+      : null;
     const owner = this.ownerFilter();
     const status = this.statusFilter();
 
@@ -144,12 +171,17 @@ export class LeadsPage {
         return false;
       }
 
-      if (search && !lead.name.toLowerCase().includes(search)) {
+      if (
+        search &&
+        lead.id !== searchId &&
+        !lead.name.toLowerCase().includes(search) &&
+        !lead.company?.name.toLowerCase().includes(search)
+      ) {
         return false;
       }
 
       if (tab === 'mine') {
-        return lead.ownerId === this.currentUserId;
+        return this.isMine(lead);
       }
 
       if (tab === 'attention') {
