@@ -6,7 +6,7 @@
 FROM node:26-bookworm-slim AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable && corepack prepare pnpm@12.8.1 --activate
+RUN npm install --global pnpm@12.8.1
 WORKDIR /app
 
 # ------------------------------------------------------------------------------
@@ -31,12 +31,10 @@ RUN pnpm install --frozen-lockfile
 COPY nx.json tsconfig.base.json eslint.config.mjs* vitest.config.mts* ./
 COPY .release-please-manifest.json ./
 COPY apps ./apps
-COPY libs ./libs
-COPY packages ./packages
 COPY tools ./tools
 
 # Build NestJS API and Angular Web application
-RUN pnpm nx run-many -t build -p api web
+RUN CI=true pnpm nx run-many -t build -p api web
 
 # ------------------------------------------------------------------------------
 # Stage 3: Dedicated tooling image for migrations and admin bootstrap
@@ -57,8 +55,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     g++ \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /app/dist/apps/api/package.json ./package.json
-RUN npm install --omit=dev --no-audit --no-fund
+COPY --from=builder /app/dist/apps/api/package.json /app/dist/apps/api/pnpm-lock.yaml /app/dist/apps/api/pnpm-workspace.yaml ./
+# Nx retains allowed scripts in its generated workspace file.
+RUN printf '  "@scarf/scarf@1.4.0": false\n' >> pnpm-workspace.yaml \
+    && pnpm install --prod --frozen-lockfile
 
 # ------------------------------------------------------------------------------
 # Stage 5: Production API runtime (NestJS)
