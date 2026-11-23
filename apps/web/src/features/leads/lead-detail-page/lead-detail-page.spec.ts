@@ -197,6 +197,29 @@ describe('LeadDetailPage', () => {
     expect(page['saved']()).toBe(true);
   });
 
+  it('omits values for custom fields that no longer exist', async () => {
+    start('7');
+    http.expectOne('/api/pipelines').flush(pipelines);
+    http
+      .expectOne('/api/leads/7')
+      .flush({ ...existingLead, customFields: { deletedField: 'stale' } });
+    await settle();
+    http.expectOne('/api/pipelines/2/statuses').flush(statuses);
+    await settle();
+
+    const page = fixture.componentInstance;
+    page['updateField']('name', 'Renamed lead');
+    const save = page['save']();
+    const request = http.expectOne('/api/leads/7');
+
+    expect(request.request.body.customFields).toEqual({});
+    request.flush({ ...existingLead, name: 'Renamed lead', customFields: {} });
+    await save;
+    await settle();
+    http.expectOne('/api/leads').flush([]);
+    http.expectOne('/api/leads/7/activity').flush([]);
+  });
+
   it('resets existing fields when navigating to new and handles lookup errors', async () => {
     start('7');
     http.expectOne('/api/pipelines').flush(pipelines);

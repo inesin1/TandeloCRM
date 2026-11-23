@@ -148,31 +148,10 @@ export const appRoutes: Route[] = [
             (m) => m.SettingsPage,
           ),
         children: [
-          { path: '', pathMatch: 'full', redirectTo: 'profile' },
-          {
-            path: 'profile',
-            title: 'Profile',
-            loadComponent: () =>
-              import('../features/settings/tabs/profile-tab/profile-tab').then(
-                (m) => m.ProfileTab,
-              ),
-          },
-          {
-            path: 'notifications',
-            title: 'Notifications',
-            loadComponent: () =>
-              import('../features/settings/tabs/notifications-tab/notifications-tab').then(
-                (m) => m.NotificationsTab,
-              ),
-          },
-          {
-            path: 'workspace',
-            title: 'Workspace',
-            loadComponent: () =>
-              import('../features/settings/tabs/workspace-tab/workspace-tab').then(
-                (m) => m.WorkspaceTab,
-              ),
-          },
+          { path: '', pathMatch: 'full', redirectTo: 'users' },
+          { path: 'profile', redirectTo: 'users' },
+          { path: 'notifications', redirectTo: 'users' },
+          { path: 'workspace', redirectTo: 'users' },
           {
             path: 'users',
             title: 'Users',

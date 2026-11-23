@@ -3,14 +3,11 @@ import { RouterModule } from '@angular/router';
 import { PIcon } from '@primeicons/angular/p-icon';
 import { AuthApi } from '../../auth/auth-api';
 
-interface SettingsGroup {
+interface SettingsItem {
   label: string;
-  items: {
-    label: string;
-    icon: string;
-    routerLink: string;
-    requiredPermission?: string;
-  }[];
+  icon: string;
+  routerLink: string;
+  requiredPermission: string;
 }
 
 @Component({
@@ -20,44 +17,28 @@ interface SettingsGroup {
 export class SettingsPage {
   private readonly authApi = inject(AuthApi);
 
-  protected readonly groups: SettingsGroup[] = [
+  protected readonly items: SettingsItem[] = [
     {
-      label: 'Personal',
-      items: [
-        { label: 'Profile', icon: 'user', routerLink: 'profile' },
-        { label: 'Notifications', icon: 'bell', routerLink: 'notifications' },
-      ],
+      label: 'Users',
+      icon: 'users',
+      routerLink: 'users',
+      requiredPermission: 'users:read',
     },
     {
-      label: 'Workspace',
-      items: [
-        { label: 'General', icon: 'sliders-h', routerLink: 'workspace' },
-        {
-          label: 'Users',
-          icon: 'users',
-          routerLink: 'users',
-          requiredPermission: 'users:read',
-        },
-        {
-          label: 'Groups',
-          icon: 'users',
-          routerLink: 'groups',
-          requiredPermission: 'groups:read',
-        },
-      ],
+      label: 'Groups',
+      icon: 'users',
+      routerLink: 'groups',
+      requiredPermission: 'groups:read',
     },
     {
-      label: 'System',
-      items: [
-        { label: 'Integrations', icon: 'th-large', routerLink: 'integrations' },
-      ],
+      label: 'Integrations',
+      icon: 'th-large',
+      routerLink: 'integrations',
+      requiredPermission: 'users:write',
     },
   ];
 
-  protected canAccess(item: SettingsGroup['items'][number]): boolean {
-    return (
-      !item.requiredPermission ||
-      this.authApi.hasPermission(item.requiredPermission)
-    );
+  protected canAccess(item: SettingsItem): boolean {
+    return this.authApi.hasPermission(item.requiredPermission);
   }
 }

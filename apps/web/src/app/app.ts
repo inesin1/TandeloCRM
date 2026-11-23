@@ -3,7 +3,7 @@ import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { filter } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SidebarModule } from 'primeng/sidebar';
-import { DrawerModule } from 'primeng/drawer';
+import { Drawer } from 'primeng/drawer';
 import { ButtonModule } from 'primeng/button';
 import { Tooltip } from 'primeng/tooltip';
 import { PIcon } from '@primeicons/angular/p-icon';
@@ -20,7 +20,16 @@ interface NavItem {
 }
 
 @Component({
-  imports: [RouterModule, SidebarModule, DrawerModule, ButtonModule, Tooltip, PIcon, Logo, CopilotChat],
+  imports: [
+    RouterModule,
+    SidebarModule,
+    Drawer,
+    ButtonModule,
+    Tooltip,
+    PIcon,
+    Logo,
+    CopilotChat,
+  ],
   selector: 'app-root',
   templateUrl: './app.html',
   styleUrl: './app.css',
@@ -30,7 +39,9 @@ export class App {
   protected readonly copilot = inject(CopilotState);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
-  protected readonly isCopilotRoute = signal(this.router.url.startsWith('/copilot'));
+  protected readonly isCopilotRoute = signal(
+    this.router.url.startsWith('/copilot'),
+  );
 
   protected title = 'Tandelo';
 
@@ -46,14 +57,16 @@ export class App {
   ];
 
   constructor() {
-    this.router.events.pipe(
-      filter((event) => event instanceof NavigationEnd),
-      takeUntilDestroyed(this.destroyRef),
-    ).subscribe(() => {
-      const onCopilotPage = this.router.url.startsWith('/copilot');
-      this.isCopilotRoute.set(onCopilotPage);
-      if (onCopilotPage) this.copilot.closePanel();
-    });
+    this.router.events
+      .pipe(
+        filter((event) => event instanceof NavigationEnd),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(() => {
+        const onCopilotPage = this.router.url.startsWith('/copilot');
+        this.isCopilotRoute.set(onCopilotPage);
+        if (onCopilotPage) this.copilot.closePanel();
+      });
   }
 
   protected panelVisibilityChanged(visible: boolean) {
@@ -67,7 +80,10 @@ export class App {
   }
 
   protected openCopilot(event: MouseEvent) {
-    this.copilot.openPanel(null, event.currentTarget instanceof HTMLElement ? event.currentTarget : null);
+    this.copilot.openPanel(
+      null,
+      event.currentTarget instanceof HTMLElement ? event.currentTarget : null,
+    );
   }
 
   protected logout() {

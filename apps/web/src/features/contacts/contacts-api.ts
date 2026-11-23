@@ -40,7 +40,7 @@ export class ContactsApi {
     return this.http.post<Contact>('/api/contacts', contact);
   }
 
-  update(id: number, contact: ContactInput) {
+  update(id: number, contact: Partial<ContactInput>) {
     return this.http.put<Contact>(`/api/contacts/${id}`, contact);
   }
 

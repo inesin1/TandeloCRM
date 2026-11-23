@@ -34,6 +34,7 @@ import { CompaniesApi } from '../../companies/companies-api';
 import { UsersApi } from '../../settings/tabs/users-tab/users-api';
 import { Task, TaskInput, TaskType, TasksApi } from '../../tasks/tasks-api';
 import { CopilotState } from '../../copilot/copilot-state';
+import { currentCustomFieldValues } from '../../../shared/custom-field-values';
 
 function toDraft(lead: Lead): LeadDraft {
   return {
@@ -338,19 +339,31 @@ export class LeadDetailPage {
     effect(() => {
       const mutation = this.copilot.confirmedMutation();
       if (!mutation || mutation.sequence <= this.handledCopilotMutation) return;
-      const lead = this.lead.hasValue() && this.lead.value().id === this.id() ? this.lead.value() : null;
-      const affectsLead = (mutation.kind === 'lead' && mutation.recordId === this.id()) ||
-        (mutation.kind === 'company' && lead?.company?.id === mutation.recordId) ||
-        (mutation.kind === 'contact' && !!lead?.contacts.some((contact) => contact.id === mutation.recordId));
+      const lead =
+        this.lead.hasValue() && this.lead.value().id === this.id()
+          ? this.lead.value()
+          : null;
+      const affectsLead =
+        (mutation.kind === 'lead' && mutation.recordId === this.id()) ||
+        (mutation.kind === 'company' &&
+          lead?.company?.id === mutation.recordId) ||
+        (mutation.kind === 'contact' &&
+          !!lead?.contacts.some((contact) => contact.id === mutation.recordId));
       if (!affectsLead && mutation.kind !== 'task') {
         this.handledCopilotMutation = mutation.sequence;
         return;
       }
       this.handledCopilotMutation = mutation.sequence;
-      const hasUnsavedEdits = this.hasChanges() || (this.isNew() && this.isDirty()) ||
-        !!this.noteText().trim() || !!this.taskDraft().text.trim() || !!this.taskDraft().dueAt;
+      const hasUnsavedEdits =
+        this.hasChanges() ||
+        (this.isNew() && this.isDirty()) ||
+        !!this.noteText().trim() ||
+        !!this.taskDraft().text.trim() ||
+        !!this.taskDraft().dueAt;
       if (hasUnsavedEdits) {
-        this.copilotRefreshNotice.set('Copilot changed this record. Your unsaved edits are still here.');
+        this.copilotRefreshNotice.set(
+          'Copilot changed this record. Your unsaved edits are still here.',
+        );
         return;
       }
       if (mutation.kind === 'task') this.tasks.reload();
@@ -465,8 +478,17 @@ export class LeadDetailPage {
 
   protected discussInCopilot(event: MouseEvent) {
     const id = this.id();
-    if (this.isNew() || id === null || !this.lead.hasValue() || this.lead.value().id !== id) return;
-    this.copilot.openPanel({ context: { kind: 'lead', id }, label: this.lead.value().name }, event.currentTarget instanceof HTMLElement ? event.currentTarget : null);
+    if (
+      this.isNew() ||
+      id === null ||
+      !this.lead.hasValue() ||
+      this.lead.value().id !== id
+    )
+      return;
+    this.copilot.openPanel(
+      { context: { kind: 'lead', id }, label: this.lead.value().name },
+      event.currentTarget instanceof HTMLElement ? event.currentTarget : null,
+    );
   }
 
   protected async cancel() {
@@ -495,7 +517,10 @@ export class LeadDetailPage {
       companyId: draft.companyId,
       ownerId: draft.ownerId,
       contactIds: [...draft.contactIds],
-      customFields: { ...draft.customFields },
+      customFields: currentCustomFieldValues(
+        draft.customFields,
+        this.customFields.value(),
+      ),
     };
     const id = this.id();
     this.isSaving.set(true);

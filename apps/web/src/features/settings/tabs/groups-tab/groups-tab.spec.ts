@@ -35,9 +35,10 @@ describe('GroupsTab', () => {
   afterEach(() => TestBed.resetTestingModule());
 
   it('shows validation after touch, not when the form first opens', async () => {
+    const element = fixture.nativeElement as HTMLElement;
     const createButton = Array.from(
-      fixture.nativeElement.querySelectorAll('button'),
-    ).find((button: HTMLButtonElement) =>
+      element.querySelectorAll<HTMLButtonElement>('button'),
+    ).find((button) =>
       button.textContent?.includes('Create group'),
     ) as HTMLButtonElement;
     createButton.click();

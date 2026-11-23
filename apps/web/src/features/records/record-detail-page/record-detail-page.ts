@@ -31,6 +31,7 @@ import {
   ContactsApi,
 } from '../../contacts/contacts-api';
 import { LeadCustomField } from '../../leads/lead-types';
+import { currentCustomFieldValues } from '../../../shared/custom-field-values';
 import { LeadsApi } from '../../leads/leads-api';
 import { CopilotState } from '../../copilot/copilot-state';
 import { UsersApi } from '../../settings/tabs/users-tab/users-api';
@@ -253,8 +254,14 @@ export class RecordDetailPage {
         return;
       }
       this.handledCopilotMutation = mutation.sequence;
-      if (this.hasChanges() || (this.isNew() && this.isNewDirty()) || !!this.noteText().trim()) {
-        this.copilotRefreshNotice.set(`Copilot changed this ${this.kind}. Your unsaved edits are still here.`);
+      if (
+        this.hasChanges() ||
+        (this.isNew() && this.isNewDirty()) ||
+        !!this.noteText().trim()
+      ) {
+        this.copilotRefreshNotice.set(
+          `Copilot changed this ${this.kind}. Your unsaved edits are still here.`,
+        );
         return;
       }
       this.record.reload();
@@ -282,8 +289,17 @@ export class RecordDetailPage {
 
   protected discussInCopilot(event: MouseEvent) {
     const id = this.id();
-    if (this.isNew() || id === null || !this.record.hasValue() || this.record.value().id !== id) return;
-    this.copilot.openPanel({ context: { kind: this.kind, id }, label: this.record.value().name }, event.currentTarget instanceof HTMLElement ? event.currentTarget : null);
+    if (
+      this.isNew() ||
+      id === null ||
+      !this.record.hasValue() ||
+      this.record.value().id !== id
+    )
+      return;
+    this.copilot.openPanel(
+      { context: { kind: this.kind, id }, label: this.record.value().name },
+      event.currentTarget instanceof HTMLElement ? event.currentTarget : null,
+    );
   }
 
   protected editName() {
@@ -363,7 +379,10 @@ export class RecordDetailPage {
         email: draft.email?.trim() || null,
         phone: draft.phone?.trim() || null,
         ownerId: draft.ownerId,
-        customFields: { ...draft.customFields },
+        customFields: currentCustomFieldValues(
+          draft.customFields,
+          this.customFields.value(),
+        ),
       };
       const result =
         this.kind === 'contact'
@@ -494,15 +513,7 @@ export class RecordDetailPage {
     this.contactLinkError.set('');
     try {
       const updated = await firstValueFrom(
-        this.contactsApi.update(contact.id, {
-          name: contact.name,
-          position: contact.position,
-          companyId,
-          email: contact.email,
-          phone: contact.phone,
-          ownerId: contact.ownerId,
-          customFields: contact.customFields,
-        }),
+        this.contactsApi.update(contact.id, { companyId }),
       );
       if (this.destroyRef.destroyed) return;
       this.contacts.update((items) =>
