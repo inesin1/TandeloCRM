@@ -6,7 +6,11 @@ import {
 } from '@nestjs/common';
 import { isISO8601 } from 'class-validator';
 import { and, asc, desc, eq, lt } from 'drizzle-orm';
-import { DATABASE_CONNECTION, Database, DatabaseExecutor } from '../database/database.module';
+import {
+  DATABASE_CONNECTION,
+  Database,
+  DatabaseExecutor,
+} from '../database/database.module';
 import {
   customFieldDefinitions,
   CustomFieldEntityType,
@@ -19,11 +23,30 @@ import { UpdateCustomFieldDto } from './dto/update-custom-field.dto';
 export class CustomFieldsService {
   constructor(@Inject(DATABASE_CONNECTION) private readonly db: Database) {}
 
-  findCopilotReferencePage(entityType: CustomFieldEntityType | null, cursorId: number | null, limit: number) {
+  findCopilotReferencePage(
+    entityType: CustomFieldEntityType | null,
+    cursorId: number | null,
+    limit: number,
+  ) {
     return this.db
-      .select({ id: customFieldDefinitions.id, entityType: customFieldDefinitions.entityType, key: customFieldDefinitions.key, label: customFieldDefinitions.label, type: customFieldDefinitions.type, options: customFieldDefinitions.options, isRequired: customFieldDefinitions.isRequired })
+      .select({
+        id: customFieldDefinitions.id,
+        entityType: customFieldDefinitions.entityType,
+        key: customFieldDefinitions.key,
+        label: customFieldDefinitions.label,
+        type: customFieldDefinitions.type,
+        options: customFieldDefinitions.options,
+        isRequired: customFieldDefinitions.isRequired,
+      })
       .from(customFieldDefinitions)
-      .where(and(entityType ? eq(customFieldDefinitions.entityType, entityType) : undefined, cursorId ? lt(customFieldDefinitions.id, cursorId) : undefined))
+      .where(
+        and(
+          entityType
+            ? eq(customFieldDefinitions.entityType, entityType)
+            : undefined,
+          cursorId ? lt(customFieldDefinitions.id, cursorId) : undefined,
+        ),
+      )
       .orderBy(desc(customFieldDefinitions.id))
       .limit(limit);
   }
@@ -38,7 +61,10 @@ export class CustomFieldsService {
     return definition;
   }
 
-  findAll(entityType?: CustomFieldEntityType, executor: DatabaseExecutor = this.db) {
+  findAll(
+    entityType?: CustomFieldEntityType,
+    executor: DatabaseExecutor = this.db,
+  ) {
     return executor
       .select()
       .from(customFieldDefinitions)
@@ -90,7 +116,6 @@ export class CustomFieldsService {
   }
 
   async remove(id: string) {
-    // TODO: вычистка осиротевших ключей из customFields — Этап 3, когда появятся companies/contacts
     const result = await this.db
       .delete(customFieldDefinitions)
       .where(eq(customFieldDefinitions.id, Number(id)));

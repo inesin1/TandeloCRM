@@ -26,9 +26,9 @@ export class AnalyticsService {
           pipelineId: pipelines.id,
           statusId: statuses.id,
           leadCount: count(leads.id).mapWith(Number),
-          totalPrice: sql<number>`coalesce(sum(${leads.price}), 0)`.mapWith(Number),
-          pipelineOrder: pipelines.sortOrder,
-          statusOrder: statuses.sortOrder,
+          totalPrice: sql<number>`coalesce(sum(${leads.price}), 0)`.mapWith(
+            Number,
+          ),
         })
         .from(pipelines)
         .innerJoin(statuses, eq(statuses.pipelineId, pipelines.id))
@@ -40,31 +40,41 @@ export class AnalyticsService {
           ),
         )
         .groupBy(pipelines.id, statuses.id)
-        .orderBy(asc(pipelines.sortOrder), asc(statuses.sortOrder), asc(statuses.id))
+        .orderBy(
+          asc(pipelines.sortOrder),
+          asc(statuses.sortOrder),
+          asc(statuses.id),
+        )
         .limit(limit + 1)
         .offset(offset);
-      return { records: rows.map(({ pipelineOrder: _p, statusOrder: _s, ...row }) => row), hasMore: rows.length > limit };
+      return { records: rows, hasMore: rows.length > limit };
     }
     if (report === 'team') {
-      const createdAfter = days ? new Date(now.getTime() - days * 86_400_000) : undefined;
+      const createdAfter = days
+        ? new Date(now.getTime() - days * 86_400_000)
+        : undefined;
       if (!includeUsers) {
         const [row] = await this.db
           .select({
             id: sql<string>`'team-summary'`,
             label: sql<string>`'Team summary'`,
             leadCount: count(leads.id).mapWith(Number),
-            totalPrice: sql<number>`coalesce(sum(${leads.price}), 0)`.mapWith(Number),
+            totalPrice: sql<number>`coalesce(sum(${leads.price}), 0)`.mapWith(
+              Number,
+            ),
           })
           .from(leads)
           .where(createdAfter ? gte(leads.createdAt, createdAfter) : undefined);
         return { records: offset === 0 ? [row] : [], hasMore: false };
       }
-      const base = this.db
+      const rows = await this.db
         .select({
           id: users.id,
           ownerId: users.id,
           leadCount: count(leads.id).mapWith(Number),
-          totalPrice: sql<number>`coalesce(sum(${leads.price}), 0)`.mapWith(Number),
+          totalPrice: sql<number>`coalesce(sum(${leads.price}), 0)`.mapWith(
+            Number,
+          ),
           ownerName: users.name,
         })
         .from(leads)
@@ -74,9 +84,8 @@ export class AnalyticsService {
         .orderBy(desc(count(leads.id)), asc(users.name), asc(users.id))
         .limit(limit + 1)
         .offset(offset);
-      const rows = await base;
       return {
-        records: rows.map(({ ownerName, ...row }) => ({ ...row, ownerName })),
+        records: rows,
         hasMore: rows.length > limit,
       };
     }
@@ -85,13 +94,26 @@ export class AnalyticsService {
         id: sql<string>`'task-summary'`,
         label: sql<string>`'Task summary'`,
         totalCount: count(tasks.id).mapWith(Number),
-        openCount: sql<number>`count(*) filter (where not ${tasks.isCompleted})`.mapWith(Number),
-        completedCount: sql<number>`count(*) filter (where ${tasks.isCompleted})`.mapWith(Number),
-        overdueCount: sql<number>`count(*) filter (where not ${tasks.isCompleted} and ${tasks.dueAt} < ${now})`.mapWith(Number),
+        openCount:
+          sql<number>`count(*) filter (where not ${tasks.isCompleted})`.mapWith(
+            Number,
+          ),
+        completedCount:
+          sql<number>`count(*) filter (where ${tasks.isCompleted})`.mapWith(
+            Number,
+          ),
+        overdueCount:
+          sql<number>`count(*) filter (where not ${tasks.isCompleted} and ${tasks.dueAt} < ${now})`.mapWith(
+            Number,
+          ),
       })
       .from(tasks);
     const types = await this.db
-      .select({ id: tasks.type, label: tasks.type, totalCount: count(tasks.id).mapWith(Number) })
+      .select({
+        id: tasks.type,
+        label: tasks.type,
+        totalCount: count(tasks.id).mapWith(Number),
+      })
       .from(tasks)
       .groupBy(tasks.type)
       .orderBy(asc(tasks.type))

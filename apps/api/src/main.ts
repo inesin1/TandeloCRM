@@ -1,4 +1,4 @@
-import { ValidationPipe } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import helmet from 'helmet';
 import { AppModule } from './app/app.module';
@@ -23,7 +23,6 @@ async function bootstrap() {
   app.useGlobalInterceptors(new LoggingInterceptor());
   app.useGlobalFilters(new AllExceptionsFilter());
 
-  // Swagger
   const config = new DocumentBuilder()
     .setTitle('TandeloCRM API')
     .setDescription('API docs')
@@ -34,9 +33,10 @@ async function bootstrap() {
   SwaggerModule.setup('api/docs', app, document);
 
   app.enableShutdownHooks();
-  const port = process.env.PORT || 3000;
+  const port = Number(process.env.PORT || 3000);
   const host = process.env.HOST || '0.0.0.0';
   await app.listen(port, host);
+  Logger.log(`API listening at ${await app.getUrl()}`, 'Bootstrap');
 }
 
 bootstrap();

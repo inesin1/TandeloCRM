@@ -75,7 +75,9 @@ function setup(...responses: ReturnType<typeof result>[]) {
     query: pool.query.bind(pool),
     release,
   });
-  const connect = vi.spyOn(pool, 'connect').mockResolvedValue(client);
+  const connect = vi
+    .spyOn(pool, 'connect')
+    .mockImplementation(async () => client);
   return {
     service: new UsersService(drizzle(pool)),
     query,
@@ -222,8 +224,9 @@ describe('UsersService', () => {
   describe('update', () => {
     it('updates scalar fields and replaces roles and groups atomically', async () => {
       const password = 'updated-password';
+      const updatedName = 'Alex Updated';
       const dto: UpdateUserDto = {
-        name: 'Alex Updated',
+        name: updatedName,
         password,
         isActive: false,
         roleIds: [3],
@@ -231,7 +234,7 @@ describe('UsersService', () => {
       };
       const updated = {
         ...user,
-        name: dto.name,
+        name: updatedName,
         isActive: false,
       };
       const { service, query, release } = setup(
@@ -252,9 +255,16 @@ describe('UsersService', () => {
         name: 'Alex Updated',
         isActive: false,
       });
-      const updatedPasswordHash = query.mock.calls[5][1].find(
+      const updateCall = (query.mock.calls as unknown[][])[5];
+      const updateParameters = Array.isArray(updateCall?.[1])
+        ? updateCall[1]
+        : [];
+      const updatedPasswordHash = updateParameters.find(
         (value) => typeof value === 'string' && value.startsWith('$argon2'),
-      ) as string;
+      );
+      if (typeof updatedPasswordHash !== 'string') {
+        throw new Error('Expected the updated password hash in the SQL values');
+      }
       expect(await argon2.verify(updatedPasswordHash, password)).toBe(true);
       expect(query.mock.calls).toEqual([
         sqlCall('begin'),

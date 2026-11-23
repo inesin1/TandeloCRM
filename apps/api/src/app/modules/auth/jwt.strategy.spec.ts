@@ -15,7 +15,7 @@ function setup(activeUser: { id: number; email: string } | null) {
 
   return {
     strategy: new JwtStrategy(
-      config as ConfigService<Env, true>,
+      config as unknown as ConfigService<Env, true>,
       usersService,
     ),
     usersService,

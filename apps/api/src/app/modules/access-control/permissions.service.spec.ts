@@ -17,13 +17,13 @@ afterEach(() => {
 describe('PermissionsService', () => {
   it('returns all permissions', async () => {
     const pool = new Pool();
-    const query = vi.spyOn(pool, 'query').mockResolvedValue({
+    const query = vi.spyOn(pool, 'query').mockImplementation(async () => ({
       command: '',
       oid: 0,
       fields: [],
       rows: [[permission.id, permission.key, '2026-09-01 10:00:00.000']],
       rowCount: 1,
-    });
+    }));
     const service = new PermissionsService(drizzle(pool));
 
     expect(await service.findAll()).toEqual([permission]);
@@ -37,13 +37,13 @@ describe('PermissionsService', () => {
 
   it('returns unique effective permissions for a user', async () => {
     const pool = new Pool();
-    const query = vi.spyOn(pool, 'query').mockResolvedValue({
+    const query = vi.spyOn(pool, 'query').mockImplementation(async () => ({
       command: '',
       oid: 0,
       fields: [],
       rows: [['leads:read'], ['leads:read'], ['tasks:write']],
       rowCount: 3,
-    });
+    }));
     const service = new PermissionsService(drizzle(pool));
 
     expect(await service.getEffectivePermissions(7)).toEqual([

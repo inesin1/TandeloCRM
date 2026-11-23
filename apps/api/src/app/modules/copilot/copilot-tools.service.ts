@@ -128,7 +128,7 @@ export class CopilotToolsService {
       case 'get_analytics':
         return this.getAnalytics(state, args, paging, granted, now);
       case 'get_reference_data':
-        return this.getReferenceData(state, args, paging, granted);
+        return this.getReferenceData(state, args, paging);
     }
   }
 
@@ -284,7 +284,7 @@ export class CopilotToolsService {
     return { report, ...(summary ? { summary } : {}), records, truncated, nextCursor: truncated ? encodeOffsetCursor(page.offset + page.limit) : null };
   }
 
-  private async getReferenceData(state: CopilotToolState, args: Record<string, unknown>, page: { limit: number; cursor: string | null }, granted: Set<string>) {
+  private async getReferenceData(state: CopilotToolState, args: Record<string, unknown>, page: { limit: number; cursor: string | null }) {
     const kind = args.kind as string;
     const cursor = decodeIdCursor(page.cursor);
     let rows: Array<Record<string, unknown>>;

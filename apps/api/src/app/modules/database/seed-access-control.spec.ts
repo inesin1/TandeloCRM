@@ -49,23 +49,33 @@ describe('seedAccessControl', () => {
       query: pool.query.bind(pool),
       release: vi.fn(),
     });
-    vi.spyOn(pool, 'connect').mockResolvedValue(client);
+    vi.spyOn(pool, 'connect').mockImplementation(async () => client);
     const db = drizzle(pool);
 
     await seedAccessControl(db);
     await seedAccessControl(db);
 
-    const statements = query.mock.calls.map(([call]) => call.text ?? '');
-    expect(statements.filter((text) => text.includes('insert into "roles"')))
-      .toHaveLength(2);
-    expect(statements.filter((text) => text.includes('insert into "permissions"')))
-      .toHaveLength(2);
+    const statements = (query.mock.calls as unknown[][]).map(([call]) => {
+      if (typeof call === 'string') return call;
+      if (typeof call !== 'object' || call === null || !('text' in call)) {
+        return '';
+      }
+      return typeof call.text === 'string' ? call.text : '';
+    });
     expect(
-      statements.filter(
-        (text) =>
-          text.includes('insert into "roles"') ||
-          text.includes('insert into "permissions"'),
-      ).every((text) => text.includes('on conflict do nothing')),
+      statements.filter((text) => text.includes('insert into "roles"')),
+    ).toHaveLength(2);
+    expect(
+      statements.filter((text) => text.includes('insert into "permissions"')),
+    ).toHaveLength(2);
+    expect(
+      statements
+        .filter(
+          (text) =>
+            text.includes('insert into "roles"') ||
+            text.includes('insert into "permissions"'),
+        )
+        .every((text) => text.includes('on conflict do nothing')),
     ).toBe(true);
     expect(statements.some((text) => text.includes('"leads"'))).toBe(false);
   });

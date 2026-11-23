@@ -8,14 +8,29 @@ import {
   MessageEvent,
   Optional,
 } from '@nestjs/common';
-import { and, count, desc, eq, getTableColumns, gte, gt, lt, lte, or } from 'drizzle-orm';
+import {
+  and,
+  count,
+  desc,
+  eq,
+  getTableColumns,
+  gte,
+  gt,
+  lt,
+  lte,
+  or,
+} from 'drizzle-orm';
 import { createHash } from 'node:crypto';
 import { Observable } from 'rxjs';
 import { DATABASE_CONNECTION, Database } from '../database/database.module';
 import { Inject } from '@nestjs/common';
 import { PermissionsService } from '../access-control/permissions.service';
 import { users } from '../users/user.entity';
-import { permissions, rolePermissions, userRoles } from '../access-control/access-control.entity';
+import {
+  permissions,
+  rolePermissions,
+  userRoles,
+} from '../access-control/access-control.entity';
 import {
   copilotConversations,
   copilotMessages,
@@ -24,11 +39,11 @@ import {
 import { ConversationsQueryDto } from './dto/conversations-query.dto';
 import { MessagesQueryDto } from './dto/messages-query.dto';
 import { SendMessageDto } from './dto/send-message.dto';
+import { COPILOT_LIMITS, CopilotProviderInputItem } from './copilot.types';
 import {
-  COPILOT_LIMITS,
-  CopilotProviderInputItem,
-} from './copilot.types';
-import { CopilotCompletion, CopilotRunnerService } from './copilot-runner.service';
+  CopilotCompletion,
+  CopilotRunnerService,
+} from './copilot-runner.service';
 import { COPILOT_SYSTEM_PROMPT } from './copilot-prompt';
 import { CopilotActionsService } from './copilot-actions.service';
 
@@ -57,23 +72,20 @@ export class CopilotService {
     const cursor = query.cursor
       ? this.decodeConversationCursor(query.cursor)
       : null;
-    const conditions = [eq(copilotConversations.userId, userId)];
-    if (cursor) {
-      conditions.push(
-        or(
+    const beforeCursor = cursor
+      ? or(
           lt(copilotConversations.updatedAt, cursor.updatedAt),
           and(
             eq(copilotConversations.updatedAt, cursor.updatedAt),
             lt(copilotConversations.id, cursor.id),
           ),
-        )!,
-      );
-    }
+        )
+      : undefined;
 
     const rows = await this.db
       .select()
       .from(copilotConversations)
-      .where(and(...conditions))
+      .where(and(eq(copilotConversations.userId, userId), beforeCursor))
       .orderBy(
         desc(copilotConversations.updatedAt),
         desc(copilotConversations.id),
@@ -81,9 +93,10 @@ export class CopilotService {
       .limit(query.limit + 1);
     const hasMore = rows.length > query.limit;
     const items = rows.slice(0, query.limit);
+    const last = items.at(-1);
     return {
       items,
-      nextCursor: hasMore ? this.encodeConversationCursor(items.at(-1)!) : null,
+      nextCursor: hasMore && last ? this.encodeConversationCursor(last) : null,
     };
   }
 
@@ -152,7 +165,10 @@ export class CopilotService {
     const filters = [eq(copilotMessages.conversationId, id)];
     if (query.beforeId) filters.push(lt(copilotMessages.id, query.beforeId));
     const rows = await this.db
-      .select({ ...getTableColumns(copilotMessages), clientRequestId: copilotRuns.clientRequestId })
+      .select({
+        ...getTableColumns(copilotMessages),
+        clientRequestId: copilotRuns.clientRequestId,
+      })
       .from(copilotMessages)
       .leftJoin(copilotRuns, eq(copilotMessages.runId, copilotRuns.id))
       .where(and(...filters))
@@ -171,7 +187,8 @@ export class CopilotService {
           id: message.id,
           conversationId: message.conversationId,
           runId: message.runId,
-          clientRequestId: message.role === 'user' ? message.clientRequestId : null,
+          clientRequestId:
+            message.role === 'user' ? message.clientRequestId : null,
           role: message.role,
           text: redacted ? REDACTED_MESSAGE : message.text,
           sources: redacted ? [] : message.sources,
@@ -426,20 +443,30 @@ export class CopilotService {
       status: run.status,
       context: run.context,
       messages,
-      actions: await this.actions?.listPublishedForRun(userId, runId) ?? [],
+      actions: (await this.actions?.listPublishedForRun(userId, runId)) ?? [],
       ...(run.errorCode ? { errorCode: run.errorCode } : {}),
       ...(run.usage ? { usage: run.usage } : {}),
     };
   }
 
-  async streamRun(userId: number, runId: string): Promise<Observable<MessageEvent>> {
+  async streamRun(
+    userId: number,
+    runId: string,
+  ): Promise<Observable<MessageEvent>> {
     let initialRun = await this.getOwnedRun(userId, runId);
-    if (initialRun.status === 'running' && initialRun.deadlineAt <= new Date()) {
+    if (
+      initialRun.status === 'running' &&
+      initialRun.deadlineAt <= new Date()
+    ) {
       await this.failRun(runId, 'deadline_exceeded');
       initialRun = await this.getOwnedRun(userId, runId);
     }
     const active = this.sseConnections.get(userId) ?? 0;
-    if (active >= 2) throw new HttpException('Too many Copilot event streams', HttpStatus.TOO_MANY_REQUESTS);
+    if (active >= 2)
+      throw new HttpException(
+        'Too many Copilot event streams',
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
     this.sseConnections.set(userId, active + 1);
 
     return new Observable<MessageEvent>((subscriber) => {
@@ -447,19 +474,28 @@ export class CopilotService {
       let timer: ReturnType<typeof setTimeout> | undefined;
       let lastStatus = initialRun.status;
       let lastStatusEventAt = Date.now();
-      const progress = this.runner.subscribeToRunEvents(runId).subscribe((event) => {
-        subscriber.next({ type: event.type, data: event.data });
-      });
+      const progress = this.runner
+        .subscribeToRunEvents(runId)
+        .subscribe((event) => {
+          subscriber.next({ type: event.type, data: event.data });
+        });
 
       const emitTerminal = async (status: string) => {
         const run = await this.getRun(userId, runId);
         if (status === 'completed') {
-          for (const message of run.messages.filter((item) => item.role === 'assistant')) {
+          for (const message of run.messages.filter(
+            (item) => item.role === 'assistant',
+          )) {
             const chars = Array.from(message.text);
             for (let index = 0; index < chars.length; index += 80) {
               subscriber.next({
                 type: 'text_delta',
-                data: { runId, messageId: message.id, sequence: index / 80, delta: chars.slice(index, index + 80).join('') },
+                data: {
+                  runId,
+                  messageId: message.id,
+                  sequence: index / 80,
+                  delta: chars.slice(index, index + 80).join(''),
+                },
               });
             }
           }
@@ -467,7 +503,12 @@ export class CopilotService {
         } else {
           subscriber.next({
             type: status,
-            data: { runId, ...(status === 'failed' && run.errorCode ? { errorCode: run.errorCode } : {}) },
+            data: {
+              runId,
+              ...(status === 'failed' && run.errorCode
+                ? { errorCode: run.errorCode }
+                : {}),
+            },
           });
         }
         subscriber.complete();
@@ -481,10 +522,16 @@ export class CopilotService {
             await this.failRun(runId, 'deadline_exceeded');
             run = await this.getOwnedRun(userId, runId);
           }
-          if (run.status !== lastStatus || Date.now() - lastStatusEventAt >= 15_000) {
+          if (
+            run.status !== lastStatus ||
+            Date.now() - lastStatusEventAt >= 15_000
+          ) {
             lastStatus = run.status;
             lastStatusEventAt = Date.now();
-            subscriber.next({ type: 'status', data: { runId, status: run.status } });
+            subscriber.next({
+              type: 'status',
+              data: { runId, status: run.status },
+            });
           }
           if (run.status !== 'running') {
             await emitTerminal(run.status);
@@ -496,9 +543,16 @@ export class CopilotService {
         }
       };
 
-      subscriber.next({ type: 'status', data: { runId, status: initialRun.status } });
-      if (initialRun.status === 'running') timer = setTimeout(() => void poll(), 1000);
-      else void emitTerminal(initialRun.status).catch((error) => subscriber.error(error));
+      subscriber.next({
+        type: 'status',
+        data: { runId, status: initialRun.status },
+      });
+      if (initialRun.status === 'running')
+        timer = setTimeout(() => void poll(), 1000);
+      else
+        void emitTerminal(initialRun.status).catch((error) =>
+          subscriber.error(error),
+        );
 
       return () => {
         closed = true;
@@ -541,21 +595,37 @@ export class CopilotService {
     return this.actions.confirm(userId, actionId);
   }
 
-  private async completeRun(runId: string, userId: number, result: CopilotCompletion) {
+  private async completeRun(
+    runId: string,
+    userId: number,
+    result: CopilotCompletion,
+  ) {
     return this.db.transaction(async (tx) => {
       const now = new Date();
       const permissionRows = await tx
         .select({ key: permissions.key })
         .from(userRoles)
-        .innerJoin(rolePermissions, eq(userRoles.roleId, rolePermissions.roleId))
-        .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
+        .innerJoin(
+          rolePermissions,
+          eq(userRoles.roleId, rolePermissions.roleId),
+        )
+        .innerJoin(
+          permissions,
+          eq(rolePermissions.permissionId, permissions.id),
+        )
         .where(eq(userRoles.userId, userId));
       const current = new Set(permissionRows.map(({ key }) => key));
       if (result.requiredPermissions.some((key) => !current.has(key))) {
         await tx
           .update(copilotRuns)
-          .set({ status: 'failed', errorCode: 'permissions_changed', finishedAt: now })
-          .where(and(eq(copilotRuns.id, runId), eq(copilotRuns.status, 'running')));
+          .set({
+            status: 'failed',
+            errorCode: 'permissions_changed',
+            finishedAt: now,
+          })
+          .where(
+            and(eq(copilotRuns.id, runId), eq(copilotRuns.status, 'running')),
+          );
         return false;
       }
       const [run] = await tx
@@ -673,9 +743,13 @@ export class CopilotService {
     ) {
       throw new Error('Current user turn exceeds context limit');
     }
-    const requiredPermissions = [...new Set(allowed
-      .filter((message) => message.role === 'assistant')
-      .flatMap((message) => message.requiredPermissions))];
+    const requiredPermissions = [
+      ...new Set(
+        allowed
+          .filter((message) => message.role === 'assistant')
+          .flatMap((message) => message.requiredPermissions),
+      ),
+    ];
     return { input, instructions: instructions(), requiredPermissions };
   }
 
@@ -709,17 +783,17 @@ export class CopilotService {
       const match = /^(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z)\|(\d+)$/.exec(
         decoded,
       );
-      const updatedAt = match && new Date(match[1]);
-      const id = match && Number(match[2]);
+      if (!match) throw new Error('invalid cursor');
+      const updatedAt = new Date(match[1]);
+      const id = Number(match[2]);
       if (
-        !updatedAt ||
         Number.isNaN(updatedAt.getTime()) ||
         !Number.isSafeInteger(id) ||
-        id! < 1
+        id < 1
       ) {
         throw new Error('invalid cursor');
       }
-      return { updatedAt, id: id! };
+      return { updatedAt, id };
     } catch {
       throw new BadRequestException('Invalid cursor');
     }

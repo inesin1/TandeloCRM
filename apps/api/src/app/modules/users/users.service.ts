@@ -5,11 +5,17 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { and, asc, desc, eq, inArray, lt, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, lt } from 'drizzle-orm';
 import * as argon2 from 'argon2';
-import { DATABASE_CONNECTION, Database, DatabaseExecutor, DatabaseTransaction } from '../database/database.module';
+import {
+  DATABASE_CONNECTION,
+  Database,
+  DatabaseExecutor,
+  DatabaseTransaction,
+} from '../database/database.module';
 import { roles, userRoles } from '../access-control/access-control.entity';
 import { SYSTEM_ROLE_NAMES } from '../access-control/permissions.constants';
+import { lockUserAccess } from '../access-control/user-access-lock';
 import { groups, publicUserColumns, users, userGroups } from './user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -39,7 +45,12 @@ export class UsersService {
     return this.db
       .select({ id: users.id, name: users.name })
       .from(users)
-      .where(and(eq(users.isActive, true), cursorId ? lt(users.id, cursorId) : undefined))
+      .where(
+        and(
+          eq(users.isActive, true),
+          cursorId ? lt(users.id, cursorId) : undefined,
+        ),
+      )
       .orderBy(desc(users.id))
       .limit(limit);
   }
@@ -124,9 +135,12 @@ export class UsersService {
   async update(id: string, dto: UpdateUserDto) {
     const { password, roleIds, groupIds, ...rest } = dto;
     const userId = Number(id);
+    const values = password
+      ? { ...rest, passwordHash: await argon2.hash(password) }
+      : rest;
 
     return this.db.transaction(async (tx) => {
-      await tx.execute(sql`select pg_advisory_xact_lock(740921)`);
+      await lockUserAccess(tx);
       const [currentUser] = await tx
         .select(publicUserColumns)
         .from(users)
@@ -151,10 +165,6 @@ export class UsersService {
       if (losesAdminAccess) {
         await this.ensureAnotherActiveAdmin(tx);
       }
-
-      const values = password
-        ? { ...rest, passwordHash: await argon2.hash(password) }
-        : rest;
 
       const [user] = Object.keys(values).length
         ? await tx
@@ -193,7 +203,7 @@ export class UsersService {
   async remove(id: string) {
     return this.db.transaction(async (tx) => {
       const userId = Number(id);
-      await tx.execute(sql`select pg_advisory_xact_lock(740921)`);
+      await lockUserAccess(tx);
       const [user] = await tx
         .select(publicUserColumns)
         .from(users)
@@ -225,7 +235,9 @@ export class UsersService {
       .where(inArray(roles.id, roleIds));
     if (
       !role ||
-      !SYSTEM_ROLE_NAMES.includes(role.name as (typeof SYSTEM_ROLE_NAMES)[number])
+      !SYSTEM_ROLE_NAMES.includes(
+        role.name as (typeof SYSTEM_ROLE_NAMES)[number],
+      )
     ) {
       throw new BadRequestException('Only Admin and Member roles are allowed');
     }
@@ -237,12 +249,7 @@ export class UsersService {
       .select({ id: userRoles.userId })
       .from(userRoles)
       .innerJoin(roles, eq(userRoles.roleId, roles.id))
-      .where(
-        and(
-          eq(userRoles.userId, userId),
-          eq(roles.name, ADMIN_ROLE),
-        ),
-      );
+      .where(and(eq(userRoles.userId, userId), eq(roles.name, ADMIN_ROLE)));
     return Boolean(role);
   }
 

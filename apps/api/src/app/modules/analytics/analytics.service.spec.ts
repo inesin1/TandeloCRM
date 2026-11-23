@@ -5,13 +5,13 @@ import { AnalyticsService } from './analytics.service';
 
 function setup(rows: unknown[][] = []) {
   const pool = new Pool();
-  const query = vi.spyOn(pool, 'query').mockResolvedValue({
+  const query = vi.spyOn(pool, 'query').mockImplementation(async () => ({
     command: 'SELECT',
     oid: 0,
     fields: [],
     rows,
     rowCount: rows.length,
-  });
+  }));
   return { service: new AnalyticsService(drizzle(pool)), query };
 }
 
@@ -23,7 +23,11 @@ describe('AnalyticsService', () => {
   it('uses a unique team ordering before applying Copilot pagination', async () => {
     const { service, query } = setup();
     await service.getCopilotReport('team', 30, new Date(), 20, 20, true);
-    expect(query.mock.calls[0][0].text).toContain('order by count("leads"."id") desc, "users"."name" asc, "users"."id" asc limit');
+    expect(query.mock.calls[0][0]).toMatchObject({
+      text: expect.stringContaining(
+        'order by count("leads"."id") desc, "users"."name" asc, "users"."id" asc limit',
+      ),
+    });
   });
 
   it('aggregates lead count and price by pipeline and status, including empty statuses', async () => {
@@ -61,12 +65,16 @@ describe('AnalyticsService', () => {
       }),
       [],
     );
-    expect(query.mock.calls[0][0].text).toContain(
-      'left join "leads" on ("leads"."statusId" = "statuses"."id" and "leads"."pipelineId" = "statuses"."pipelineId")',
-    );
-    expect(query.mock.calls[0][0].text).toContain(
-      'group by "pipelines"."id", "statuses"."id"',
-    );
+    expect(query.mock.calls[0][0]).toMatchObject({
+      text: expect.stringContaining(
+        'left join "leads" on ("leads"."statusId" = "statuses"."id" and "leads"."pipelineId" = "statuses"."pipelineId")',
+      ),
+    });
+    expect(query.mock.calls[0][0]).toMatchObject({
+      text: expect.stringContaining(
+        'group by "pipelines"."id", "statuses"."id"',
+      ),
+    });
   });
 
   it('returns no rows when no pipelines exist', async () => {

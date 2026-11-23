@@ -1,10 +1,10 @@
-import { IsInt, IsOptional, IsString } from 'class-validator';
+import { IsInt, IsString, ValidateIf } from 'class-validator';
 
 export class CreatePipelineDto {
   @IsString()
   name!: string;
 
-  @IsOptional()
+  @ValidateIf((_object: unknown, value: unknown) => value !== undefined)
   @IsInt()
   sortOrder?: number;
 }

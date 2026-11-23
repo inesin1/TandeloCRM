@@ -66,8 +66,10 @@ function createMemoryDb(seed: { runs?: Record<string, unknown>[] } = {}) {
           return [{ value: countQuery === 2 ? active : state.runs.length }];
         }
         const requestIds = params.filter((param) => typeof param === 'string');
-        return state.runs.filter((run) =>
-          requestIds.includes(run.clientRequestId),
+        return state.runs.filter(
+          (run) =>
+            typeof run.clientRequestId === 'string' &&
+            requestIds.includes(run.clientRequestId),
         );
       }
       return [];
@@ -75,19 +77,23 @@ function createMemoryDb(seed: { runs?: Record<string, unknown>[] } = {}) {
     const select = (selection?: unknown) => {
       let table: unknown;
       let params: unknown[] = [];
-      const builder: Record<string, (...args: unknown[]) => unknown> = {
-        from: (value) => ((table = value), builder),
-        where: (value) => ((params = extractParams(value)), builder),
-        orderBy: () => builder,
-        limit: (limit) =>
-          Promise.resolve(
-            read(table, selection, params).slice(0, Number(limit)),
-          ),
+      return {
+        from(value: unknown) {
+          table = value;
+          return this;
+        },
+        where(value: unknown) {
+          params = extractParams(value);
+          return this;
+        },
+        orderBy() {
+          return this;
+        },
+        limit: (limit: number) =>
+          Promise.resolve(read(table, selection, params).slice(0, limit)),
         for: () => Promise.resolve(read(table, selection, params)),
-        then: (resolve, reject) =>
-          Promise.resolve(read(table, selection, params)).then(resolve, reject),
+        then: queryResult(() => read(table, selection, params)),
       };
-      return builder;
     };
     const update = (table: unknown) => {
       let values: Record<string, unknown> = {};
@@ -107,14 +113,15 @@ function createMemoryDb(seed: { runs?: Record<string, unknown>[] } = {}) {
         }
         return [];
       };
-      const builder: Record<string, (...args: unknown[]) => unknown> = {
-        set: (value) => ((values = value as Record<string, unknown>), builder),
+      return {
+        set(value: Record<string, unknown>) {
+          values = value;
+          return this;
+        },
         where: () => Promise.resolve(execute()),
         returning: () => Promise.resolve(execute()),
-        then: (resolve, reject) =>
-          Promise.resolve(execute()).then(resolve, reject),
+        then: queryResult(execute),
       };
-      return builder;
     };
     const insert = (table: unknown) => {
       let values: Record<string, unknown> = {};
@@ -138,16 +145,14 @@ function createMemoryDb(seed: { runs?: Record<string, unknown>[] } = {}) {
         }
         return inserted;
       };
-      const builder: Record<string, (...args: unknown[]) => unknown> = {
-        values: (value) => (
-          (values = value as Record<string, unknown>),
-          builder
-        ),
+      return {
+        values(value: Record<string, unknown>) {
+          values = value;
+          return this;
+        },
         returning: () => Promise.resolve([execute()]),
-        then: (resolve, reject) =>
-          Promise.resolve(execute()).then(resolve, reject),
+        then: queryResult(execute),
       };
-      return builder;
     };
     return { select, update, insert };
   };
@@ -163,9 +168,13 @@ function createMemoryDb(seed: { runs?: Record<string, unknown>[] } = {}) {
       );
       return result;
     },
-    select: (...args: unknown[]) => createExecutor().select(...args),
+    select: (selection?: unknown) => createExecutor().select(selection),
   };
   return { db, state };
+}
+
+function queryResult<T>(execute: () => T): PromiseLike<T>['then'] {
+  return (resolve, reject) => Promise.resolve(execute()).then(resolve, reject);
 }
 
 const dto = (clientRequestId = randomUUID(), text = 'Question') => ({

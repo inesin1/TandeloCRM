@@ -6,7 +6,9 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
+import { DrizzleQueryError } from 'drizzle-orm';
 import { Request, Response } from 'express';
+import { DatabaseError } from 'pg';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -17,13 +19,15 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
 
-    const status =
+    const httpException =
       exception instanceof HttpException
-        ? exception.getStatus()
-        : HttpStatus.INTERNAL_SERVER_ERROR;
+        ? exception
+        : databaseHttpError(exception);
+    const status =
+      httpException?.getStatus() ?? HttpStatus.INTERNAL_SERVER_ERROR;
     const message =
-      status < HttpStatus.INTERNAL_SERVER_ERROR && exception instanceof HttpException
-        ? exception.getResponse()
+      status < HttpStatus.INTERNAL_SERVER_ERROR && httpException
+        ? httpException.getResponse()
         : 'Internal server error';
 
     const logContext = { path: request.url, status, message };
@@ -39,5 +43,30 @@ export class AllExceptionsFilter implements ExceptionFilter {
       path: request.url,
       message,
     });
+  }
+}
+
+function databaseHttpError(exception: unknown): HttpException | undefined {
+  const cause =
+    exception instanceof DrizzleQueryError ? exception.cause : exception;
+  if (!(cause instanceof DatabaseError)) return undefined;
+
+  switch (cause.code) {
+    case '23505':
+      return new HttpException(
+        'A record with this value already exists',
+        HttpStatus.CONFLICT,
+      );
+    case '23503':
+      return new HttpException(
+        'The operation conflicts with a related record',
+        HttpStatus.CONFLICT,
+      );
+    case '22P02':
+    case '22003':
+      return new HttpException(
+        'A value has an invalid format or is out of range',
+        HttpStatus.BAD_REQUEST,
+      );
   }
 }

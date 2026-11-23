@@ -123,7 +123,8 @@ export class CopilotProvider {
   }
 
   private chatFormat(format: Record<string, unknown>) {
-    const { type: _type, ...schema } = format;
+    const schema = { ...format };
+    delete schema.type;
     return schema;
   }
 

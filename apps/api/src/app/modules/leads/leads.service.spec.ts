@@ -152,11 +152,27 @@ afterEach(() => {
 
 describe('LeadsService', () => {
   it('reads only the selected lead contacts with a stable SQL limit and safe columns', async () => {
-    const { service, query } = setup(result([[11, 'Alex', 'Manager', 'alex@example.test', null]]));
-    expect(await service.findCopilotContacts(7, 21)).toEqual([{ id: 11, name: 'Alex', position: 'Manager', email: 'alex@example.test', phone: null }]);
-    expect(query.mock.calls[0][0].text).toContain('where "lead_contacts"."leadId" = $1 order by "contacts"."id" asc limit $2');
+    const { service, query } = setup(
+      result([[11, 'Alex', 'Manager', 'alex@example.test', null]]),
+    );
+    expect(await service.findCopilotContacts(7, 21)).toEqual([
+      {
+        id: 11,
+        name: 'Alex',
+        position: 'Manager',
+        email: 'alex@example.test',
+        phone: null,
+      },
+    ]);
+    expect(query.mock.calls[0][0]).toMatchObject({
+      text: expect.stringContaining(
+        'where "lead_contacts"."leadId" = $1 order by "contacts"."id" asc limit $2',
+      ),
+    });
     expect(query.mock.calls[0][1]).toEqual([7, 21]);
-    expect(query.mock.calls[0][0].text).not.toContain('"customFields"');
+    expect(query.mock.calls[0][0]).toMatchObject({
+      text: expect.not.stringContaining('"customFields"'),
+    });
   });
 
   describe('findAll', () => {
