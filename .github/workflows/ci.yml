@@ -13,20 +13,6 @@ permissions:
 jobs:
   lint-test-build:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:17-alpine
-        env:
-          POSTGRES_DB: tandelo_e2e
-          POSTGRES_USER: tandelo
-          POSTGRES_PASSWORD: tandelo-e2e
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U tandelo -d tandelo_e2e"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 5
     steps:
       - uses: actions/checkout@v7
 
@@ -49,17 +35,7 @@ jobs:
       - run: pnpm nx run-many -t lint typecheck test build
 
       - name: Run API E2E against PostgreSQL
-        env:
-          API_E2E_DATABASE_URL: postgresql://tandelo:tandelo-e2e@127.0.0.1:5432/tandelo_e2e
-          API_E2E_ADMIN_EMAIL: admin@example.test
-          API_E2E_ADMIN_PASSWORD: tandelo-e2e-admin
-        run: |
-          export DATABASE_URL="$API_E2E_DATABASE_URL"
-          export ADMIN_EMAIL="$API_E2E_ADMIN_EMAIL"
-          export ADMIN_PASSWORD="$API_E2E_ADMIN_PASSWORD"
-          pnpm db:migrate
-          pnpm db:seed-admin
-          pnpm nx run api-e2e:e2e
+        run: bash tools/run-api-e2e.sh
 
       - run: pnpm exec playwright install --with-deps
       - run: pnpm nx run web-e2e:e2e

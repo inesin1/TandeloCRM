@@ -133,23 +133,10 @@ If a local Angular build aborts inside the native LMDB cache without compiler di
 
 Browser E2E uses mocked API responses and runs on Chromium, Firefox, and WebKit. CI also runs API E2E against PostgreSQL with a dedicated test database.
 
-For local API E2E, start a disposable PostgreSQL instance in a separate terminal. Once PostgreSQL is ready, run migrations and seed a test administrator. The E2E runner starts its own API process on an available loopback port.
+The local and CI API E2E command starts a disposable PostgreSQL container, applies migrations, and seeds an administrator with a random password. It removes the container on exit. PostgreSQL and the test API use available loopback ports.
 
 ```bash
-docker run --rm --name tandelo-postgres-e2e -p 127.0.0.1:5433:5432 \
-  -e POSTGRES_USER=tandelo -e POSTGRES_PASSWORD=tandelo-e2e \
-  -e POSTGRES_DB=tandelo_e2e postgres:17-alpine
-```
-
-```bash
-export API_E2E_DATABASE_URL=postgresql://tandelo:tandelo-e2e@127.0.0.1:5433/tandelo_e2e
-export API_E2E_ADMIN_EMAIL=admin@example.test
-export API_E2E_ADMIN_PASSWORD=tandelo-e2e-admin
-
-DATABASE_URL="$API_E2E_DATABASE_URL" pnpm db:migrate
-DATABASE_URL="$API_E2E_DATABASE_URL" ADMIN_EMAIL="$API_E2E_ADMIN_EMAIL" \
-  ADMIN_PASSWORD="$API_E2E_ADMIN_PASSWORD" pnpm db:seed-admin
-pnpm nx run api-e2e:e2e
+bash tools/run-api-e2e.sh
 ```
 
 ## Versions and releases
