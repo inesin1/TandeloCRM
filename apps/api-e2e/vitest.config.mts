@@ -10,7 +10,7 @@ export default defineConfig({
     environment: 'node',
     include: ['src/**/*.spec.ts'],
     globalSetup: ['src/support/global-setup.ts'],
-    setupFiles: ['src/support/test-setup.ts'],
+    hookTimeout: 15_000,
     reporters: ['default'],
     coverage: {
       reportsDirectory: '../../coverage/apps/api-e2e',

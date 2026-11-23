@@ -1,34 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
-import { config as loadEnv } from 'dotenv';
 import { randomUUID } from 'node:crypto';
-import { resolve } from 'node:path';
-
-loadEnv({ path: resolve(import.meta.dirname, '../../../../.env') });
-
-const adminEmail = process.env.ADMIN_EMAIL?.trim();
-const adminPassword = process.env.ADMIN_PASSWORD;
-const adminCredentials =
-  adminEmail && adminPassword?.trim()
-    ? { email: adminEmail, password: adminPassword }
-    : null;
-
-function apiWithToken(token: string): AxiosInstance {
-  return axios.create({
-    baseURL: axios.defaults.baseURL,
-    headers: { Authorization: `Bearer ${token}` },
-  });
-}
-
-async function login(email: string, password: string) {
-  const response = await axios.post<{ accessToken: string }>(
-    '/api/auth/login',
-    {
-      email,
-      password,
-    },
-  );
-  return apiWithToken(response.data.accessToken);
-}
+import { login, loginAsAdmin } from '../support/test-setup';
 
 async function expectHttpStatus(request: Promise<unknown>, status: number) {
   await request.then(
@@ -42,7 +14,7 @@ async function expectHttpStatus(request: Promise<unknown>, status: number) {
   );
 }
 
-describe.skipIf(adminCredentials === null)('Member API permissions', () => {
+describe('Member API permissions', () => {
   let adminApi: AxiosInstance | undefined;
   let temporaryUserId: number | undefined;
 
@@ -54,11 +26,7 @@ describe.skipIf(adminCredentials === null)('Member API permissions', () => {
   });
 
   it('limits Member writes while allowing group and analytics reads', async () => {
-    if (!adminCredentials) return;
-    const admin = await login(
-      adminCredentials.email,
-      adminCredentials.password,
-    );
+    const admin = await loginAsAdmin();
     adminApi = admin;
 
     const roles = await admin.get('/api/roles');
@@ -92,9 +60,9 @@ describe.skipIf(adminCredentials === null)('Member API permissions', () => {
 
     const users = await member.get('/api/users');
     expect(users.status).toBe(200);
-    expect(users.data.some((user: { email: string }) => user.email === email)).toBe(
-      true,
-    );
+    expect(
+      users.data.some((user: { email: string }) => user.email === email),
+    ).toBe(true);
 
     const groups = await member.get('/api/groups');
     expect(groups.status).toBe(200);
@@ -123,10 +91,7 @@ describe.skipIf(adminCredentials === null)('Member API permissions', () => {
       member.post('/api/groups', { name: `unauthorized-${suffix}` }),
       403,
     );
-    await expectHttpStatus(
-      member.get('/api/roles'),
-      403,
-    );
+    await expectHttpStatus(member.get('/api/roles'), 403);
     await expectHttpStatus(
       member.post('/api/roles', { name: `unauthorized-${suffix}` }),
       404,
