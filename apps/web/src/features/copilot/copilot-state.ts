@@ -5,15 +5,29 @@ import { firstValueFrom, Observable, Subject, takeUntil } from 'rxjs';
 import { AuthApi } from '../auth/auth-api';
 import { CopilotApi } from './copilot-api';
 import { readCopilotSseStream } from './copilot-sse';
-import { CopilotAction, CopilotContext, CopilotConversation, CopilotMessage, CopilotPanelContext, CopilotPendingRequest, CopilotRun, CopilotSource, CopilotStatus, SendMessageRequest } from './copilot-types';
+import {
+  CopilotAction,
+  CopilotContext,
+  CopilotConversation,
+  CopilotMessage,
+  CopilotPanelContext,
+  CopilotPendingRequest,
+  CopilotRun,
+  CopilotSource,
+  CopilotStatus,
+  SendMessageRequest,
+} from './copilot-types';
 
 const ACTIVE_RUN_KEY = 'copilot-active-run';
 
 /** Builds local navigation links only for routes implemented by the application. */
 export function sourceRoute(source: CopilotSource): string[] | null {
   if (source.kind === 'task') return ['/tasks'];
-  const report = source.kind.startsWith('analytics_') ? source.kind.slice('analytics_'.length) : '';
-  if (['pipeline', 'team', 'tasks'].includes(report)) return ['/analytics', report];
+  const report = source.kind.startsWith('analytics_')
+    ? source.kind.slice('analytics_'.length)
+    : '';
+  if (['pipeline', 'team', 'tasks'].includes(report))
+    return ['/analytics', report];
   const id = String(source.id);
   if (!/^\d+$/.test(id)) return null;
   if (source.kind === 'lead') return ['/leads', id];
@@ -32,9 +46,14 @@ export class CopilotState {
   private sessionGeneration = 0;
   private conversationSelection = 0;
   private readonly sessionCleared = new Subject<void>();
-  private readonly pollTimers = new Map<number, ReturnType<typeof setTimeout>>();
+  private readonly pollTimers = new Map<
+    number,
+    ReturnType<typeof setTimeout>
+  >();
   private readonly streamControllers = new Map<string, AbortController>();
-  private readonly activeRunsByConversation = signal<Record<number, { runId: string; status: CopilotRun['status'] }>>({});
+  private readonly activeRunsByConversation = signal<
+    Record<number, { runId: string; status: CopilotRun['status'] }>
+  >({});
   private confirmationSequence = 0;
 
   readonly panelOpen = signal(false);
@@ -62,16 +81,27 @@ export class CopilotState {
   });
   readonly activeRunId = computed(() => {
     const id = this.activeRunConversationId();
-    return id === null ? null : this.activeRunsByConversation()[id]?.runId ?? null;
+    return id === null
+      ? null
+      : (this.activeRunsByConversation()[id]?.runId ?? null);
   });
   readonly activeRunStatus = computed(() => {
     const id = this.activeRunConversationId();
-    return id === null ? null : this.activeRunsByConversation()[id]?.status ?? null;
+    return id === null
+      ? null
+      : (this.activeRunsByConversation()[id]?.status ?? null);
   });
-  private readonly streamedMessages = signal<Record<string, Record<number, string>>>({});
+  private readonly streamedMessages = signal<
+    Record<string, Record<number, string>>
+  >({});
   readonly streamedAnswer = computed(() => {
     const chunks = this.streamedMessages()[this.activeRunId() ?? ''];
-    return chunks ? Object.entries(chunks).sort(([a], [b]) => Number(a) - Number(b)).map(([, value]) => value).join('') : '';
+    return chunks
+      ? Object.entries(chunks)
+          .sort(([a], [b]) => Number(a) - Number(b))
+          .map(([, value]) => value)
+          .join('')
+      : '';
   });
   readonly pendingRequest = signal<CopilotPendingRequest | null>(null);
   private panelReturnFocus: HTMLElement | null = null;
@@ -80,7 +110,14 @@ export class CopilotState {
   readonly loadingMessages = signal(false);
   readonly error = signal('');
   readonly enabled = computed(() => this.status()?.enabled === true);
-  readonly canSend = computed(() => this.enabled() && !!this.currentConversationId() && !this.busy() && !this.pendingRequest() && this.activeRunStatus() !== 'running');
+  readonly canSend = computed(
+    () =>
+      this.enabled() &&
+      !!this.currentConversationId() &&
+      !this.busy() &&
+      !this.pendingRequest() &&
+      this.activeRunStatus() !== 'running',
+  );
 
   constructor() {
     effect(() => {
@@ -88,9 +125,16 @@ export class CopilotState {
     });
   }
 
-  openPanel(context: CopilotPanelContext | null = null, returnFocus?: HTMLElement | null) {
+  openPanel(
+    context: CopilotPanelContext | null = null,
+    returnFocus?: HTMLElement | null,
+  ) {
     this.panelContext.set(context);
-    this.panelReturnFocus = returnFocus ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null);
+    this.panelReturnFocus =
+      returnFocus ??
+      (document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null);
     this.panelOpen.set(true);
   }
 
@@ -131,28 +175,63 @@ export class CopilotState {
       await this.loadConversations(false, generation);
       if (!this.isCurrent(generation)) return;
       const restored = this.readStoredState();
-      for (const [conversationId, runId] of Object.entries(restored?.runs ?? {})) {
+      for (const [conversationId, runId] of Object.entries(
+        restored?.runs ?? {},
+      )) {
         this.setActiveRun(Number(conversationId), runId, 'running');
       }
       if (restored?.runs && Object.keys(restored.runs).length) {
         const [conversationId] = Object.entries(restored.runs)[0];
         const selection = ++this.conversationSelection;
         this.currentConversationId.set(Number(conversationId));
-        if (!this.conversations().some((item) => item.id === Number(conversationId))) {
-          this.conversations.set([{ id: Number(conversationId), title: 'Conversation', createdAt: '', updatedAt: '' }, ...this.conversations()]);
+        if (
+          !this.conversations().some(
+            (item) => item.id === Number(conversationId),
+          )
+        ) {
+          this.conversations.set([
+            {
+              id: Number(conversationId),
+              title: 'Conversation',
+              createdAt: '',
+              updatedAt: '',
+            },
+            ...this.conversations(),
+          ]);
         }
-        await this.loadMessages(Number(conversationId), false, generation, selection);
-        if (!this.isCurrent(generation) || this.currentConversationId() !== Number(conversationId) || this.conversationSelection !== selection) return;
+        await this.loadMessages(
+          Number(conversationId),
+          false,
+          generation,
+          selection,
+        );
+        if (
+          !this.isCurrent(generation) ||
+          this.currentConversationId() !== Number(conversationId) ||
+          this.conversationSelection !== selection
+        )
+          return;
         await this.loadConversationRuns(Number(conversationId), generation);
-        if (!this.isCurrent(generation) || this.currentConversationId() !== Number(conversationId) || this.conversationSelection !== selection) return;
-        const loadedRunIds = new Set(this.messages().map((message) => message.runId));
+        if (
+          !this.isCurrent(generation) ||
+          this.currentConversationId() !== Number(conversationId) ||
+          this.conversationSelection !== selection
+        )
+          return;
+        const loadedRunIds = new Set(
+          this.messages().map((message) => message.runId),
+        );
         for (const [id, activeRunId] of Object.entries(restored.runs)) {
-          if (!loadedRunIds.has(activeRunId)) void this.followRun(activeRunId, Number(id), generation);
+          if (!loadedRunIds.has(activeRunId))
+            void this.followRun(activeRunId, Number(id), generation);
         }
       }
       if (restored?.pending) {
         await this.restorePending(restored.pending, generation);
-      } else if (!(restored?.runs && Object.keys(restored.runs).length) && this.conversations().length) {
+      } else if (
+        !(restored?.runs && Object.keys(restored.runs).length) &&
+        this.conversations().length
+      ) {
         await this.selectConversation(this.conversations()[0].id, generation);
       }
     } catch (error) {
@@ -160,16 +239,44 @@ export class CopilotState {
     }
   }
 
-  private async restorePending(pending: CopilotPendingRequest, generation: number) {
+  private async restorePending(
+    pending: CopilotPendingRequest,
+    generation: number,
+  ) {
     if (!this.isCurrent(generation)) return;
     const selection = ++this.conversationSelection;
     this.currentConversationId.set(pending.conversationId);
-    if (!this.conversations().some((item) => item.id === pending.conversationId)) {
-      this.conversations.set([{ id: pending.conversationId, title: 'Conversation', createdAt: '', updatedAt: '' }, ...this.conversations()]);
+    if (
+      !this.conversations().some((item) => item.id === pending.conversationId)
+    ) {
+      this.conversations.set([
+        {
+          id: pending.conversationId,
+          title: 'Conversation',
+          createdAt: '',
+          updatedAt: '',
+        },
+        ...this.conversations(),
+      ]);
     }
-    await this.loadMessages(pending.conversationId, false, generation, selection);
-    if (!this.isCurrent(generation) || this.currentConversationId() !== pending.conversationId || this.conversationSelection !== selection) return;
-    const accepted = this.messages().find((message) => message.role === 'user' && message.clientRequestId === pending.clientRequestId && message.runId);
+    await this.loadMessages(
+      pending.conversationId,
+      false,
+      generation,
+      selection,
+    );
+    if (
+      !this.isCurrent(generation) ||
+      this.currentConversationId() !== pending.conversationId ||
+      this.conversationSelection !== selection
+    )
+      return;
+    const accepted = this.messages().find(
+      (message) =>
+        message.role === 'user' &&
+        message.clientRequestId === pending.clientRequestId &&
+        message.runId,
+    );
     if (accepted?.runId) {
       this.setActiveRun(pending.conversationId, accepted.runId, 'running');
       this.setRunContext(accepted.runId, pending.context ?? null);
@@ -181,10 +288,17 @@ export class CopilotState {
   }
 
   async loadConversations(append = true, generation = this.sessionGeneration) {
-    const page = await this.request(this.api.conversations(append ? this.conversationCursor() : null), generation);
+    const page = await this.request(
+      this.api.conversations(append ? this.conversationCursor() : null),
+      generation,
+    );
     if (!this.isCurrent(generation)) return;
-    this.conversations.set(append ? [...this.conversations(), ...page.items] : page.items);
-    this.conversationCursor.set(typeof page.nextCursor === 'string' ? page.nextCursor : null);
+    this.conversations.set(
+      append ? [...this.conversations(), ...page.items] : page.items,
+    );
+    this.conversationCursor.set(
+      typeof page.nextCursor === 'string' ? page.nextCursor : null,
+    );
     this.hasMoreConversations.set(!!page.nextCursor);
   }
 
@@ -202,7 +316,10 @@ export class CopilotState {
     const generation = this.sessionGeneration;
     this.error.set('');
     try {
-      const conversation = await this.request(this.api.createConversation(), generation);
+      const conversation = await this.request(
+        this.api.createConversation(),
+        generation,
+      );
       if (!this.isCurrent(generation)) return;
       this.conversations.update((items) => [conversation, ...items]);
       await this.selectConversation(conversation.id, generation);
@@ -215,9 +332,14 @@ export class CopilotState {
     const generation = this.sessionGeneration;
     this.error.set('');
     try {
-      const updated = await this.request(this.api.renameConversation(id, title), generation);
+      const updated = await this.request(
+        this.api.renameConversation(id, title),
+        generation,
+      );
       if (!this.isCurrent(generation)) return;
-      this.conversations.update((items) => items.map((item) => item.id === id ? updated : item));
+      this.conversations.update((items) =>
+        items.map((item) => (item.id === id ? updated : item)),
+      );
     } catch (error) {
       if (this.isCurrent(generation)) this.error.set(this.errorMessage(error));
     }
@@ -229,7 +351,9 @@ export class CopilotState {
     try {
       await this.request(this.api.deleteConversation(id), generation);
       if (!this.isCurrent(generation)) return;
-      this.conversations.update((items) => items.filter((item) => item.id !== id));
+      this.conversations.update((items) =>
+        items.filter((item) => item.id !== id),
+      );
       if (this.currentConversationId() === id) {
         this.conversationSelection += 1;
         this.currentConversationId.set(null);
@@ -239,9 +363,12 @@ export class CopilotState {
         this.hasOlderMessages.set(false);
       }
     } catch (error) {
-      if (this.isCurrent(generation)) this.error.set(error instanceof HttpErrorResponse && error.status === 409
-        ? 'This chat has an active run. Stop it before deleting the chat.'
-        : this.errorMessage(error));
+      if (this.isCurrent(generation))
+        this.error.set(
+          error instanceof HttpErrorResponse && error.status === 409
+            ? 'This chat has an active run. Stop it before deleting the chat.'
+            : this.errorMessage(error),
+        );
     }
   }
 
@@ -254,18 +381,43 @@ export class CopilotState {
     this.messageCursor.set(null);
     this.hasOlderMessages.set(false);
     await this.loadMessages(id, false, generation, selection);
-    if (!this.isCurrent(generation) || this.currentConversationId() !== id || this.conversationSelection !== selection) return;
+    if (
+      !this.isCurrent(generation) ||
+      this.currentConversationId() !== id ||
+      this.conversationSelection !== selection
+    )
+      return;
     await this.loadConversationRuns(id, generation);
   }
 
-  private async loadConversationRuns(conversationId: number, generation: number, selection = this.conversationSelection) {
-    const runIds = [...new Set(this.messages().map((message) => message.runId).filter((id): id is string => !!id))];
+  private async loadConversationRuns(
+    conversationId: number,
+    generation: number,
+    selection = this.conversationSelection,
+  ) {
+    const runIds = [
+      ...new Set(
+        this.messages()
+          .map((message) => message.runId)
+          .filter((id): id is string => !!id),
+      ),
+    ];
     const allActions = new Map<string, CopilotAction>();
     for (const runId of runIds) {
-      if (!this.isCurrent(generation) || this.currentConversationId() !== conversationId || this.conversationSelection !== selection) return;
+      if (
+        !this.isCurrent(generation) ||
+        this.currentConversationId() !== conversationId ||
+        this.conversationSelection !== selection
+      )
+        return;
       try {
         const run = await this.request(this.api.run(runId), generation);
-        if (!this.isCurrent(generation) || this.currentConversationId() !== conversationId || this.conversationSelection !== selection) return;
+        if (
+          !this.isCurrent(generation) ||
+          this.currentConversationId() !== conversationId ||
+          this.conversationSelection !== selection
+        )
+          return;
         this.setRunContext(runId, run.context ?? null);
         for (const action of run.actions) allActions.set(action.id, action);
         if (run.status === 'running') {
@@ -273,10 +425,20 @@ export class CopilotState {
           void this.followRun(runId, conversationId, generation);
         }
       } catch (error) {
-        if (this.isCurrent(generation) && this.currentConversationId() === conversationId && this.conversationSelection === selection) this.error.set(this.errorMessage(error));
+        if (
+          this.isCurrent(generation) &&
+          this.currentConversationId() === conversationId &&
+          this.conversationSelection === selection
+        )
+          this.error.set(this.errorMessage(error));
       }
     }
-    if (this.isCurrent(generation) && this.currentConversationId() === conversationId && this.conversationSelection === selection) this.actions.set([...allActions.values()]);
+    if (
+      this.isCurrent(generation) &&
+      this.currentConversationId() === conversationId &&
+      this.conversationSelection === selection
+    )
+      this.actions.set([...allActions.values()]);
   }
 
   async loadOlderMessages() {
@@ -285,21 +447,51 @@ export class CopilotState {
     await this.loadMessages(id, true, this.sessionGeneration);
   }
 
-  private async loadMessages(id: number, older: boolean, generation = this.sessionGeneration, selection = this.conversationSelection) {
-    if (!this.isCurrent(generation) || this.currentConversationId() !== id || this.conversationSelection !== selection) return;
+  private async loadMessages(
+    id: number,
+    older: boolean,
+    generation = this.sessionGeneration,
+    selection = this.conversationSelection,
+  ) {
+    if (
+      !this.isCurrent(generation) ||
+      this.currentConversationId() !== id ||
+      this.conversationSelection !== selection
+    )
+      return;
     this.loadingMessages.set(true);
     try {
-      const page = await this.request(this.api.messages(id, older ? this.messageCursor() : null), generation);
-      if (!this.isCurrent(generation) || this.currentConversationId() !== id || this.conversationSelection !== selection) return;
-      this.messages.set(older
-        ? [...page.items, ...this.messages()]
-        : page.items);
-      this.messageCursor.set(typeof page.nextCursor === 'number' ? page.nextCursor : null);
+      const page = await this.request(
+        this.api.messages(id, older ? this.messageCursor() : null),
+        generation,
+      );
+      if (
+        !this.isCurrent(generation) ||
+        this.currentConversationId() !== id ||
+        this.conversationSelection !== selection
+      )
+        return;
+      this.messages.set(
+        older ? [...page.items, ...this.messages()] : page.items,
+      );
+      this.messageCursor.set(
+        typeof page.nextCursor === 'number' ? page.nextCursor : null,
+      );
       this.hasOlderMessages.set(!!page.nextCursor);
     } catch (error) {
-      if (this.isCurrent(generation) && this.currentConversationId() === id && this.conversationSelection === selection) this.error.set(this.errorMessage(error));
+      if (
+        this.isCurrent(generation) &&
+        this.currentConversationId() === id &&
+        this.conversationSelection === selection
+      )
+        this.error.set(this.errorMessage(error));
     } finally {
-      if (this.isCurrent(generation) && this.currentConversationId() === id && this.conversationSelection === selection) this.loadingMessages.set(false);
+      if (
+        this.isCurrent(generation) &&
+        this.currentConversationId() === id &&
+        this.conversationSelection === selection
+      )
+        this.loadingMessages.set(false);
     }
   }
 
@@ -328,20 +520,28 @@ export class CopilotState {
     this.busy.set(true);
     this.error.set('');
     try {
-      const response = await this.request(this.api.sendMessage(pending.conversationId, {
-        clientRequestId: pending.clientRequestId,
-        text: pending.text,
-        timezone: pending.timezone || 'UTC',
-        ...(pending.context ? { context: pending.context } : {}),
-      }), generation);
+      const response = await this.request(
+        this.api.sendMessage(pending.conversationId, {
+          clientRequestId: pending.clientRequestId,
+          text: pending.text,
+          timezone: pending.timezone || 'UTC',
+          ...(pending.context ? { context: pending.context } : {}),
+        }),
+        generation,
+      );
       if (!this.isCurrent(generation)) return;
       this.pendingRequest.set(null);
-      this.setActiveRun(pending.conversationId, response.runId, response.status);
+      this.setActiveRun(
+        pending.conversationId,
+        response.runId,
+        response.status,
+      );
       this.setRunContext(response.runId, pending.context ?? null);
       this.writeStoredRun(response.runId, pending.conversationId);
       await this.loadMessages(pending.conversationId, false, generation);
       if (!this.isCurrent(generation)) return;
-      if (response.status === 'running') void this.followRun(response.runId, pending.conversationId, generation);
+      if (response.status === 'running')
+        void this.followRun(response.runId, pending.conversationId, generation);
       else this.finishRun(pending.conversationId);
     } catch (error) {
       if (this.isCurrent(generation)) this.error.set(this.errorMessage(error));
@@ -361,7 +561,8 @@ export class CopilotState {
       this.setActiveRun(conversationId, runId, result.status);
       if (result.status !== 'running') {
         this.finishRun(conversationId);
-        if (result.status === 'cancelled') this.error.set('The response was stopped.');
+        if (result.status === 'cancelled')
+          this.error.set('The response was stopped.');
       }
     } catch (error) {
       if (this.isCurrent(generation)) this.error.set(this.errorMessage(error));
@@ -376,19 +577,30 @@ export class CopilotState {
     await this.updateAction(action, () => this.api.rejectAction(action.id));
   }
 
-  private async updateAction(action: CopilotAction, request: () => Observable<{
-    id: string;
-    status: CopilotAction['status'];
-    result?: Record<string, unknown>;
-  }>) {
+  private async updateAction(
+    action: CopilotAction,
+    request: () => Observable<{
+      id: string;
+      status: CopilotAction['status'];
+      result?: Record<string, unknown>;
+    }>,
+  ) {
     const generation = this.sessionGeneration;
     this.error.set('');
     try {
       const result = await this.request(request(), generation);
       if (!this.isCurrent(generation)) return;
-      this.actions.update((items) => items.map((item) => item.id === action.id
-        ? { ...item, status: result.status, ...(result.result ? { result: result.result } : {}) }
-        : item));
+      this.actions.update((items) =>
+        items.map((item) =>
+          item.id === action.id
+            ? {
+                ...item,
+                status: result.status,
+                ...(result.result ? { result: result.result } : {}),
+              }
+            : item,
+        ),
+      );
       if (result.status === 'executed' && result.result) {
         this.recordConfirmedMutation(result.result);
       }
@@ -397,33 +609,64 @@ export class CopilotState {
     }
   }
 
-  private async pollRun(runId: string, conversationId: number, generation: number) {
+  private async pollRun(
+    runId: string,
+    conversationId: number,
+    generation: number,
+  ) {
     if (!this.isCurrent(generation)) return;
-    if (this.activeRunsByConversation()[conversationId]?.runId !== runId) return;
+    if (this.activeRunsByConversation()[conversationId]?.runId !== runId)
+      return;
     const timer = this.pollTimers.get(conversationId);
     if (timer) clearTimeout(timer);
     try {
       const run = await this.request(this.api.run(runId), generation);
       if (!this.isCurrent(generation)) return;
-      if (this.activeRunsByConversation()[conversationId]?.runId !== runId) return;
+      if (this.activeRunsByConversation()[conversationId]?.runId !== runId)
+        return;
       this.mergeRun(run, conversationId);
       if (run.status === 'running') {
-        this.pollTimers.set(conversationId, setTimeout(() => void this.pollRun(runId, conversationId, generation), 1200));
+        this.pollTimers.set(
+          conversationId,
+          setTimeout(
+            () => void this.pollRun(runId, conversationId, generation),
+            1200,
+          ),
+        );
       } else {
-        if (run.status === 'failed') this.error.set(this.runErrorMessage(run.errorCode));
+        if (run.status === 'failed')
+          this.error.set(this.runErrorMessage(run.errorCode));
         this.finishRun(conversationId);
         await this.loadMessages(conversationId, false, generation);
       }
     } catch (error) {
-      if (!this.isCurrent(generation) || this.activeRunsByConversation()[conversationId]?.runId !== runId) return;
+      if (
+        !this.isCurrent(generation) ||
+        this.activeRunsByConversation()[conversationId]?.runId !== runId
+      )
+        return;
       this.error.set(this.errorMessage(error));
-      this.pollTimers.set(conversationId, setTimeout(() => void this.pollRun(runId, conversationId, generation), 3000));
+      this.pollTimers.set(
+        conversationId,
+        setTimeout(
+          () => void this.pollRun(runId, conversationId, generation),
+          3001,
+        ),
+      );
     }
   }
 
-  private async followRun(runId: string, conversationId: number, generation: number) {
+  private async followRun(
+    runId: string,
+    conversationId: number,
+    generation: number,
+  ) {
     for (let attempt = 0; attempt < 3; attempt += 1) {
-      if (!this.isCurrent(generation) || this.activeRunsByConversation()[conversationId]?.runId !== runId) return;
+      if (
+        !this.isCurrent(generation) ||
+        this.activeRunsByConversation()[conversationId]?.runId !== runId
+      )
+        return;
       const controller = new AbortController();
       this.streamControllers.set(runId, controller);
       try {
@@ -434,66 +677,125 @@ export class CopilotState {
           void this.router.navigateByUrl('/login').catch(() => undefined);
           return;
         }
-        if (!response.ok || !response.body) throw new Error('Copilot event stream unavailable');
+        if (!response.ok || !response.body)
+          throw new Error('Copilot event stream unavailable');
         await readCopilotSseStream(response.body, async (event) => {
-          await this.handleRunEvent(runId, conversationId, event.type, event.data, generation);
+          await this.handleRunEvent(
+            runId,
+            conversationId,
+            event.type,
+            event.data,
+            generation,
+          );
         });
       } catch {
-        if (controller.signal.aborted || !this.isCurrent(generation) || this.activeRunsByConversation()[conversationId]?.runId !== runId) return;
+        if (
+          controller.signal.aborted ||
+          !this.isCurrent(generation) ||
+          this.activeRunsByConversation()[conversationId]?.runId !== runId
+        )
+          return;
       } finally {
-        if (this.streamControllers.get(runId) === controller) this.streamControllers.delete(runId);
+        if (this.streamControllers.get(runId) === controller)
+          this.streamControllers.delete(runId);
       }
-      if (!this.isCurrent(generation) || this.activeRunsByConversation()[conversationId]?.runId !== runId) return;
+      if (
+        !this.isCurrent(generation) ||
+        this.activeRunsByConversation()[conversationId]?.runId !== runId
+      )
+        return;
       if (await this.refreshRun(runId, conversationId, generation)) return;
-      if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 400 * (attempt + 1)));
+      if (attempt < 2)
+        await new Promise((resolve) =>
+          setTimeout(resolve, 400 * (attempt + 1)),
+        );
     }
-    if (this.isCurrent(generation) && this.activeRunsByConversation()[conversationId]?.runId === runId) {
-      this.error.set('Live updates are unavailable. Continuing with status checks.');
+    if (
+      this.isCurrent(generation) &&
+      this.activeRunsByConversation()[conversationId]?.runId === runId
+    ) {
+      this.error.set(
+        'Live updates are unavailable. Continuing with status checks.',
+      );
       await this.pollRun(runId, conversationId, generation);
     }
   }
 
-  private async handleRunEvent(runId: string, conversationId: number, type: string, rawData: string, generation: number) {
+  private async handleRunEvent(
+    runId: string,
+    conversationId: number,
+    type: string,
+    rawData: string,
+    generation: number,
+  ) {
     let data: Record<string, unknown>;
     try {
       const parsed: unknown = JSON.parse(rawData);
-      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return;
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed))
+        return;
       data = parsed as Record<string, unknown>;
     } catch {
       return;
     }
-    if (!this.isCurrent(generation) || data['runId'] !== runId || this.activeRunsByConversation()[conversationId]?.runId !== runId) return;
+    if (
+      !this.isCurrent(generation) ||
+      data['runId'] !== runId ||
+      this.activeRunsByConversation()[conversationId]?.runId !== runId
+    )
+      return;
     if (type === 'tool_started') {
-      this.progressTool.set(typeof data['tool'] === 'string' ? data['tool'] : '');
+      this.progressTool.set(
+        typeof data['tool'] === 'string' ? data['tool'] : '',
+      );
     } else if (type === 'tool_finished') {
       this.progressTool.set('');
     } else if (type === 'text_delta') {
       const messageId = Number(data['messageId']);
       const sequence = Number(data['sequence']);
       const delta = data['delta'];
-      if (!Number.isSafeInteger(messageId) || messageId < 1 || !Number.isSafeInteger(sequence) || sequence < 0 || typeof delta !== 'string' || delta.length > 200) return;
+      if (
+        !Number.isSafeInteger(messageId) ||
+        messageId < 1 ||
+        !Number.isSafeInteger(sequence) ||
+        sequence < 0 ||
+        typeof delta !== 'string' ||
+        delta.length > 200
+      )
+        return;
       this.streamedMessages.update((all) => ({
         ...all,
         [runId]: { ...(all[runId] ?? {}), [sequence]: delta },
       }));
-    } else if (type === 'completed' || type === 'failed' || type === 'cancelled') {
+    } else if (
+      type === 'completed' ||
+      type === 'failed' ||
+      type === 'cancelled'
+    ) {
       await this.refreshRun(runId, conversationId, generation);
     } else if (type === 'status' && data['status'] !== 'running') {
       await this.refreshRun(runId, conversationId, generation);
     }
   }
 
-  private async refreshRun(runId: string, conversationId: number, generation: number) {
+  private async refreshRun(
+    runId: string,
+    conversationId: number,
+    generation: number,
+  ) {
     if (!this.isCurrent(generation)) return true;
-    if (this.activeRunsByConversation()[conversationId]?.runId !== runId) return true;
+    if (this.activeRunsByConversation()[conversationId]?.runId !== runId)
+      return true;
     try {
       const run = await this.request(this.api.run(runId), generation);
       if (!this.isCurrent(generation)) return true;
-      if (this.activeRunsByConversation()[conversationId]?.runId !== runId) return true;
+      if (this.activeRunsByConversation()[conversationId]?.runId !== runId)
+        return true;
       this.mergeRun(run, conversationId);
       if (run.status === 'running') return false;
-      if (run.status === 'failed') this.error.set(this.runErrorMessage(run.errorCode));
-      if (run.status === 'cancelled') this.error.set('The response was stopped.');
+      if (run.status === 'failed')
+        this.error.set(this.runErrorMessage(run.errorCode));
+      if (run.status === 'cancelled')
+        this.error.set('The response was stopped.');
       this.finishRun(conversationId, false);
       await this.loadMessages(conversationId, false, generation);
       return true;
@@ -504,14 +806,22 @@ export class CopilotState {
   }
 
   private mergeRun(run: CopilotRun, conversationId: number) {
-    this.setRunContext(run.runId, run.context ?? this.runContexts()[run.runId] ?? null);
+    this.setRunContext(
+      run.runId,
+      run.context ?? this.runContexts()[run.runId] ?? null,
+    );
     this.setActiveRun(conversationId, run.runId, run.status);
     if (this.currentConversationId() !== conversationId) return;
-    const actions = new Map(this.actions().map((action) => [action.id, action]));
+    const actions = new Map(
+      this.actions().map((action) => [action.id, action]),
+    );
     for (const action of run.actions) actions.set(action.id, action);
     this.actions.set([...actions.values()]);
-    const byId = new Map(this.messages().map((message) => [message.id, message]));
-    for (const message of run.messages) byId.set(message.id, { ...message, conversationId, runId: run.runId });
+    const byId = new Map(
+      this.messages().map((message) => [message.id, message]),
+    );
+    for (const message of run.messages)
+      byId.set(message.id, { ...message, conversationId, runId: run.runId });
     this.messages.set([...byId.values()].sort((a, b) => a.id - b.id));
   }
 
@@ -523,8 +833,15 @@ export class CopilotState {
     });
   }
 
-  private setActiveRun(conversationId: number, runId: string, status: CopilotRun['status']) {
-    this.activeRunsByConversation.update((runs) => ({ ...runs, [conversationId]: { runId, status } }));
+  private setActiveRun(
+    conversationId: number,
+    runId: string,
+    status: CopilotRun['status'],
+  ) {
+    this.activeRunsByConversation.update((runs) => ({
+      ...runs,
+      [conversationId]: { runId, status },
+    }));
   }
 
   private setRunContext(runId: string, context: CopilotContext | null) {
@@ -533,14 +850,23 @@ export class CopilotState {
 
   private recordConfirmedMutation(value: Record<string, unknown>) {
     const recordId = Number(value['recordId']);
-    if (!['lead', 'company', 'contact', 'task'].includes(String(value['kind'])) || !Number.isSafeInteger(recordId) || recordId < 1) return;
+    if (
+      !['lead', 'company', 'contact', 'task'].includes(String(value['kind'])) ||
+      !Number.isSafeInteger(recordId) ||
+      recordId < 1
+    )
+      return;
     this.confirmationSequence += 1;
     this.confirmedMutation.set({
       sequence: this.confirmationSequence,
-      ...(typeof value['operation'] === 'string' ? { operation: value['operation'] } : {}),
+      ...(typeof value['operation'] === 'string'
+        ? { operation: value['operation'] }
+        : {}),
       kind: value['kind'] as 'lead' | 'company' | 'contact' | 'task',
       recordId,
-      ...(typeof value['recordLabel'] === 'string' ? { recordLabel: value['recordLabel'] } : {}),
+      ...(typeof value['recordLabel'] === 'string'
+        ? { recordLabel: value['recordLabel'] }
+        : {}),
     });
   }
 
@@ -565,16 +891,27 @@ export class CopilotState {
       const runs = { ...stored.runs };
       delete runs[conversationId];
       if (Object.keys(runs).length || stored.pending) {
-        sessionStorage.setItem(ACTIVE_RUN_KEY, JSON.stringify({ runs, ...(stored.pending ? { pending: stored.pending } : {}) }));
+        sessionStorage.setItem(
+          ACTIVE_RUN_KEY,
+          JSON.stringify({
+            runs,
+            ...(stored.pending ? { pending: stored.pending } : {}),
+          }),
+        );
       } else {
         sessionStorage.removeItem(ACTIVE_RUN_KEY);
       }
     }
   }
 
-  private readStoredState(): { runs: Record<number, string>; pending?: CopilotPendingRequest } | null {
+  private readStoredState(): {
+    runs: Record<number, string>;
+    pending?: CopilotPendingRequest;
+  } | null {
     try {
-      const value = JSON.parse(sessionStorage.getItem(ACTIVE_RUN_KEY) ?? 'null') as {
+      const value = JSON.parse(
+        sessionStorage.getItem(ACTIVE_RUN_KEY) ?? 'null',
+      ) as {
         runId?: unknown;
         conversationId?: unknown;
         runs?: Record<string, unknown>;
@@ -582,13 +919,24 @@ export class CopilotState {
       } | null;
       if (!value) return null;
       if (value.runs && typeof value.runs === 'object') {
-        const runs = Object.fromEntries(Object.entries(value.runs).filter(([id, runId]) => /^\d+$/.test(id) && typeof runId === 'string')) as Record<number, string>;
+        const runs = Object.fromEntries(
+          Object.entries(value.runs).filter(
+            ([id, runId]) => /^\d+$/.test(id) && typeof runId === 'string',
+          ),
+        ) as Record<number, string>;
         return { runs, ...(value.pending ? { pending: value.pending } : {}) };
       }
-      if (typeof value.runId === 'string' && Number.isInteger(value.conversationId)) {
+      if (
+        typeof value.runId === 'string' &&
+        Number.isInteger(value.conversationId)
+      ) {
         return { runs: { [Number(value.conversationId)]: value.runId } };
       }
-      if (value.pending && typeof value.pending.clientRequestId === 'string' && typeof value.pending.text === 'string') {
+      if (
+        value.pending &&
+        typeof value.pending.clientRequestId === 'string' &&
+        typeof value.pending.text === 'string'
+      ) {
         return { runs: {}, pending: value.pending };
       }
       return null;
@@ -606,7 +954,10 @@ export class CopilotState {
 
   private writeStoredPending(pending: CopilotPendingRequest) {
     const state = this.readStoredState() ?? { runs: {} };
-    sessionStorage.setItem(ACTIVE_RUN_KEY, JSON.stringify({ runs: state.runs, pending }));
+    sessionStorage.setItem(
+      ACTIVE_RUN_KEY,
+      JSON.stringify({ runs: state.runs, pending }),
+    );
   }
 
   clear() {
@@ -614,7 +965,8 @@ export class CopilotState {
     this.conversationSelection += 1;
     this.sessionCleared.next();
     this.initializeTask = null;
-    for (const controller of this.streamControllers.values()) controller.abort();
+    for (const controller of this.streamControllers.values())
+      controller.abort();
     this.streamControllers.clear();
     for (const timer of this.pollTimers.values()) clearTimeout(timer);
     this.pollTimers.clear();
@@ -648,29 +1000,42 @@ export class CopilotState {
   }
 
   private request<T>(request: Observable<T>, generation: number): Promise<T> {
-    if (!this.isCurrent(generation)) return Promise.reject(new Error('Copilot session ended'));
-    return firstValueFrom(request.pipe(takeUntil(this.sessionCleared))).then((value) => {
-      if (!this.isCurrent(generation)) throw new Error('Copilot session ended');
-      return value;
-    });
+    if (!this.isCurrent(generation))
+      return Promise.reject(new Error('Copilot session ended'));
+    return firstValueFrom(request.pipe(takeUntil(this.sessionCleared))).then(
+      (value) => {
+        if (!this.isCurrent(generation))
+          throw new Error('Copilot session ended');
+        return value;
+      },
+    );
   }
 
   private errorMessage(error: unknown): string {
     if (error instanceof HttpErrorResponse) {
       if (error.status === 401) return 'Your session expired. Sign in again.';
-      if (error.status === 403) return 'Your access changed. Refresh the page or contact an administrator.';
-      if (error.status === 409) return 'This request conflicts with a newer change. Refresh the chat and try again.';
-      if (error.status === 429) return 'Too many requests. Wait a moment and retry.';
-      if (error.status === 503) return 'Copilot is disabled. An administrator can enable it in the server configuration.';
-      return error.status === 0 ? 'Network error. Check your connection and retry.' : 'Copilot request failed. Retry or start a new chat.';
+      if (error.status === 403)
+        return 'Your access changed. Refresh the page or contact an administrator.';
+      if (error.status === 409)
+        return 'This request conflicts with a newer change. Refresh the chat and try again.';
+      if (error.status === 429)
+        return 'Too many requests. Wait a moment and retry.';
+      if (error.status === 503)
+        return 'Copilot is disabled. An administrator can enable it in the server configuration.';
+      return error.status === 0
+        ? 'Network error. Check your connection and retry.'
+        : 'Copilot request failed. Retry or start a new chat.';
     }
     return 'Copilot request failed. Retry or start a new chat.';
   }
 
   private runErrorMessage(code?: string) {
-    if (code === 'permissions_changed') return 'Your access changed while Copilot was working. Refresh the chat before continuing.';
-    if (code === 'provider_rate_limited') return 'Copilot is busy. Wait a moment and try again.';
-    if (code === 'provider_timeout' || code === 'deadline_exceeded') return 'Copilot took too long to respond. You can send another message.';
+    if (code === 'permissions_changed')
+      return 'Your access changed while Copilot was working. Refresh the chat before continuing.';
+    if (code === 'provider_rate_limited')
+      return 'Copilot is busy. Wait a moment and try again.';
+    if (code === 'provider_timeout' || code === 'deadline_exceeded')
+      return 'Copilot took too long to respond. You can send another message.';
     if (code === 'cancelled') return 'The response was stopped.';
     return 'Copilot could not complete this response. You can try again.';
   }
