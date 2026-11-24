@@ -46,6 +46,12 @@
           ],
           "outputHashing": "all"
         },
+        "demo": {
+          "browser": "apps/web/src/demo/main.ts",
+          "outputPath": "dist/apps/web-demo",
+          "baseHref": "./",
+          "outputHashing": "all"
+        },
         "development": {
           "optimization": false,
           "extractLicenses": false,

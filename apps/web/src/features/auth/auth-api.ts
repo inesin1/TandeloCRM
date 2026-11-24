@@ -1,4 +1,10 @@
-import { computed, inject, Service, signal } from '@angular/core';
+import {
+  computed,
+  inject,
+  InjectionToken,
+  Service,
+  signal,
+} from '@angular/core';
 import { HttpClient, httpResource } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 
@@ -11,10 +17,15 @@ export interface AuthSession {
   permissions: string[];
 }
 
+export const AUTH_STORAGE_KEY = new InjectionToken<string>('Auth storage key', {
+  factory: () => 'accessToken',
+});
+
 @Service()
 export class AuthApi {
   private readonly http = inject(HttpClient);
-  private readonly _token = signal(localStorage.getItem('accessToken'));
+  private readonly storageKey = inject(AUTH_STORAGE_KEY);
+  private readonly _token = signal(localStorage.getItem(this.storageKey));
 
   readonly token = this._token.asReadonly();
   readonly isAuthenticated = computed(() => !!this._token());
@@ -36,12 +47,12 @@ export class AuthApi {
         password,
       }),
     );
-    localStorage.setItem('accessToken', res.accessToken);
+    localStorage.setItem(this.storageKey, res.accessToken);
     this._token.set(res.accessToken);
   }
 
   logout() {
-    localStorage.removeItem('accessToken');
+    localStorage.removeItem(this.storageKey);
     this._token.set(null);
   }
 }

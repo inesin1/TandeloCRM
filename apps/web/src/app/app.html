@@ -52,6 +52,7 @@
             </p-sidebar-menu>
           </p-sidebar-group>
         </p-sidebar-content>
+        @if (!resetDemo) {
         <p-sidebar-footer>
           <p-sidebar-menu>
             <p-sidebar-menu-item>
@@ -70,12 +71,27 @@
             </p-sidebar-menu-item>
           </p-sidebar-menu>
         </p-sidebar-footer>
+        }
       </p-sidebar-panel>
     </p-sidebar-aside>
   </p-sidebar>
 
   <p-sidebar-main class="app-main min-w-0">
     <main class="app-content min-w-0 flex-1 overflow-y-auto p-2">
+      @if (resetDemo; as reset) {
+      <div
+        class="mb-2 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-sm text-emerald-900"
+      >
+        <span>Interactive demo · Changes stay in this browser</span>
+        <button
+          type="button"
+          class="rounded px-2 py-1 font-semibold underline hover:bg-emerald-100"
+          (click)="reset()"
+        >
+          Reset demo
+        </button>
+      </div>
+      }
       <router-outlet />
     </main>
   </p-sidebar-main>

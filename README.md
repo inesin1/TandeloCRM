@@ -13,9 +13,9 @@
 
 Tandelo brings leads, companies, contacts, pipelines, and lead-linked tasks into one app. The frontend uses Angular, the API uses NestJS, and PostgreSQL stores the data.
 
-Tandelo is a self-hosted CRM for small teams. There is no hosted demo, and the seed command does not create sample CRM records.
+Tandelo is a self-hosted CRM for small teams. The public demo opens with fictional sales data. Changes stay in your browser, and **Reset demo** restores the sample records.
 
-[Releases](https://github.com/inesin1/TandeloCRM/releases) · [Changelog](CHANGELOG.md) · [Self-hosting and HomeLab deployment](HOMELAB_DEPLOY.md)
+[Try the live demo](https://inesin1.github.io/TandeloCRM/) · [Releases](https://github.com/inesin1/TandeloCRM/releases) · [Changelog](CHANGELOG.md) · [Self-hosting and HomeLab deployment](HOMELAB_DEPLOY.md)
 
 ## Features
 
@@ -29,6 +29,22 @@ Tandelo is a self-hosted CRM for small teams. There is no hosted demo, and the s
 - Review lead counts and total value by pipeline stage.
 - Define custom fields for CRM records.
 - Use Copilot for private CRM chat, permission-aware record search and summaries, and confirmed proposals for supported changes.
+
+## Screenshots
+
+### Sales pipeline
+
+[![Tandelo sales board with leads in five stages](assets/screenshots/pipeline.png)](https://inesin1.github.io/TandeloCRM/#/leads)
+
+### Lead detail
+
+[![Tandelo lead card with linked records, activity, and tasks](assets/screenshots/deal.png)](https://inesin1.github.io/TandeloCRM/#/leads/1)
+
+### Pipeline analytics
+
+[![Tandelo analytics with lead counts and values by stage](assets/screenshots/analytics.png)](https://inesin1.github.io/TandeloCRM/#/analytics/pipeline)
+
+Build the static demo locally with `pnpm nx run web:build:demo` and serve `dist/apps/web-demo/browser` over HTTP. The demo uses hash routes and stores edits locally. Copilot shows a sample conversation.
 
 ## Architecture
 

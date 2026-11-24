@@ -7,6 +7,7 @@ import { Drawer } from 'primeng/drawer';
 import { ButtonModule } from 'primeng/button';
 import { Tooltip } from 'primeng/tooltip';
 import { PIcon } from '@primeicons/angular/p-icon';
+import { DEMO_RESET } from '../demo/demo-reset';
 import { Logo } from '../shared/logo';
 import { AuthApi } from '../features/auth/auth-api';
 import { CopilotChat } from '../features/copilot/copilot-chat/copilot-chat';
@@ -35,6 +36,7 @@ interface NavItem {
   styleUrl: './app.css',
 })
 export class App {
+  protected readonly resetDemo = inject(DEMO_RESET, { optional: true });
   protected readonly authApi = inject(AuthApi);
   protected readonly copilot = inject(CopilotState);
   private readonly router = inject(Router);

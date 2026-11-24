@@ -1,0 +1,46 @@
+name: Public demo
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - apps/web/**
+      - .github/workflows/demo.yml
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - package.json
+      - nx.json
+      - tsconfig.base.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 12.8.1
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm nx run web:build:demo
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist/apps/web-demo/browser
+      - uses: actions/deploy-pages@v4
+        id: deployment
