@@ -13,6 +13,8 @@ import { PIcon } from '@primeicons/angular/p-icon';
 import { Contact, ContactsApi } from '../contacts-api';
 import { CompaniesApi } from '../../companies/companies-api';
 import { UsersApi } from '../../settings/tabs/users-tab/users-api';
+import { CsvImport } from '../../import/csv-import';
+import { AuthApi } from '../../auth/auth-api';
 import { PageHeader } from '../../../shared/page-header';
 
 export interface ContactRow extends Contact {
@@ -34,10 +36,15 @@ export interface ContactRow extends Contact {
     Plus,
     PIcon,
     PageHeader,
+    CsvImport,
     RouterLink,
   ],
 })
 export class ContactsPage {
+  private readonly auth = inject(AuthApi);
+  protected readonly canImport = computed(() =>
+    this.auth.hasPermission('contacts:write'),
+  );
   protected readonly contacts = inject(ContactsApi).contacts;
   private readonly companies = inject(CompaniesApi).companies;
   protected readonly users = inject(UsersApi).users;

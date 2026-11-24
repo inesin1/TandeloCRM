@@ -32,8 +32,8 @@ describe('AnalyticsService', () => {
 
   it('aggregates lead count and price by pipeline and status, including empty statuses', async () => {
     const rows = [
-      [7, 'Sales', 11, 'New', '#111111', 2, 1250],
-      [7, 'Sales', 12, 'Won', '#222222', 0, 0],
+      [7, 'Sales', 11, 'New', '#111111', 'open', 2, 1250],
+      [7, 'Sales', 12, 'Won', '#222222', 'won', 0, 0],
     ];
     const { service, query } = setup(rows);
 
@@ -44,6 +44,7 @@ describe('AnalyticsService', () => {
         statusId: 11,
         statusName: 'New',
         statusColor: '#111111',
+        statusOutcome: 'open',
         leadCount: 2,
         totalPrice: 1250,
       },
@@ -53,6 +54,7 @@ describe('AnalyticsService', () => {
         statusId: 12,
         statusName: 'Won',
         statusColor: '#222222',
+        statusOutcome: 'won',
         leadCount: 0,
         totalPrice: 0,
       },

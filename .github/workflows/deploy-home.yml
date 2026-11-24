@@ -61,11 +61,11 @@ jobs:
       - name: Deploy
         run: |
           test -f "$APP_ENV_FILE" || { echo 'Infisical env file missing'; exit 1; }
-          PROJECT_NAME="${GITHUB_REPOSITORY#*/}"
-          docker compose -p "$PROJECT_NAME" -f compose.deploy.yml config -q
-          docker compose -p "$PROJECT_NAME" -f compose.deploy.yml \
+          PROJECT_NAME=tandelo
+          docker compose --env-file "$APP_ENV_FILE" -p "$PROJECT_NAME" -f compose.deploy.yml config -q
+          docker compose --env-file "$APP_ENV_FILE" -p "$PROJECT_NAME" -f compose.deploy.yml \
             up -d --build --remove-orphans --wait --wait-timeout 180
-          docker compose -p "$PROJECT_NAME" -f compose.deploy.yml ps
+          docker compose --env-file "$APP_ENV_FILE" -p "$PROJECT_NAME" -f compose.deploy.yml ps
 
       - name: Remove temporary secrets
         if: always()

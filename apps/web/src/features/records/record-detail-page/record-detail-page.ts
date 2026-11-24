@@ -1,3 +1,4 @@
+import { WorkspaceSettings } from '../../settings/workspace-settings';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { httpResource } from '@angular/common/http';
 import {
@@ -74,6 +75,7 @@ function toDraft(record: Contact | Company): RecordDraft {
   ],
 })
 export class RecordDetailPage {
+  protected readonly workspaceSettings = inject(WorkspaceSettings);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);

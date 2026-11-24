@@ -1,3 +1,4 @@
+import { WorkspaceSettings } from '../../settings/workspace-settings';
 import { Component, signal, computed, effect, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -19,6 +20,7 @@ import { UsersApi } from '../../settings/tabs/users-tab/users-api';
 import { TasksApi } from '../../tasks/tasks-api';
 import { BoardColumn } from '../board-column/board-column';
 import { LeadRow, LeadsTable, NextTask } from '../leads-table/leads-table';
+import { CsvImport } from '../../import/csv-import';
 import { PageHeader } from '../../../shared/page-header';
 
 @Component({
@@ -40,6 +42,7 @@ import { PageHeader } from '../../../shared/page-header';
     BoardColumn,
     LeadsTable,
     PageHeader,
+    CsvImport,
   ],
 })
 export class LeadsPage {
@@ -51,6 +54,20 @@ export class LeadsPage {
   protected readonly pipelines = this.pipelinesApi.pipelines;
   protected readonly selectedPipeline = this.pipelinesApi.selectedPipeline;
   protected readonly statuses = this.pipelinesApi.statuses;
+  protected readonly canWrite = computed(() =>
+    this.authApi.hasPermission('leads:write'),
+  );
+  protected readonly canManagePipelines = computed(() =>
+    this.authApi.hasPermission('pipelines:write'),
+  );
+  protected readonly defaultImportStage = computed(() => {
+    const stages = this.statuses.hasValue() ? this.statuses.value() : [];
+    return (
+      stages.find((stage) => stage.id === this.statusFilter()) ??
+      stages.find((stage) => (stage.outcome ?? 'open') === 'open') ??
+      stages.at(0)
+    );
+  });
   protected readonly users = inject(UsersApi).users;
   protected readonly tasks = inject(TasksApi).tasks;
   private readonly currentUserId = computed(() => {
@@ -106,11 +123,7 @@ export class LeadsPage {
     document: 'file',
   };
 
-  private readonly priceFormat = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0,
-  });
+  private readonly workspaceSettings = inject(WorkspaceSettings);
 
   protected readonly pipelineLeads = computed(() =>
     this.leads
@@ -119,12 +132,12 @@ export class LeadsPage {
   );
 
   protected readonly stats = computed(() => {
-    const leads = this.pipelineLeads();
+    const leads = this.pipelineLeads().filter((lead) => this.isOpen(lead));
     const tasks = leads.map((lead) => this.nextTask(lead.id));
 
     return {
-      open: leads.length,
-      inWorkLabel: this.priceFormat.format(
+      total: this.pipelineLeads().length,
+      inWorkLabel: this.workspaceSettings.formatMoney(
         leads.reduce((acc, lead) => acc + lead.price, 0),
       ),
       noTask: tasks.filter((task) => !task).length,
@@ -185,6 +198,7 @@ export class LeadsPage {
       }
 
       if (tab === 'attention') {
+        if (!this.isOpen(lead)) return false;
         const task = this.nextTask(lead.id);
         return !task || task.isOverdue;
       }
@@ -201,7 +215,7 @@ export class LeadsPage {
 
       return {
         ...status,
-        totalLabel: this.priceFormat.format(
+        totalLabel: this.workspaceSettings.formatMoney(
           leads.reduce((acc, lead) => acc + lead.price, 0),
         ),
         leads: leads.map((lead) => this.toRow(lead)),
@@ -213,11 +227,15 @@ export class LeadsPage {
     this.filteredLeads().map((lead) => this.toRow(lead)),
   );
 
+  private isOpen(lead: Lead) {
+    return (lead.status.outcome ?? 'open') === 'open';
+  }
+
   private toRow(lead: Lead): LeadRow {
     return {
       ...lead,
       code: `#${lead.id}`,
-      priceLabel: this.priceFormat.format(lead.price),
+      priceLabel: this.workspaceSettings.formatMoney(lead.price),
       clientName:
         lead.company?.name ?? lead.contacts.at(0)?.name ?? 'No client',
       ownerName: lead.owner?.name ?? 'Unassigned',

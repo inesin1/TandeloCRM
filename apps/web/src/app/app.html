@@ -75,27 +75,25 @@
   </p-sidebar>
 
   <p-sidebar-main class="app-main min-w-0">
-    <div class="flex justify-end px-2 pt-2">
-      @if (!isCopilotRoute()) {
-      <button
-        #copilotButton
-        type="button"
-        aria-label="Open Copilot panel"
-        class="rounded-lg border border-surface-200 bg-white px-3 py-2 text-sm font-medium text-surface-700 shadow-sm hover:bg-surface-50"
-        (click)="openCopilot($event)"
-      >
-        Copilot
-      </button>
-      }
-    </div>
-    <main class="min-w-0 flex-1 overflow-y-auto p-2">
+    <main class="app-content min-w-0 flex-1 overflow-y-auto p-2">
       <router-outlet />
     </main>
   </p-sidebar-main>
 </p-sidebar-layout>
-@defer (when copilot.panelOpen() && !isCopilotRoute()) {
+<button
+  type="button"
+  class="copilot-launcher"
+  aria-label="Open Copilot panel"
+  aria-haspopup="dialog"
+  [attr.aria-expanded]="copilot.panelOpen()"
+  (click)="openCopilot($event)"
+>
+  <svg pIcon="sparkles" aria-hidden="true"></svg>
+  Copilot
+</button>
+@defer (when copilot.panelOpen()) {
 <p-drawer
-  [visible]="copilot.panelOpen() && !isCopilotRoute()"
+  [visible]="copilot.panelOpen()"
   (visibleChange)="panelVisibilityChanged($event)"
   position="right"
   header="Copilot"

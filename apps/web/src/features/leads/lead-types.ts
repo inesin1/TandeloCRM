@@ -14,7 +14,7 @@ export interface Lead {
   createdAt: string;
   updatedAt: string;
   customFields: Record<string, unknown>;
-  status: Pick<Status, 'id' | 'name' | 'color'>;
+  status: Pick<Status, 'id' | 'name' | 'color' | 'outcome'>;
   company: Pick<Company, 'id' | 'name'> | null;
   owner: Pick<User, 'id' | 'name' | 'email'> | null;
   contacts: Contact[];
@@ -25,6 +25,7 @@ export interface LeadInput {
   pipelineId: number;
   statusId: number;
   price: number;
+  source?: string | null;
   companyId: number | null;
   ownerId: number | null;
   contactIds: number[];

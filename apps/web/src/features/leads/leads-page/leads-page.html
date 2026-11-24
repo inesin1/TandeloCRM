@@ -6,7 +6,7 @@
     Failed to load leads. Try again later.
   </p-message>
   } @else {
-  <app-page-header title="Leads" [count]="stats().open">
+  <app-page-header title="Leads" [count]="stats().total">
     <p-select
       [options]="pipelines.value()"
       [ngModel]="selectedPipeline()"
@@ -39,14 +39,20 @@
         </ng-template>
       </p-selectbutton>
 
-      <button pButton severity="secondary" outlined>
-        <svg [pIcon]="'upload'"></svg>
-        <span>Import</span>
-      </button>
+      @if (canWrite()) {
+      <app-csv-import
+        entity="lead"
+        [pipelineId]="selectedPipeline()?.id"
+        [statusId]="defaultImportStage()?.id"
+        [stages]="statuses.value()"
+        (imported)="leads.reload()"
+      />
+      }
 
       <button
         pButton
         routerLink="/leads/new"
+        [disabled]="!defaultImportStage()"
         [queryParams]="{ pipelineId: selectedPipeline()?.id }"
       >
         <svg data-p-icon="plus"></svg>
@@ -54,6 +60,28 @@
       </button>
     </ng-container>
   </app-page-header>
+
+  @if (!isLoading() && !defaultImportStage()) {
+  <div
+    class="mt-4 flex flex-wrap items-center gap-3 rounded-lg border border-surface-200 bg-white p-4"
+  >
+    <p class="text-sm text-surface-700">
+      {{ selectedPipeline() ? 'Add a stage to start tracking leads in this
+      pipeline.' : 'Create a pipeline to start tracking leads.' }}
+    </p>
+    @if (canManagePipelines()) {
+    <a
+      routerLink="/settings/pipelines"
+      class="text-sm font-semibold text-emerald-800 underline"
+      >Set up pipelines</a
+    >
+    } @else {
+    <span class="text-sm text-surface-600"
+      >Ask an administrator to set up the pipeline.</span
+    >
+    }
+  </div>
+  }
 
   <div
     class="mt-4 flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-surface-200 bg-white shadow-sm"
@@ -145,7 +173,7 @@
     <div
       class="shrink-0 border-t border-surface-200 bg-white px-4 py-2.5 text-xs text-surface-500"
     >
-      Showing {{ filteredLeads().length }} of {{ stats().open }}
+      Showing {{ filteredLeads().length }} of {{ stats().total }}
     </div>
     } @else if (!mineSessionLoading() && viewMode() === 'list') {
     <app-leads-table [rows]="rows()" />

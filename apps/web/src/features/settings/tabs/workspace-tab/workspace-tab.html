@@ -1,0 +1,62 @@
+<section class="mx-auto max-w-3xl" aria-labelledby="workspace-title">
+  <h2 id="workspace-title" class="text-lg font-semibold text-surface-900">
+    Workspace
+  </h2>
+  @if (preferences.error()) {
+  <div class="mt-4 flex flex-wrap items-center gap-3">
+    <p role="alert" class="text-sm text-red-700">
+      Workspace settings could not be loaded.
+    </p>
+    <button
+      pButton
+      type="button"
+      severity="secondary"
+      (click)="preferences.reload()"
+    >
+      Retry
+    </button>
+  </div>
+  } @else if (preferences.isLoading()) {
+  <p role="status" class="mt-4 text-sm text-surface-600">
+    Loading workspace settings…
+  </p>
+  } @else {
+  <form class="mt-5 max-w-md space-y-4" (submit)="save($event)">
+    <div class="grid gap-1.5">
+      <label
+        for="workspace-currency"
+        class="text-sm font-medium text-surface-800"
+        >Currency</label
+      >
+      <select
+        id="workspace-currency"
+        class="min-h-10 w-full rounded-lg border border-surface-300 bg-white px-3 text-base text-surface-900"
+        [formField]="currencyForm.currency"
+        aria-describedby="currency-hint"
+      >
+        @for (currency of currencies; track currency.code) {
+        <option [value]="currency.code">
+          {{ currency.code }} · {{ currency.name }}
+        </option>
+        }
+      </select>
+      <p id="currency-hint" class="text-sm text-surface-600">
+        This currency applies to all deals and reports. Existing amounts keep
+        their numeric value.
+      </p>
+    </div>
+    @if (canManage()) {
+    <div class="flex flex-wrap items-center gap-3">
+      <button pButton type="submit" [disabled]="saving() || !changed()">
+        {{ saving() ? 'Saving…' : 'Save currency' }}
+      </button>
+      @if (error()) {
+      <p role="alert" class="text-sm text-red-700">{{ error() }}</p>
+      } @else if (saved() && !changed()) {
+      <p role="status" class="text-sm text-surface-700">Currency saved.</p>
+      }
+    </div>
+    }
+  </form>
+  }
+</section>

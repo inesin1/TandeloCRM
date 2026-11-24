@@ -245,7 +245,12 @@ export class LeadsService {
     return db
       .select({
         ...getTableColumns(leads),
-        status: { id: statuses.id, name: statuses.name, color: statuses.color },
+        status: {
+          id: statuses.id,
+          name: statuses.name,
+          color: statuses.color,
+          outcome: statuses.outcome,
+        },
         company: { id: companies.id, name: companies.name },
         owner: { id: users.id, name: users.name, email: users.email },
       })

@@ -1,5 +1,6 @@
 import { httpResource } from '@angular/common/http';
 import { inject, Service } from '@angular/core';
+import { StageOutcome } from '../leads/pipelines-api';
 import { AuthApi } from '../auth/auth-api';
 
 export interface PipelineAnalyticsRow {
@@ -8,6 +9,7 @@ export interface PipelineAnalyticsRow {
   statusId: number | null;
   statusName: string | null;
   statusColor: string | null;
+  statusOutcome?: StageOutcome | null;
   leadCount: number;
   totalPrice: number;
 }

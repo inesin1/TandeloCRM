@@ -93,6 +93,7 @@ describe('LeadDetailPage', () => {
     fixture = TestBed.createComponent(LeadDetailPage);
     http = TestBed.inject(HttpTestingController);
     TestBed.tick();
+    http.expectOne('/api/workspace-settings').flush({ currency: 'USD' });
     for (const path of ['contacts', 'companies', 'users', 'leads']) {
       http.expectOne(`/api/${path}`).flush([]);
     }

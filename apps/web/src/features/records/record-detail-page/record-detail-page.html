@@ -254,7 +254,10 @@
         @if (saveError()) {
         <p-message severity="error" class="mt-3">{{ saveError() }}</p-message> }
         @if (copilotRefreshNotice()) {
-        <p-message severity="info" class="mt-3">{{ copilotRefreshNotice() }}</p-message> }
+        <p-message severity="info" class="mt-3"
+          >{{ copilotRefreshNotice() }}</p-message
+        >
+        }
       </div>
 
       <div
@@ -439,7 +442,8 @@
                 >{{ lead.name }}</span
               >
               <span class="block text-xs text-surface-500"
-                >#{{ lead.id }} · {{ lead.price | currency: 'USD' }}</span
+                >#{{ lead.id }} · {{ lead.price | currency:
+                workspaceSettings.currency() : '1.0-0' }}</span
               >
             </a>
             <span class="text-xs text-surface-500">{{ lead.status.name }}</span>

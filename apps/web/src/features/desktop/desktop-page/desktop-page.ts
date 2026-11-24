@@ -1,3 +1,4 @@
+import { WorkspaceSettings } from '../../settings/workspace-settings';
 import { DatePipe } from '@angular/common';
 import { Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
@@ -29,7 +30,9 @@ export class DesktopPage {
   );
 
   protected readonly summary = computed(() => {
-    const leads = this.leads.value();
+    const leads = this.leads
+      .value()
+      .filter((lead) => (lead.status.outcome ?? 'open') === 'open');
     const tasks = this.tasks.value();
 
     return {
@@ -102,14 +105,10 @@ export class DesktopPage {
       })),
   );
 
-  private readonly priceFormat = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0,
-  });
+  private readonly workspaceSettings = inject(WorkspaceSettings);
 
   protected formatPrice(value: number) {
-    return this.priceFormat.format(value);
+    return this.workspaceSettings.formatMoney(value);
   }
 
   protected retry() {

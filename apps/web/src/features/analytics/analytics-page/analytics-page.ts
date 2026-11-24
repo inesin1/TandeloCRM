@@ -1,3 +1,4 @@
+import { WorkspaceSettings } from '../../settings/workspace-settings';
 import { DatePipe } from '@angular/common';
 import { httpResource } from '@angular/common/http';
 import { Component, computed, inject, signal } from '@angular/core';
@@ -93,14 +94,16 @@ export class AnalyticsPage {
         ...row,
         statusName: row.statusName ?? 'Unknown stage',
         statusColor: row.statusColor ?? '#94a3b8',
-        totalPriceLabel: this.priceFormat.format(row.totalPrice),
+        totalPriceLabel: this.workspaceSettings.formatMoney(row.totalPrice),
       }));
   });
   protected readonly pipelineTotals = computed(() => {
-    const stages = this.stages();
+    const stages = this.stages().filter(
+      (stage) => (stage.statusOutcome ?? 'open') === 'open',
+    );
     return {
       leadCount: stages.reduce((total, stage) => total + stage.leadCount, 0),
-      totalPriceLabel: this.priceFormat.format(
+      totalPriceLabel: this.workspaceSettings.formatMoney(
         stages.reduce((total, stage) => total + stage.totalPrice, 0),
       ),
     };
@@ -124,7 +127,7 @@ export class AnalyticsPage {
     return rows.map((row) => ({
       ...row,
       ownerLabel: row.ownerName ?? 'Unassigned',
-      totalPriceLabel: this.priceFormat.format(row.totalPrice),
+      totalPriceLabel: this.workspaceSettings.formatMoney(row.totalPrice),
       sharePercent:
         totalCount === 0 ? 0 : Math.round((row.leadCount / totalCount) * 100),
     }));
@@ -136,11 +139,7 @@ export class AnalyticsPage {
     document: 'Documents',
   } satisfies Record<TaskAnalyticsRow['type'], string>;
 
-  private readonly priceFormat = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0,
-  });
+  private readonly workspaceSettings = inject(WorkspaceSettings);
   private readonly numberFormat = new Intl.NumberFormat('en-US');
 
   protected selectPipeline(event: Event) {
@@ -172,7 +171,7 @@ export class AnalyticsPage {
   }
 
   protected formatPrice(value: number) {
-    return this.priceFormat.format(value);
+    return this.workspaceSettings.formatMoney(value);
   }
 
   protected formatNumber(value: number) {

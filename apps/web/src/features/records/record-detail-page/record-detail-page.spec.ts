@@ -49,6 +49,7 @@ describe('RecordDetailPage', () => {
     fixture = TestBed.createComponent(RecordDetailPage);
     http = TestBed.inject(HttpTestingController);
     TestBed.tick();
+    http.expectOne('/api/workspace-settings').flush({ currency: 'USD' });
 
     http.expectOne('/api/contacts').flush([]);
     http.expectOne('/api/companies').flush([]);

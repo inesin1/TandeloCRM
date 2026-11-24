@@ -75,6 +75,7 @@ describe('LeadsPage filters', () => {
     page = TestBed.createComponent(LeadsPage).componentInstance;
     http = TestBed.inject(HttpTestingController);
     TestBed.tick();
+    http.expectOne('/api/workspace-settings').flush({ currency: 'USD' });
   });
 
   afterEach(() => {
@@ -142,6 +143,19 @@ describe('LeadsPage filters', () => {
     page['statusFilter'].set(2);
     expect(rowIds()).toEqual([]);
     expect(page['columns']()[0].leads).toEqual([]);
+  });
+
+  it('keeps won deals on the board while excluding them from open value and attention', () => {
+    http.match('/api/auth/me');
+    const record = leads[0];
+    page['leads'].value.set([
+      { ...record, status: { ...record.status, outcome: 'won' }, price: 1500 },
+      ...leads.slice(1),
+    ]);
+    expect(rowIds()).toContain(record.id);
+    expect(page['stats']().inWorkLabel).toBe('$0');
+    page['activeTab'].set('attention');
+    expect(rowIds()).not.toContain(record.id);
   });
 
   it.each([

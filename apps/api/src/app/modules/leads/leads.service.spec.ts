@@ -35,7 +35,7 @@ const contact: typeof contacts.$inferSelect = {
   createdAt: now,
   updatedAt: now,
 };
-const status = { id: 3, name: 'Qualified', color: '#123456' };
+const status = { id: 3, name: 'Qualified', color: '#123456', outcome: 'open' };
 const company = { id: 4, name: 'Example' };
 const owner = { id: 5, name: 'Owner', email: 'owner@example.com' };
 const hydrated = { ...lead, status, company, owner, contacts: [contact] };
@@ -53,7 +53,7 @@ const dto: CreateLeadDto = {
 const columns =
   '"id", "name", "price", "source", "pipelineId", "statusId", "companyId", "ownerId", "customFields", "createdAt", "updatedAt"';
 const selectSql =
-  'select "leads"."id", "leads"."name", "leads"."price", "leads"."source", "leads"."pipelineId", "leads"."statusId", "leads"."companyId", "leads"."ownerId", "leads"."customFields", "leads"."createdAt", "leads"."updatedAt", "statuses"."id", "statuses"."name", "statuses"."color", "companies"."id", "companies"."name", "users"."id", "users"."name", "users"."email" from "leads" inner join "statuses" on ("leads"."statusId" = "statuses"."id" and "leads"."pipelineId" = "statuses"."pipelineId") left join "companies" on "leads"."companyId" = "companies"."id" left join "users" on "leads"."ownerId" = "users"."id"';
+  'select "leads"."id", "leads"."name", "leads"."price", "leads"."source", "leads"."pipelineId", "leads"."statusId", "leads"."companyId", "leads"."ownerId", "leads"."customFields", "leads"."createdAt", "leads"."updatedAt", "statuses"."id", "statuses"."name", "statuses"."color", "statuses"."outcome", "companies"."id", "companies"."name", "users"."id", "users"."name", "users"."email" from "leads" inner join "statuses" on ("leads"."statusId" = "statuses"."id" and "leads"."pipelineId" = "statuses"."pipelineId") left join "companies" on "leads"."companyId" = "companies"."id" left join "users" on "leads"."ownerId" = "users"."id"';
 const contactSql =
   'select "lead_contacts"."leadId", "contacts"."id", "contacts"."name", "contacts"."position", "contacts"."companyId", "contacts"."email", "contacts"."phone", "contacts"."ownerId", "contacts"."customFields", "contacts"."createdAt", "contacts"."updatedAt" from "lead_contacts" inner join "contacts" on "lead_contacts"."contactId" = "contacts"."id"';
 const idSql = `${selectSql} where "leads"."id" = $1`;
@@ -85,6 +85,7 @@ function joinedRow(value = lead): unknown[] {
     status.id,
     status.name,
     status.color,
+    status.outcome,
     value.companyId,
     value.companyId === null ? null : company.name,
     value.ownerId,

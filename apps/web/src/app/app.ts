@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { Component, DestroyRef, inject } from '@angular/core';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { filter } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -39,9 +39,6 @@ export class App {
   protected readonly copilot = inject(CopilotState);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
-  protected readonly isCopilotRoute = signal(
-    this.router.url.startsWith('/copilot'),
-  );
 
   protected title = 'Tandelo';
 
@@ -63,9 +60,7 @@ export class App {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe(() => {
-        const onCopilotPage = this.router.url.startsWith('/copilot');
-        this.isCopilotRoute.set(onCopilotPage);
-        if (onCopilotPage) this.copilot.closePanel();
+        if (this.router.url.startsWith('/copilot')) this.copilot.closePanel();
       });
   }
 

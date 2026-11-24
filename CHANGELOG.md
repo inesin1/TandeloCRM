@@ -3,6 +3,20 @@
 Release notes for Tandelo. The API and web app share one version from `package.json`.
 Release Please adds entries when preparing a release PR. Changes on `main` after the latest tag are not released yet.
 
+## [0.2.0](https://github.com/inesin1/TandeloCRM/compare/v0.1.0-beta.2...v0.2.0) (2026-11-24)
+
+### Features
+
+- Configure pipelines and stages in Settings. Won and lost stages are excluded from open lead totals and attention filters.
+- Set a workspace currency for deal amounts and reporting. Existing numeric amounts are preserved.
+- Import leads, contacts, and companies from CSV with preview and row-level feedback.
+- Open Copilot from a fixed tab on the right edge of any signed-in page.
+- Install Tandelo on a VPS with Docker Compose and persistent PostgreSQL. The deployment guide covers backup and recovery.
+
+### Upgrade
+
+Back up PostgreSQL, then run `pnpm db:migrate` before starting the new version. Migration `0007` creates a default pipeline only when no pipeline exists. Existing stages initially have the Open outcome. Review them in **Settings → Pipelines** and mark the applicable stages as Won or Lost. See the [deployment guide](https://github.com/inesin1/TandeloCRM/blob/v0.2.0/HOMELAB_DEPLOY.md).
+
 ## [0.1.0-beta.2](https://github.com/inesin1/TandeloCRM/compare/v0.1.0-beta.1...v0.1.0-beta.2) (2026-10-24)
 
 

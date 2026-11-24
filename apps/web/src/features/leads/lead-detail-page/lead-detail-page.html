@@ -184,7 +184,7 @@
               [minFractionDigits]="0"
               [maxFractionDigits]="0"
               mode="currency"
-              currency="USD"
+              [currency]="workspaceSettings.currency()"
               locale="en-US"
               class="w-full"
               inputStyleClass="w-full"
@@ -289,8 +289,10 @@
         } @if (saved()) {
         <p-message severity="success" class="mt-3">Changes saved.</p-message> }
         @if (copilotRefreshNotice()) {
-        <p-message severity="info" class="mt-3">{{ copilotRefreshNotice() }}</p-message> }
-        @if (saveError()) {
+        <p-message severity="info" class="mt-3"
+          >{{ copilotRefreshNotice() }}</p-message
+        >
+        } @if (saveError()) {
         <p-message severity="error" class="mt-3">{{ saveError() }}</p-message> }
       </div>
 

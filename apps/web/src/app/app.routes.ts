@@ -151,7 +151,22 @@ export const appRoutes: Route[] = [
           { path: '', pathMatch: 'full', redirectTo: 'users' },
           { path: 'profile', redirectTo: 'users' },
           { path: 'notifications', redirectTo: 'users' },
-          { path: 'workspace', redirectTo: 'users' },
+          {
+            path: 'workspace',
+            title: 'Workspace settings',
+            loadComponent: () =>
+              import('../features/settings/tabs/workspace-tab/workspace-tab').then(
+                (m) => m.WorkspaceTab,
+              ),
+          },
+          {
+            path: 'pipelines',
+            title: 'Pipeline settings',
+            loadComponent: () =>
+              import('../features/settings/tabs/pipelines-tab/pipelines-tab').then(
+                (m) => m.PipelinesTab,
+              ),
+          },
           {
             path: 'users',
             title: 'Users',

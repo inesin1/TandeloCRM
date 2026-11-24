@@ -8,10 +8,9 @@
   } @else {
   <app-page-header title="Companies" [count]="companies.value().length">
     <ng-container actions>
-      <button pButton severity="secondary" outlined>
-        <svg [pIcon]="'upload'"></svg>
-        <span>Import</span>
-      </button>
+      @if (canImport()) {
+      <app-csv-import entity="company" (imported)="companies.reload()" />
+      }
 
       <button pButton routerLink="/companies/new">
         <svg data-p-icon="plus"></svg>

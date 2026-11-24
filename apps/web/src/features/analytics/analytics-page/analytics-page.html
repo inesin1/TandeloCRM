@@ -60,13 +60,13 @@
 
     <div class="flex gap-8">
       <div>
-        <div class="text-sm text-surface-500">Leads</div>
+        <div class="text-sm text-surface-500">Open leads</div>
         <div class="text-xl font-semibold">
           {{ pipelineTotals().leadCount }}
         </div>
       </div>
       <div>
-        <div class="text-sm text-surface-500">Total value</div>
+        <div class="text-sm text-surface-500">Open value</div>
         <div class="text-xl font-semibold">
           {{ pipelineTotals().totalPriceLabel }}
         </div>
@@ -113,7 +113,13 @@
               class="mr-2 inline-block size-2 rounded-full"
               [style.backgroundColor]="stage.statusColor"
             ></span>
-            {{ stage.statusName }}
+            {{ stage.statusName }} @if (stage.statusOutcome === 'won') {
+            <small class="ml-1 text-xs font-medium text-emerald-800">Won</small>
+            } @else if (stage.statusOutcome === 'lost') {
+            <small class="ml-1 text-xs font-medium text-surface-600"
+              >Lost</small
+            >
+            }
           </th>
           <td class="px-4 py-3 text-right">{{ stage.leadCount }}</td>
           <td class="px-4 py-3 text-right">{{ stage.totalPriceLabel }}</td>

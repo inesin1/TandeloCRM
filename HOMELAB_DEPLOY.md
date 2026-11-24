@@ -1,6 +1,50 @@
 # HomeLab Deployment Guide for Tandelo
 
-This document details the production deployment procedure for Tandelo to the HomeLab environment (WSL2 Ubuntu Docker Engine, shared `homelab` network, shared PostgreSQL, Infisical secrets, and Caddy reverse proxy).
+This guide covers standalone VPS installation and the existing HomeLab deployment. Both deployment options use the production Docker images and keep the web port bound to loopback for a reverse proxy.
+
+## Standalone VPS installation
+
+Requirements are Docker Engine with Compose v2, a domain pointed at the server, and a reverse proxy with HTTPS. PostgreSQL runs in Compose on a private network and persists in the `postgres_data` volume.
+
+1. Copy `.env.vps.example` to `.env.vps`. Set `POSTGRES_PASSWORD` and `ADMIN_PASSWORD` to unique random values. Generate `JWT_SECRET` with `openssl rand -hex 32`. Set the same URL-encoded PostgreSQL password in `DATABASE_URL`. Keep `.env.vps` private.
+2. Start PostgreSQL and wait for it to become healthy, then build the images.
+
+   ```bash
+   docker compose --env-file .env.vps -f compose.vps.yml up -d --build --wait postgres
+   docker compose --env-file .env.vps -f compose.vps.yml build api web tooling
+   ```
+
+3. Apply migrations and create the first administrator.
+
+   ```bash
+   docker compose --env-file .env.vps -f compose.vps.yml --profile tools run --rm tooling pnpm db:migrate
+   docker compose --env-file .env.vps -f compose.vps.yml --profile tools run --rm tooling pnpm db:seed-admin
+   ```
+
+4. Start the application and check readiness.
+
+   ```bash
+   docker compose --env-file .env.vps -f compose.vps.yml up -d --wait
+   curl -f http://127.0.0.1:3103/api/health/ready
+   ```
+
+   The web app is available on `127.0.0.1:3103`. Point the HTTPS reverse proxy at that address. Leave PostgreSQL and the API off public host ports. Set `APP_HOST_PORT` if port 3103 is occupied.
+
+Back up the database and `.env.vps` securely. A database backup alone cannot decrypt Copilot credentials without the original `JWT_SECRET`.
+
+For a routine update, back up the database and build `api web tooling` from the new version. Run `stop web api`, apply migrations with the new tooling image, then run `up -d --wait` using the same Compose file. Avoid rerunning `db:seed-admin` during upgrades because it resets the configured administrator password and role.
+
+Create a database backup and verify recovery in a separate database.
+
+```bash
+BACKUP_FILE="/secure/backup/path/tandelo_$(date +%Y%m%d_%H%M%S).dump"
+docker compose --env-file .env.vps -f compose.vps.yml exec -T postgres pg_dump -U tandelo -d tandelo -Fc > "$BACKUP_FILE"
+docker compose --env-file .env.vps -f compose.vps.yml exec -T postgres createdb -U tandelo tandelo_restore_test
+docker compose --env-file .env.vps -f compose.vps.yml exec -T postgres pg_restore -U tandelo -d tandelo_restore_test --exit-on-error < "$BACKUP_FILE"
+docker compose --env-file .env.vps -f compose.vps.yml exec -T postgres psql -U tandelo -d tandelo_restore_test -c 'SELECT count(*) FROM leads;'
+```
+
+To switch to a recovered database, stop `web` and `api`, confirm the recovery point, update the database name in `DATABASE_URL`, and start the app with the same `JWT_SECRET`.
 
 ---
 
@@ -173,8 +217,8 @@ Before performing a production backup, ensure no active transactions or backgrou
 Execute a compressed PostgreSQL dump using the shared database container:
 
 ```bash
-BACKUP_FILE="/tmp/tandelo_backup_$(date +%Y%m%d_%H%M%S).dump"
-docker exec -t homelab-postgres pg_dump -U tandelo_user -d tandelo -F c -b -v -f "$BACKUP_FILE"
+BACKUP_FILE="/secure/backup/path/tandelo_$(date +%Y%m%d_%H%M%S).dump"
+docker exec homelab-postgres pg_dump -U tandelo_user -d tandelo -F c -b > "$BACKUP_FILE"
 ```
 
 Save both `$BACKUP_FILE` and the active `JWT_SECRET` securely in your backup vault.
@@ -189,7 +233,7 @@ TEST_DB="tandelo_restore_test_$(date +%s)"
 docker exec -i homelab-postgres psql -U postgres -c "CREATE DATABASE $TEST_DB OWNER tandelo_user;"
 
 # 2. Restore into test database
-docker exec -i homelab-postgres pg_restore -U tandelo_user -d "$TEST_DB" -v "$BACKUP_FILE"
+docker exec -i homelab-postgres pg_restore -U tandelo_user -d "$TEST_DB" -v < "$BACKUP_FILE"
 
 # 3. Verify record counts and integrity
 docker exec -i homelab-postgres psql -U tandelo_user -d "$TEST_DB" -c "SELECT count(*) FROM users; SELECT count(*) FROM leads;"
@@ -222,7 +266,7 @@ If a schema migration altered data incompatibly:
    ```bash
    docker exec -i homelab-postgres dropdb -U postgres tandelo
    docker exec -i homelab-postgres createdb -U postgres -O tandelo_user tandelo
-   docker exec -i homelab-postgres pg_restore -U tandelo_user -d tandelo -v "$BACKUP_FILE"
+   docker exec -i homelab-postgres pg_restore -U tandelo_user -d tandelo -v < "$BACKUP_FILE"
    ```
 3. Start application containers:
    ```bash

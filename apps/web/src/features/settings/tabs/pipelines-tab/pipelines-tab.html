@@ -1,0 +1,407 @@
+<section class="space-y-5" aria-labelledby="pipelines-title">
+  <header class="flex flex-wrap items-start justify-between gap-3">
+    <div>
+      <h2 id="pipelines-title" class="text-lg font-semibold text-surface-900">
+        Pipelines
+      </h2>
+      <p class="mt-1 text-sm text-surface-500">
+        Set up deal stages and mark which deals are won or lost.
+      </p>
+    </div>
+    @if (canManage()) {
+    <button
+      pButton
+      type="button"
+      severity="secondary"
+      outlined
+      [disabled]="saving()"
+      (click)="startCreatePipeline()"
+    >
+      Create pipeline
+    </button>
+    }
+  </header>
+
+  @if (pipelines.error()) {
+  <div
+    class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-3"
+  >
+    <p class="text-sm text-red-800" role="alert">
+      Could not load pipelines. Try again.
+    </p>
+    <button pButton type="button" severity="secondary" (click)="retry()">
+      Retry
+    </button>
+  </div>
+  } @else if (pipelines.isLoading() && !pipelines.hasValue()) {
+  <p class="text-sm text-surface-500" role="status">Loading pipelines…</p>
+  } @else if (pipelines.value().length === 0 && !selectedPipeline() &&
+  !creatingPipeline()) {
+  <div
+    class="rounded-xl border border-dashed border-surface-300 bg-surface-50 px-5 py-8 text-center"
+  >
+    <h2 class="font-semibold text-surface-800">Create your first pipeline</h2>
+    <p class="mx-auto mt-1 max-w-lg text-sm text-surface-500">
+      A pipeline groups deals into stages. Add one to start adding deals to
+      Tandelo.
+    </p>
+    @if (!canManage()) {
+    <p class="mt-3 text-sm text-surface-500">
+      Ask an administrator to create the first pipeline.
+    </p>
+    }
+  </div>
+  } @else {
+  <div class="grid gap-5 lg:grid-cols-[minmax(14rem,0.75fr)_minmax(0,1.7fr)]">
+    <aside aria-label="Pipeline list" class="min-w-0">
+      <h2
+        class="mb-2 text-xs font-semibold uppercase tracking-wide text-surface-500"
+      >
+        Your pipelines
+      </h2>
+      <div class="space-y-1">
+        @for (pipeline of pipelines.value(); track pipeline.id) {
+        <button
+          type="button"
+          class="flex w-full items-start justify-between gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800"
+          [class.border-emerald-800]="selectedPipeline()?.id === pipeline.id"
+          [class.bg-emerald-50]="selectedPipeline()?.id === pipeline.id"
+          [class.border-surface-200]="selectedPipeline()?.id !== pipeline.id"
+          [class.hover:bg-surface-50]="selectedPipeline()?.id !== pipeline.id"
+          [attr.aria-pressed]="selectedPipeline()?.id === pipeline.id"
+          [disabled]="saving()"
+          (click)="selectPipeline(pipeline)"
+        >
+          <span class="min-w-0">
+            <span class="block truncate text-sm font-medium text-surface-800">
+              {{ pipeline.name }}
+            </span>
+            @if (selectedPipeline()?.id === pipeline.id && stages.hasValue()) {
+            <span class="mt-0.5 block text-xs text-surface-500">
+              {{ stages.value().length }} {{ stages.value().length === 1 ?
+              'stage' : 'stages' }}
+            </span>
+            }
+          </span>
+          @if (selectedPipeline()?.id === pipeline.id) {
+          <span
+            class="mt-1 size-2 shrink-0 rounded-full bg-emerald-700"
+            aria-hidden="true"
+          ></span>
+          }
+        </button>
+        }
+      </div>
+    </aside>
+
+    <div class="min-w-0 space-y-5">
+      <section class="rounded-xl border border-surface-200 bg-white p-4 sm:p-5">
+        <div class="mb-4 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 class="font-semibold text-surface-900">
+              {{ selectedPipeline() ? 'Pipeline details' : 'New pipeline' }}
+            </h2>
+            <p class="mt-1 text-sm text-surface-500">
+              Choose a name and its place in the list.
+            </p>
+          </div>
+          @if (selectedPipeline() && canManage()) {
+          <button
+            pButton
+            type="button"
+            severity="danger"
+            text
+            size="small"
+            [disabled]="saving()"
+            (click)="deletePipeline(selectedPipeline()!)"
+          >
+            Delete pipeline
+          </button>
+          }
+        </div>
+
+        <form
+          class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_8rem_auto] sm:items-end"
+          (submit)="savePipeline($event)"
+        >
+          <div class="min-w-0 space-y-1.5">
+            <label
+              for="pipelineName"
+              class="text-sm font-medium text-surface-700"
+              >Name</label
+            >
+            <input
+              pInputText
+              id="pipelineName"
+              name="pipelineName"
+              maxlength="100"
+              required
+              class="w-full"
+              [disabled]="!canManage() || saving()"
+              [ngModel]="pipelineDraft().name"
+              (ngModelChange)="updatePipelineDraft('name', $event)"
+            />
+          </div>
+          <div class="space-y-1.5">
+            <label
+              for="pipelineOrder"
+              class="text-sm font-medium text-surface-700"
+              >Order</label
+            >
+            <input
+              pInputText
+              id="pipelineOrder"
+              name="pipelineOrder"
+              type="number"
+              min="0"
+              step="1"
+              required
+              class="w-full"
+              [disabled]="!canManage() || saving()"
+              [ngModel]="pipelineDraft().sortOrder"
+              (ngModelChange)="updatePipelineDraft('sortOrder', $event)"
+            />
+          </div>
+          @if (canManage()) {
+          <button
+            pButton
+            type="submit"
+            [disabled]="saving() || !pipelineDraft().name.trim()"
+          >
+            {{ saving() ? 'Saving…' : selectedPipeline() ? 'Save' : 'Create' }}
+          </button>
+          }
+        </form>
+      </section>
+
+      <section
+        aria-labelledby="stages-title"
+        class="rounded-xl border border-surface-200 bg-white p-4 sm:p-5"
+      >
+        <div class="mb-4 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 id="stages-title" class="font-semibold text-surface-900">
+              Stages
+            </h2>
+            <p class="mt-1 text-sm text-surface-500">
+              Set each stage’s color and whether a deal stays open, is won, or
+              is lost.
+            </p>
+          </div>
+          @if (canManage() && selectedPipeline()) {
+          <button
+            pButton
+            type="button"
+            severity="secondary"
+            outlined
+            size="small"
+            [disabled]="saving() || editingStageId() !== null"
+            (click)="startAddStage()"
+          >
+            Add stage
+          </button>
+          }
+        </div>
+
+        @if (stages.error()) {
+        <div
+          class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-3"
+        >
+          <p class="text-sm text-red-800" role="alert">
+            Could not load stages. Try again.
+          </p>
+          <button
+            pButton
+            type="button"
+            severity="secondary"
+            (click)="stages.reload()"
+          >
+            Retry
+          </button>
+        </div>
+        } @else if (stages.isLoading() && !stages.hasValue()) {
+        <p class="text-sm text-surface-500" role="status">Loading stages…</p>
+        } @else if (stages.value().length === 0 && editingStageId() === null) {
+        <div
+          class="rounded-lg border border-dashed border-surface-300 bg-surface-50 px-4 py-6 text-center"
+        >
+          <p class="text-sm text-surface-600">
+            No stages yet. Add the first stage to make this pipeline ready for
+            deals.
+          </p>
+        </div>
+        } @else {
+        <ol class="space-y-2">
+          @for (stage of stages.value(); track stage.id) {
+          <li class="rounded-lg border border-surface-200 p-3">
+            @if (editingStageId() === stage.id) {
+            <ng-container *ngTemplateOutlet="stageEditor" />
+            } @else {
+            <div class="flex flex-wrap items-center gap-3">
+              <span
+                class="size-3 shrink-0 rounded-full ring-2 ring-white outline outline-1 outline-surface-200"
+                [style.backgroundColor]="stage.color"
+                aria-hidden="true"
+              ></span>
+              <span class="min-w-0 flex-1">
+                <span
+                  class="block truncate text-sm font-medium text-surface-800"
+                  >{{ stage.name }}</span
+                >
+                <span class="text-xs text-surface-500"
+                  >Position {{ stage.sortOrder ?? 0 }}</span
+                >
+              </span>
+              <span
+                class="rounded-full bg-surface-100 px-2.5 py-1 text-xs font-medium text-surface-700"
+              >
+                {{ outcomeLabel(stage.outcome) }}
+              </span>
+              @if (canManage()) {
+              <div class="flex items-center gap-1">
+                <button
+                  pButton
+                  type="button"
+                  severity="secondary"
+                  text
+                  size="small"
+                  [disabled]="saving() || editingStageId() !== null"
+                  (click)="editStage(stage)"
+                >
+                  Edit
+                </button>
+                <button
+                  pButton
+                  type="button"
+                  severity="danger"
+                  text
+                  size="small"
+                  [disabled]="saving() || editingStageId() !== null"
+                  (click)="deleteStage(stage)"
+                >
+                  Delete
+                </button>
+              </div>
+              }
+            </div>
+            }
+          </li>
+          }
+        </ol>
+        } @if (editingStageId() === 'new') {
+        <div
+          class="mt-3 rounded-lg border border-emerald-200 bg-emerald-50/50 p-3"
+        >
+          <ng-container *ngTemplateOutlet="stageEditor" />
+        </div>
+        }
+      </section>
+
+      @if (error()) {
+      <p-message
+        [severity]="error().includes('saved.') || error().includes('created.') || error().includes('deleted.') ? 'success' : 'error'"
+        role="status"
+        class="w-full"
+        >{{ error() }}</p-message
+      >
+      }
+    </div>
+  </div>
+  } @if (pipelines.hasValue() && !canManage()) {
+  <p class="text-xs text-surface-500">
+    You can view pipelines. Contact an administrator to change them.
+  </p>
+  }
+</section>
+
+<ng-template #stageEditor>
+  <form class="grid gap-3 sm:grid-cols-2" (submit)="saveStage($event)">
+    <div class="space-y-1.5 sm:col-span-2">
+      <label for="stageName" class="text-sm font-medium text-surface-700"
+        >Stage name</label
+      >
+      <input
+        pInputText
+        id="stageName"
+        name="stageName"
+        maxlength="100"
+        required
+        class="w-full"
+        [disabled]="saving()"
+        [ngModel]="stageDraft().name"
+        (ngModelChange)="updateStageDraft('name', $event)"
+      />
+    </div>
+    <div class="space-y-1.5">
+      <label for="stageOrder" class="text-sm font-medium text-surface-700"
+        >Position</label
+      >
+      <input
+        pInputText
+        id="stageOrder"
+        name="stageOrder"
+        type="number"
+        min="0"
+        step="1"
+        required
+        class="w-full"
+        [disabled]="saving()"
+        [ngModel]="stageDraft().sortOrder"
+        (ngModelChange)="updateStageDraft('sortOrder', $event)"
+      />
+    </div>
+    <div class="space-y-1.5">
+      <label for="stageOutcome" class="text-sm font-medium text-surface-700"
+        >Deal outcome</label
+      >
+      <select
+        id="stageOutcome"
+        name="stageOutcome"
+        class="h-10 w-full rounded-lg border border-surface-300 bg-white px-3 text-sm text-surface-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800"
+        [disabled]="saving()"
+        [ngModel]="stageDraft().outcome"
+        (ngModelChange)="updateStageDraft('outcome', $event)"
+      >
+        <option value="open">Open</option>
+        <option value="won">Won</option>
+        <option value="lost">Lost</option>
+      </select>
+    </div>
+    <div class="flex items-end gap-3 sm:col-span-2">
+      <label
+        for="stageColor"
+        class="min-w-0 flex-1 text-sm font-medium text-surface-700"
+        >Stage color</label
+      >
+      <input
+        id="stageColor"
+        name="stageColor"
+        type="color"
+        class="size-10 cursor-pointer rounded-md border border-surface-300 bg-white p-1"
+        [disabled]="saving()"
+        [ngModel]="stageDraft().color"
+        (ngModelChange)="updateStageDraft('color', $event)"
+      />
+    </div>
+    <div class="flex justify-end gap-2 sm:col-span-2">
+      <button
+        pButton
+        type="button"
+        severity="secondary"
+        outlined
+        [disabled]="saving()"
+        (click)="cancelStageEdit()"
+      >
+        Cancel
+      </button>
+      <button
+        pButton
+        type="submit"
+        [disabled]="saving() || !stageDraft().name.trim()"
+      >
+        {{ saving() ? 'Saving…' : editingStageId() === 'new' ? 'Add stage' :
+        'Save stage' }}
+      </button>
+    </div>
+  </form>
+</ng-template>

@@ -13,10 +13,11 @@ import { CustomFieldsModule } from './modules/custom-fields/custom-fields.module
 import { TasksModule } from './modules/tasks/tasks.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { AppController } from './app.controller';
+import { WorkspaceSettingsController } from './modules/workspace-settings/workspace-settings.controller';
 import { CopilotModule } from './modules/copilot/copilot.module';
 
 @Module({
-  controllers: [AppController],
+  controllers: [AppController, WorkspaceSettingsController],
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,

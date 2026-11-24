@@ -134,6 +134,7 @@ export class AnalyticsService {
         statusId: statuses.id,
         statusName: statuses.name,
         statusColor: statuses.color,
+        statusOutcome: statuses.outcome,
         leadCount: count(leads.id).mapWith(Number),
         totalPrice: sql<number>`coalesce(sum(${leads.price}), 0)`.mapWith(
           Number,

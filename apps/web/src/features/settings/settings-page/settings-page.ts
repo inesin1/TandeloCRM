@@ -19,6 +19,18 @@ export class SettingsPage {
 
   protected readonly items: SettingsItem[] = [
     {
+      label: 'Workspace',
+      icon: 'cog',
+      routerLink: 'workspace',
+      requiredPermission: 'pipelines:write',
+    },
+    {
+      label: 'Pipelines',
+      icon: 'sitemap',
+      routerLink: 'pipelines',
+      requiredPermission: 'pipelines:write',
+    },
+    {
       label: 'Users',
       icon: 'users',
       routerLink: 'users',

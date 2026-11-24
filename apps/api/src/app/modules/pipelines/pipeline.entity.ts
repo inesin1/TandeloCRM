@@ -1,4 +1,11 @@
-import { integer, pgTable, text, timestamp, unique } from 'drizzle-orm/pg-core';
+import {
+  integer,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  unique,
+} from 'drizzle-orm/pg-core';
 
 export const pipelines = pgTable('pipelines', {
   id: integer().generatedAlwaysAsIdentity().primaryKey(),
@@ -11,6 +18,9 @@ export const pipelines = pgTable('pipelines', {
     .$onUpdate(() => new Date()),
 });
 
+export const stageOutcomes = ['open', 'won', 'lost'] as const;
+export const stageOutcome = pgEnum('stage_outcome', stageOutcomes);
+
 export const statuses = pgTable(
   'statuses',
   {
@@ -20,6 +30,7 @@ export const statuses = pgTable(
       .references(() => pipelines.id, { onDelete: 'cascade' }),
     name: text().notNull(),
     color: text().notNull(),
+    outcome: stageOutcome().notNull().default('open'),
     sortOrder: integer().notNull().default(0),
     createdAt: timestamp().notNull().defaultNow(),
     updatedAt: timestamp()

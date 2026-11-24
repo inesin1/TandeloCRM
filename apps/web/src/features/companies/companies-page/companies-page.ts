@@ -12,6 +12,8 @@ import { Plus } from '@primeicons/angular/plus';
 import { PIcon } from '@primeicons/angular/p-icon';
 import { Company, CompaniesApi } from '../companies-api';
 import { UsersApi } from '../../settings/tabs/users-tab/users-api';
+import { CsvImport } from '../../import/csv-import';
+import { AuthApi } from '../../auth/auth-api';
 import { PageHeader } from '../../../shared/page-header';
 import { UserChip } from '../../../shared/user-chip';
 
@@ -33,11 +35,16 @@ export interface CompanyRow extends Company {
     Plus,
     PIcon,
     PageHeader,
+    CsvImport,
     UserChip,
     RouterLink,
   ],
 })
 export class CompaniesPage {
+  private readonly auth = inject(AuthApi);
+  protected readonly canImport = computed(() =>
+    this.auth.hasPermission('companies:write'),
+  );
   protected readonly companies = inject(CompaniesApi).companies;
   protected readonly users = inject(UsersApi).users;
 

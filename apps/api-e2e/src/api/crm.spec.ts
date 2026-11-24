@@ -48,6 +48,41 @@ describe('CRM API workflows', () => {
     }
   });
 
+  it('provisions a usable pipeline and persists the workspace currency', async () => {
+    const { data: pipelines } = await admin.get('/api/pipelines');
+    const sales = pipelines.find(
+      (pipeline: { name: string }) => pipeline.name === 'Sales',
+    );
+    expect(sales).toBeDefined();
+    const { data: stages } = await admin.get(
+      `/api/pipelines/${sales.id}/statuses`,
+    );
+    expect(stages.map((stage: { outcome: string }) => stage.outcome)).toEqual([
+      'open',
+      'open',
+      'open',
+      'won',
+      'lost',
+    ]);
+
+    const { data: original } = await admin.get('/api/workspace-settings');
+    try {
+      const updated = await admin.put('/api/workspace-settings', {
+        currency: 'EUR',
+      });
+      expect(updated.data).toEqual({ currency: 'EUR' });
+      expect((await admin.get('/api/workspace-settings')).data).toEqual({
+        currency: 'EUR',
+      });
+      await expectStatus(
+        admin.put('/api/workspace-settings', { currency: 'INVALID' }),
+        400,
+      );
+    } finally {
+      await admin.put('/api/workspace-settings', original);
+    }
+  });
+
   it('creates and links CRM records, filters tasks, and reports pipeline totals', async () => {
     const unique = randomUUID();
     const pipeline = await admin.post('/api/pipelines', {
@@ -203,6 +238,20 @@ describe('CRM API workflows', () => {
         pipelineId: created.pipelineId,
         statusId: qualifiedStatus.data.id,
         leadCount: 1,
+        totalPrice: 8900,
+      }),
+    );
+
+    const stageUrl = `/api/pipelines/${created.pipelineId}/statuses/${qualifiedStatus.data.id}`;
+    await expectStatus(admin.put(stageUrl, { outcome: 'closed' }), 400);
+    await admin.put(stageUrl, { outcome: 'won' });
+    const { data: wonLead } = await admin.get(`/api/leads/${created.leadId}`);
+    expect(wonLead.status.outcome).toBe('won');
+    const { data: wonTotals } = await admin.get('/api/analytics/pipeline');
+    expect(wonTotals).toContainEqual(
+      expect.objectContaining({
+        statusId: qualifiedStatus.data.id,
+        statusOutcome: 'won',
         totalPrice: 8900,
       }),
     );

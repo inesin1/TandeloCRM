@@ -26,3 +26,56 @@
 .p-sidebar[data-collapsible='icon'] .p-sidebar-menu-button > span {
   opacity: 0;
 }
+
+.app-content {
+  padding-inline-end: 2.75rem;
+}
+
+.copilot-launcher {
+  position: fixed;
+  z-index: 20;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  writing-mode: vertical-rl;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.85rem 0.52rem;
+  min-inline-size: 5.2rem;
+  min-block-size: 2.15rem;
+  border: 1px solid var(--p-surface-300);
+  border-radius: 0.7rem 0 0 0.7rem;
+  background: var(--p-surface-0);
+  color: var(--p-primary-color);
+  box-shadow: 0 2px 8px rgb(16 26 20 / 0.09);
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 650;
+  line-height: 1;
+  transition:
+    background-color 150ms,
+    box-shadow 150ms;
+}
+
+.copilot-launcher svg {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+
+.copilot-launcher:hover,
+.copilot-launcher[aria-expanded='true'] {
+  background: var(--p-surface-100);
+}
+
+.copilot-launcher:focus-visible {
+  outline: 2px solid var(--p-primary-color);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .copilot-launcher {
+    transition: none;
+  }
+}

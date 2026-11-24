@@ -91,6 +91,11 @@ describe('Member API permissions', () => {
       member.post('/api/groups', { name: `unauthorized-${suffix}` }),
       403,
     );
+    expect((await member.get('/api/workspace-settings')).status).toBe(200);
+    await expectHttpStatus(
+      member.put('/api/workspace-settings', { currency: 'EUR' }),
+      403,
+    );
     await expectHttpStatus(member.get('/api/roles'), 403);
     await expectHttpStatus(
       member.post('/api/roles', { name: `unauthorized-${suffix}` }),

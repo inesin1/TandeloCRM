@@ -50,6 +50,13 @@
       "when": 1792825774610,
       "tag": "0006_old_songbird",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1795510207591,
+      "tag": "0007_workspace_currency_and_stage_outcomes",
+      "breakpoints": true
     }
   ]
 }

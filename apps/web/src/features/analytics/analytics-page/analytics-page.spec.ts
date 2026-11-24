@@ -41,6 +41,7 @@ describe('AnalyticsPage', () => {
     fixture = TestBed.createComponent(AnalyticsPage);
     http = TestBed.inject(HttpTestingController);
     TestBed.tick();
+    http.expectOne('/api/workspace-settings').flush({ currency: 'USD' });
     http.expectOne('/api/analytics/pipeline').flush(rows);
     fixture.detectChanges();
   }

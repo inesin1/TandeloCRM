@@ -1,3 +1,4 @@
+import { WorkspaceSettings } from '../../settings/workspace-settings';
 import { DatePipe } from '@angular/common';
 import { httpResource } from '@angular/common/http';
 import {
@@ -65,6 +66,7 @@ function toDraft(lead: Lead): LeadDraft {
   ],
 })
 export class LeadDetailPage {
+  protected readonly workspaceSettings = inject(WorkspaceSettings);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
@@ -332,6 +334,7 @@ export class LeadDetailPage {
       );
       const status =
         options.find((item) => this.isNew() && item.id === requested) ??
+        options.find((item) => (item.outcome ?? 'open') === 'open') ??
         options[0];
       if (status)
         this.draft.update((value) => ({ ...value, statusId: status.id }));

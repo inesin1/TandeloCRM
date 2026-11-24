@@ -5,6 +5,7 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { sql } from 'drizzle-orm';
+import { workspaceSettings } from './modules/workspace-settings/workspace-settings.entity';
 import {
   DATABASE_CONNECTION,
   Database,
@@ -25,7 +26,7 @@ export class AppController {
   @Get('health/ready')
   async getReadiness(): Promise<{ status: 'ok'; database: 'connected' }> {
     try {
-      await this.db.execute(sql`SELECT 1`);
+      await this.db.execute(sql`SELECT 1 FROM ${workspaceSettings} LIMIT 1`);
       return { status: 'ok', database: 'connected' };
     } catch {
       throw new ServiceUnavailableException({

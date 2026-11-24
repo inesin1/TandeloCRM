@@ -7,19 +7,21 @@
       <img alt="CI" src="https://github.com/inesin1/TandeloCRM/actions/workflows/ci.yml/badge.svg?branch=main" />
     </a>
     <img alt="Self-hosted CRM" src="https://img.shields.io/badge/Self--hosted-CRM-1f9d55?style=flat-square&logo=server&logoColor=white" />
-    <img alt="MVP in development" src="https://img.shields.io/badge/MVP-in%20development-f59e0b?style=flat-square" />
+    <img alt="Latest release" src="https://img.shields.io/github/v/release/inesin1/TandeloCRM?style=flat-square" />
   </p>
 </div>
 
 Tandelo brings leads, companies, contacts, pipelines, and lead-linked tasks into one app. The frontend uses Angular, the API uses NestJS, and PostgreSQL stores the data.
 
-This is an active MVP project. There is no hosted demo, and the seed command does not create sample CRM records.
+Tandelo is a self-hosted CRM for small teams. There is no hosted demo, and the seed command does not create sample CRM records.
 
-[Releases](https://github.com/inesin1/TandeloCRM/releases) · [Changelog](CHANGELOG.md) · [HomeLab Deployment](HOMELAB_DEPLOY.md)
+[Releases](https://github.com/inesin1/TandeloCRM/releases) · [Changelog](CHANGELOG.md) · [Self-hosting and HomeLab deployment](HOMELAB_DEPLOY.md)
 
 ## Features
 
-- View leads in board and list layouts across pipelines.
+- View leads in board and list layouts. Configure pipelines, stages, and won or lost outcomes in **Settings → Pipelines**.
+- Set the currency for all deals and reports in **Settings → Workspace**.
+- Import leads, contacts, and companies from CSV with a preview and row-level feedback.
 - Link leads to companies and contacts.
 - Create and complete tasks attached to leads, with optional assignees.
 - Manage users and groups with Admin and Member access levels.
@@ -144,11 +146,11 @@ bash tools/run-api-e2e.sh
 Tandelo uses one version for the API and web app. `package.json` is the source of truth, and Swagger reads that version too. Published versions are listed on the Releases page; commits on `main` after the latest release tag are unreleased. Version and changelog updates are managed by [Release Please](https://github.com/googleapis/release-please-action) in the CI workflow.
 
 1. Use Conventional Commits: `feat:` for features, `fix:` for fixes, and `!` for breaking changes.
-2. After successful CI on `main`, the release job creates or updates a release PR containing the next version and `CHANGELOG.md` entry. While the beta policy is active, releases use a `-beta.N` suffix with an incrementing prerelease number.
+2. After successful CI on `main`, the release job creates or updates a release PR containing the next version and `CHANGELOG.md` entry. Stable releases use semantic versioning.
 3. Review the release notes, upgrade requirements, and checks. If GitHub holds a bot-created PR's workflow runs for approval, select **Approve workflows to run**. CI can also be run manually from **Actions → CI → Run workflow**, selecting the release PR branch.
-4. Merge the release PR when ready. After CI passes on `main`, the release job creates its `v…` tag and GitHub prerelease. Ordinary feature pushes do not publish a new release on their own.
+4. Merge the release PR when ready. After CI passes on `main`, the release job creates its `v…` tag and GitHub release. Ordinary feature pushes do not publish a new release on their own.
 
-The workflow uses the repository's `GITHUB_TOKEN`, with write permissions limited to the release job. GitHub's **Settings → Actions → General → Workflow permissions → Allow GitHub Actions to create and approve pull requests** must be enabled. The job creates PRs; it does not approve or merge them. Stable releases require a deliberate change to the prerelease policy in `release-please-config.json` and review of the proposed version. This workflow does not publish npm packages, Docker images, or deploy an application.
+The workflow uses the repository's `GITHUB_TOKEN`, with write permissions limited to the release job. GitHub's **Settings → Actions → General → Workflow permissions → Allow GitHub Actions to create and approve pull requests** must be enabled. The job creates PRs; it does not approve or merge them. This workflow does not publish npm packages, Docker images, or deploy an application.
 
 ## Updating an existing installation
 
@@ -162,9 +164,9 @@ pnpm db:migrate
 pnpm nx run-many -t build -p api web
 ```
 
-Replace `vX.Y.Z` with the actual target tag, then restart the API and web server using your installation's startup process. Current development code requires Node.js 26 and pnpm 12; upgrading from the initial beta also requires the Copilot migrations through `0006`. Run migrations once for the installation. Do not rerun user/access-control seed commands as an upgrade step: they can reset role assignments. Rolling code back does not roll the database back; restore a compatible backup if the release requires it.
+Replace `vX.Y.Z` with the actual target tag, then restart the API and web server using your installation's startup process. Current development code requires Node.js 26 and pnpm 12; upgrading from the initial beta also requires the Copilot migrations through `0006`. Run migrations once for the installation. Migration `0007` creates a default sales pipeline if the installation has none. After an upgrade, existing stages start as Open. Set their outcomes in **Settings → Pipelines**. Do not rerun user/access-control seed commands as an upgrade step: they can reset role assignments. Rolling code back does not roll the database back; restore a compatible backup if the release requires it.
 
-For containerized production deployments on Docker and HomeLab infrastructure, refer to the [HomeLab Deployment Guide](HOMELAB_DEPLOY.md).
+For standalone Docker Compose installation on a VPS or the existing HomeLab deployment, follow the [Self-hosting and HomeLab Deployment Guide](HOMELAB_DEPLOY.md).
 
 ## Project structure
 
@@ -183,7 +185,7 @@ For containerized production deployments on Docker and HomeLab infrastructure, r
 
 ## Status and roadmap
 
-The MVP covers leads, companies, contacts, pipelines, lead-linked tasks, access control, user and group administration, pipeline analytics, and optional Copilot assistance. Integrations, a plugin SDK, historical analytics, automation, and production deployment options are future work.
+The MVP covers leads, companies, contacts, pipelines, lead-linked tasks, access control, user and group administration, pipeline analytics, and optional Copilot assistance. Integrations beyond Copilot, a plugin SDK, historical analytics, and automation are future work.
 
 ## Contributing
 
