@@ -3,6 +3,18 @@
 Release notes for Tandelo. The API and web app share one version from `package.json`.
 Release Please adds entries when preparing a release PR. Changes on `main` after the latest tag are not released yet.
 
+## [0.3.0](https://github.com/inesin1/TandeloCRM/compare/v0.2.0...v0.3.0) (2026-11-24)
+
+
+### Features
+
+* publish interactive Tandelo demo ([4e8bd61](https://github.com/inesin1/TandeloCRM/commit/4e8bd613f493b5432fe509101f29a36ed026ef7b))
+
+
+### Bug Fixes
+
+* **ci:** deploy the uploaded Pages artifact ([3872115](https://github.com/inesin1/TandeloCRM/commit/3872115a48226c9b751cfdc1f4a216e9ed7684c5))
+
 ## [0.2.0](https://github.com/inesin1/TandeloCRM/compare/v0.1.0-beta.2...v0.2.0) (2026-11-24)
 
 ### Features
